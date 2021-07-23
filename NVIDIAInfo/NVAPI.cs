@@ -5,9 +5,9 @@ using HMODULE = System.IntPtr;
 
 namespace DisplayMagicianShared.NVIDIA
 {
-    public delegate IntPtr ADL_Main_Memory_Alloc_Delegate(int size);
+    //public delegate IntPtr ADL_Main_Memory_Alloc_Delegate(int size);
 
-    public enum NVAPI_STATUS
+    public enum NVAPI_STATUS : int
     {
         // Result Codes
         NVAPI_OK = 0,      //!< Success. Request is completed.
@@ -160,8 +160,361 @@ namespace DisplayMagicianShared.NVIDIA
         NVAPI_NO_VULKAN = -229,    //!< OpenGL does not export Vulkan fake extensions
         NVAPI_REQUEST_PENDING = -230,    //!< A request for NvTOPPs telemetry CData has already been made and is pending a response.
         NVAPI_RESOURCE_IN_USE = -231,    //!< Operation cannot be performed because the resource is in use.
+    }
 
-    }    
+    public enum NV_DISPLAYCONFIG_FLAGS : uint
+    {
+        NV_DISPLAYCONFIG_VALIDATE_ONLY = 0x00000001,
+        NV_DISPLAYCONFIG_SAVE_TO_PERSISTENCE = 0x00000002,
+        NV_DISPLAYCONFIG_DRIVER_RELOAD_ALLOWED = 0x00000004,               //!< Driver reload is permitted if necessary
+        NV_DISPLAYCONFIG_FORCE_MODE_ENUMERATION = 0x00000008,               //!< Refresh OS mode list.
+        NV_FORCE_COMMIT_VIDPN = 0x00000010,               //!< Tell OS to avoid optimizing CommitVidPn call during a modeset
+    }
+
+    public enum NV_ROTATE : uint
+    {
+        NV_ROTATE_0 = 0,
+        NV_ROTATE_90 = 1,
+        NV_ROTATE_180 = 2,
+        NV_ROTATE_270 = 3,
+        NV_ROTATE_IGNORED = 4,
+    }
+
+    public enum NV_FORMAT : uint
+    {
+        NV_FORMAT_UNKNOWN = 0,       //!< unknown. Driver will choose one as following value.
+        NV_FORMAT_P8 = 41,       //!< for 8bpp mode
+        NV_FORMAT_R5G6B5 = 23,       //!< for 16bpp mode
+        NV_FORMAT_A8R8G8B8 = 21,       //!< for 32bpp mode
+        NV_FORMAT_A16B16G16R16F = 113,      //!< for 64bpp(floating point) mode.
+
+    }
+
+    public enum NV_SCALING : uint
+    {
+        NV_SCALING_DEFAULT = 0,        //!< No change
+
+        // New Scaling Declarations
+        NV_SCALING_GPU_SCALING_TO_CLOSEST = 1,  //!< Balanced  - Full Screen
+        NV_SCALING_GPU_SCALING_TO_NATIVE = 2,  //!< Force GPU - Full Screen
+        NV_SCALING_GPU_SCANOUT_TO_NATIVE = 3,  //!< Force GPU - Centered\No Scaling
+        NV_SCALING_GPU_SCALING_TO_ASPECT_SCANOUT_TO_NATIVE = 5,  //!< Force GPU - Aspect Ratio
+        NV_SCALING_GPU_SCALING_TO_ASPECT_SCANOUT_TO_CLOSEST = 6,  //!< Balanced  - Aspect Ratio
+        NV_SCALING_GPU_SCANOUT_TO_CLOSEST = 7,  //!< Balanced  - Centered\No Scaling
+        NV_SCALING_GPU_INTEGER_ASPECT_SCALING = 8,  //!< Force GPU - Integer Scaling
+
+        // Legacy Declarations
+        NV_SCALING_MONITOR_SCALING = NV_SCALING_GPU_SCALING_TO_CLOSEST,
+        NV_SCALING_ADAPTER_SCALING = NV_SCALING_GPU_SCALING_TO_NATIVE,
+        NV_SCALING_CENTERED = NV_SCALING_GPU_SCANOUT_TO_NATIVE,
+        NV_SCALING_ASPECT_SCALING = NV_SCALING_GPU_SCALING_TO_ASPECT_SCANOUT_TO_NATIVE,
+
+        NV_SCALING_CUSTOMIZED = 255       //!< For future use
+    }
+
+    public enum NV_TARGET_VIEW_MODE : uint
+    {
+        NV_VIEW_MODE_STANDARD = 0,
+        NV_VIEW_MODE_CLONE = 1,
+        NV_VIEW_MODE_HSPAN = 2,
+        NV_VIEW_MODE_VSPAN = 3,
+        NV_VIEW_MODE_DUALVIEW = 4,
+        NV_VIEW_MODE_MULTIVIEW = 5,
+    }
+
+    public enum NV_DISPLAY_TV_FORMAT : uint
+    {
+        NV_DISPLAY_TV_FORMAT_NONE = 0,
+        NV_DISPLAY_TV_FORMAT_SD_NTSCM = 0x00000001,
+        NV_DISPLAY_TV_FORMAT_SD_NTSCJ = 0x00000002,
+        NV_DISPLAY_TV_FORMAT_SD_PALM = 0x00000004,
+        NV_DISPLAY_TV_FORMAT_SD_PALBDGH = 0x00000008,
+        NV_DISPLAY_TV_FORMAT_SD_PALN = 0x00000010,
+        NV_DISPLAY_TV_FORMAT_SD_PALNC = 0x00000020,
+        NV_DISPLAY_TV_FORMAT_SD_576i = 0x00000100,
+        NV_DISPLAY_TV_FORMAT_SD_480i = 0x00000200,
+        NV_DISPLAY_TV_FORMAT_ED_480p = 0x00000400,
+        NV_DISPLAY_TV_FORMAT_ED_576p = 0x00000800,
+        NV_DISPLAY_TV_FORMAT_HD_720p = 0x00001000,
+        NV_DISPLAY_TV_FORMAT_HD_1080i = 0x00002000,
+        NV_DISPLAY_TV_FORMAT_HD_1080p = 0x00004000,
+        NV_DISPLAY_TV_FORMAT_HD_720p50 = 0x00008000,
+        NV_DISPLAY_TV_FORMAT_HD_1080p24 = 0x00010000,
+        NV_DISPLAY_TV_FORMAT_HD_1080i50 = 0x00020000,
+        NV_DISPLAY_TV_FORMAT_HD_1080p50 = 0x00040000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp30 = 0x00080000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp30_3840 = NV_DISPLAY_TV_FORMAT_UHD_4Kp30,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp25 = 0x00100000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp25_3840 = NV_DISPLAY_TV_FORMAT_UHD_4Kp25,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp24 = 0x00200000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp24_3840 = NV_DISPLAY_TV_FORMAT_UHD_4Kp24,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp24_SMPTE = 0x00400000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp50_3840 = 0x00800000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp60_3840 = 0x00900000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp30_4096 = 0x00A00000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp25_4096 = 0x00B00000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp24_4096 = 0x00C00000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp50_4096 = 0x00D00000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp60_4096 = 0x00E00000,
+        NV_DISPLAY_TV_FORMAT_UHD_8Kp24_7680 = 0x01000000,
+        NV_DISPLAY_TV_FORMAT_UHD_8Kp25_7680 = 0x02000000,
+        NV_DISPLAY_TV_FORMAT_UHD_8Kp30_7680 = 0x04000000,
+        NV_DISPLAY_TV_FORMAT_UHD_8Kp48_7680 = 0x08000000,
+        NV_DISPLAY_TV_FORMAT_UHD_8Kp50_7680 = 0x09000000,
+        NV_DISPLAY_TV_FORMAT_UHD_8Kp60_7680 = 0x0A000000,
+        NV_DISPLAY_TV_FORMAT_UHD_8Kp100_7680 = 0x0B000000,
+        NV_DISPLAY_TV_FORMAT_UHD_8Kp120_7680 = 0x0C000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp48_3840 = 0x0D000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp48_4096 = 0x0E000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp100_4096 = 0x0F000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp100_3840 = 0x10000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp120_4096 = 0x11000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp120_3840 = 0x12000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp100_5120 = 0x13000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp120_5120 = 0x14000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp24_5120 = 0x15000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp25_5120 = 0x16000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp30_5120 = 0x17000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp48_5120 = 0x18000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp50_5120 = 0x19000000,
+        NV_DISPLAY_TV_FORMAT_UHD_4Kp60_5120 = 0x20000000,
+        NV_DISPLAY_TV_FORMAT_UHD_10Kp24_10240 = 0x21000000,
+        NV_DISPLAY_TV_FORMAT_UHD_10Kp25_10240 = 0x22000000,
+        NV_DISPLAY_TV_FORMAT_UHD_10Kp30_10240 = 0x23000000,
+        NV_DISPLAY_TV_FORMAT_UHD_10Kp48_10240 = 0x24000000,
+        NV_DISPLAY_TV_FORMAT_UHD_10Kp50_10240 = 0x25000000,
+        NV_DISPLAY_TV_FORMAT_UHD_10Kp60_10240 = 0x26000000,
+        NV_DISPLAY_TV_FORMAT_UHD_10Kp100_10240 = 0x27000000,
+        NV_DISPLAY_TV_FORMAT_UHD_10Kp120_10240 = 0x28000000,
+
+
+        NV_DISPLAY_TV_FORMAT_SD_OTHER = 0x30000000,
+        NV_DISPLAY_TV_FORMAT_ED_OTHER = 0x40000000,
+        NV_DISPLAY_TV_FORMAT_HD_OTHER = 0x50000000,
+
+        NV_DISPLAY_TV_FORMAT_ANY = 0x80000000,
+
+    }
+
+    public enum NV_GPU_CONNECTOR_TYPE : uint
+    {
+        NVAPI_GPU_CONNECTOR_VGA_15_PIN = 0x00000000,
+        NVAPI_GPU_CONNECTOR_TV_COMPOSITE = 0x00000010,
+        NVAPI_GPU_CONNECTOR_TV_SVIDEO = 0x00000011,
+        NVAPI_GPU_CONNECTOR_TV_HDTV_COMPONENT = 0x00000013,
+        NVAPI_GPU_CONNECTOR_TV_SCART = 0x00000014,
+        NVAPI_GPU_CONNECTOR_TV_COMPOSITE_SCART_ON_EIAJ4120 = 0x00000016,
+        NVAPI_GPU_CONNECTOR_TV_HDTV_EIAJ4120 = 0x00000017,
+        NVAPI_GPU_CONNECTOR_PC_POD_HDTV_YPRPB = 0x00000018,
+        NVAPI_GPU_CONNECTOR_PC_POD_SVIDEO = 0x00000019,
+        NVAPI_GPU_CONNECTOR_PC_POD_COMPOSITE = 0x0000001A,
+        NVAPI_GPU_CONNECTOR_DVI_I_TV_SVIDEO = 0x00000020,
+        NVAPI_GPU_CONNECTOR_DVI_I_TV_COMPOSITE = 0x00000021,
+        NVAPI_GPU_CONNECTOR_DVI_I = 0x00000030,
+        NVAPI_GPU_CONNECTOR_DVI_D = 0x00000031,
+        NVAPI_GPU_CONNECTOR_ADC = 0x00000032,
+        NVAPI_GPU_CONNECTOR_LFH_DVI_I_1 = 0x00000038,
+        NVAPI_GPU_CONNECTOR_LFH_DVI_I_2 = 0x00000039,
+        NVAPI_GPU_CONNECTOR_SPWG = 0x00000040,
+        NVAPI_GPU_CONNECTOR_OEM = 0x00000041,
+        NVAPI_GPU_CONNECTOR_DISPLAYPORT_EXTERNAL = 0x00000046,
+        NVAPI_GPU_CONNECTOR_DISPLAYPORT_INTERNAL = 0x00000047,
+        NVAPI_GPU_CONNECTOR_DISPLAYPORT_MINI_EXT = 0x00000048,
+        NVAPI_GPU_CONNECTOR_HDMI_A = 0x00000061,
+        NVAPI_GPU_CONNECTOR_HDMI_C_MINI = 0x00000063,
+        NVAPI_GPU_CONNECTOR_LFH_DISPLAYPORT_1 = 0x00000064,
+        NVAPI_GPU_CONNECTOR_LFH_DISPLAYPORT_2 = 0x00000065,
+        NVAPI_GPU_CONNECTOR_VIRTUAL_WFD = 0x00000070,
+        NVAPI_GPU_CONNECTOR_USB_C = 0x00000071,
+        NVAPI_GPU_CONNECTOR_UNKNOWN = 0xFFFFFFFF,
+    }
+
+    public enum NV_TIMING_OVERRIDE : uint
+    {
+        NV_TIMING_OVERRIDE_CURRENT = 0,          //!< get the current timing
+        NV_TIMING_OVERRIDE_AUTO,                 //!< the timing the driver will use based the current policy
+        NV_TIMING_OVERRIDE_EDID,                 //!< EDID timing
+        NV_TIMING_OVERRIDE_DMT,                  //!< VESA DMT timing
+        NV_TIMING_OVERRIDE_DMT_RB,               //!< VESA DMT timing with reduced blanking
+        NV_TIMING_OVERRIDE_CVT,                  //!< VESA CVT timing
+        NV_TIMING_OVERRIDE_CVT_RB,               //!< VESA CVT timing with reduced blanking
+        NV_TIMING_OVERRIDE_GTF,                  //!< VESA GTF timing
+        NV_TIMING_OVERRIDE_EIA861,               //!< EIA 861x pre-defined timing
+        NV_TIMING_OVERRIDE_ANALOG_TV,            //!< analog SD/HDTV timing
+        NV_TIMING_OVERRIDE_CUST,                 //!< NV custom timings
+        NV_TIMING_OVERRIDE_NV_PREDEFINED,        //!< NV pre-defined timing (basically the PsF timings)
+        NV_TIMING_OVERRIDE_NV_PSF = NV_TIMING_OVERRIDE_NV_PREDEFINED,
+        NV_TIMING_OVERRIDE_NV_ASPR,
+        NV_TIMING_OVERRIDE_SDI,                  //!< Override for SDI timing
+
+        NV_TIMING_OVRRIDE_MAX,
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DisplayHandle
+    {
+        private readonly IntPtr ptr;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct UnAttachedDisplayHandle
+    {
+        public readonly IntPtr ptr;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PhysicalGpuHandle
+    {
+        private readonly IntPtr ptr;
+    }
+
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct NV_TIMINGEXT
+    {
+        public uint flag;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
+        public ushort rr;            //!< Logical refresh rate to present
+        public uint rrx1k;         //!< Physical vertical refresh rate in 0.001Hz
+        public uint aspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
+        public ushort rep;           //!< Bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
+        public uint status;        //!< Timing standard
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
+        public string name;      //!< Timing name
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_TIMING
+    {
+        // VESA scan out timing parameters:
+        public ushort HVisible;         //!< horizontal visible
+        public ushort HBorder;          //!< horizontal border
+        public ushort HFrontPorch;      //!< horizontal front porch
+        public ushort HSyncWidth;       //!< horizontal sync width
+        public ushort HTotal;           //!< horizontal total
+        public byte HSyncPol;         //!< horizontal sync polarity: 1-negative, 0-positive
+
+        public ushort VVisible;         //!< vertical visible
+        public ushort VBorder;          //!< vertical border
+        public ushort VFrontPorch;      //!< vertical front porch
+        public ushort VSyncWidth;       //!< vertical sync width
+        public ushort VTotal;           //!< vertical total
+        public byte VSyncPol;         //!< vertical sync polarity: 1-negative, 0-positive
+
+        public ushort interlaced;       //!< 1-interlaced, 0-progressive
+        public uint pclk;             //!< pixel clock in 10 kHz
+
+        //other timing related extras
+        NV_TIMINGEXT etc;
+    }
+
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_POSITION
+    {
+        public int x;
+        public int y;
+    }
+
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_RESOLUTION
+    {
+        public uint width;
+        public uint height;
+        public uint colorDepth;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_VIEWPORTF
+    {
+        public float x;    //!<  x-coordinate of the viewport top-left point
+        public float y;    //!<  y-coordinate of the viewport top-left point
+        public float w;    //!<  Width of the viewport
+        public float h;    //!<  Height of the viewport
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO
+    {
+        public uint version;
+
+        // Rotation and Scaling
+        public NV_ROTATE rotation;       //!< (IN) rotation setting.
+        public NV_SCALING scaling;        //!< (IN) scaling setting.
+
+        // Refresh Rate
+        public uint refreshRate1K;  //!< (IN) Non-interlaced Refresh Rate of the mode, multiplied by 1000, 0 = ignored
+                                    //!< This is the value which driver reports to the OS.
+                                    // Flags
+        public uint interlaced:1;   //!< (IN) Interlaced mode flag, ignored if refreshRate == 0
+        public uint primary:1;      //!< (IN) Declares primary display in clone configuration. This is *NOT* GDI Primary.
+                                    //!< Only one target can be primary per source. If no primary is specified, the first
+                                    //!< target will automatically be primary.
+        public uint isPanAndScanTarget:1; //!< Whether on this target Pan and Scan is enabled or has to be enabled. Valid only
+                                          //!< when the target is part of clone topology.
+        public uint disableVirtualModeSupport:1;
+        public uint isPreferredUnscaledTarget:1;
+        public uint reserved:27;
+        // TV format information
+        public NV_GPU_CONNECTOR_TYPE connector;      //!< Specify connector type. For TV only, ignored if tvFormat == NV_DISPLAY_TV_FORMAT_NONE
+        public NV_DISPLAY_TV_FORMAT tvFormat;       //!< (IN) to choose the last TV format set this value to NV_DISPLAY_TV_FORMAT_NONE
+                                                    //!< In case of NvAPI_DISP_GetDisplayConfig(), this field will indicate the currently applied TV format;
+                                                    //!< if no TV format is applied, this field will have NV_DISPLAY_TV_FORMAT_NONE value.
+                                                    //!< In case of NvAPI_DISP_SetDisplayConfig(), this field should only be set in case of TVs;
+                                                    //!< for other displays this field will be ignored and resolution & refresh rate specified in input will be used to apply the TV format.
+
+        // Backend (raster) timing standard
+        public NV_TIMING_OVERRIDE timingOverride;     //!< Ignored if timingOverride == NV_TIMING_OVERRIDE_CURRENT
+        public NV_TIMING timing;             //!< Scan out timing, valid only if timingOverride == NV_TIMING_OVERRIDE_CUST
+                                      //!< The value NV_TIMING::NV_TIMINGEXT::rrx1k is obtained from the EDID. The driver may
+                                      //!< tweak this value for HDTV, stereo, etc., before reporting it to the OS.
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2
+    {
+        public uint  displayId;  //!< Display ID
+        NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] details;    //!< May be NULL if no advanced settings are required
+        public uint targetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_DISPLAYCONFIG_PATH_INFO_V2
+    {
+        public uint Version;
+        public uint SourceId;               //!< Identifies sourceId used by Windows CCD. This can be optionally set.
+
+        public uint TargetInfoCount;            //!< Number of elements in targetInfo array
+        public NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[] TargetInfo;
+        public NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1[] sourceModeInfo;             //!< May be NULL if mode info is not important
+        public uint IsNonNVIDIAAdapter : 1;     //!< True for non-NVIDIA adapter.
+        public uint reserved : 31;              //!< Must be 0
+        public LUID pOSAdapterID;              //!< Used by Non-NVIDIA adapter for pointer to OS Adapter of LUID
+                                     //!< type, type casted to void *.
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1
+    {
+        public NV_RESOLUTION resolution;
+        public NV_FORMAT colorFormat;                //!< Ignored at present, must be NV_FORMAT_UNKNOWN (0)
+        public NV_POSITION position;                   //!< Is all positions are 0 or invalid, displays will be automatically
+                                                       //!< positioned from left to right with GDI Primary at 0,0, and all
+                                                       //!< other displays in the order of the path array.
+        public NV_DISPLAYCONFIG_SPANNING_ORIENTATION spanningOrientation;        //!< Spanning is only supported on XP
+        public uint bGDIPrimary : 1;
+        public uint bSLIFocus : 1;
+        public uint reserved : 30;              //!< Must be 0
+    }
+
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO
+    {
+        public uint displayId;  //!< Display ID
+        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] details;    //!< May be NULL if no advanced settings are required
+        public uint targetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
+    }
 
 
     class NVImport
@@ -231,246 +584,20 @@ namespace DisplayMagicianShared.NVIDIA
         [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern NVAPI_STATUS NvAPI_DRS_DestorySession(IntPtr session);
 
-        /*// adapter functions
-        //typedef int (* ADL2_DISPLAY_POSSIBLEMODE_GET) (ADL_CONTEXT_HANDLE, int, int*, ADLMode**);
-        // This function retrieves the OS possible modes list for a specified input adapter.
+        // This API lets caller retrieve the current global display configuration.
+        // USAGE: The caller might have to call this three times to fetch all the required configuration details as follows:
+        // First Pass: Caller should Call NvAPI_DISP_GetDisplayConfig() with pathInfo set to NULL to fetch pathInfoCount.
+        // Second Pass: Allocate memory for pathInfo with respect to the number of pathInfoCount(from First Pass) to fetch targetInfoCount. If sourceModeInfo is needed allocate memory or it can be initialized to NULL.
+        // Third Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect to number of targetInfoCount(from Second Pass).
         [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_PossibleMode_Get(IntPtr ADLContextHandle, int adapterIndex, out int numModes, out IntPtr modes);
-
-        //typedef int (* ADL2_ADAPTER_PRIMARY_SET) (ADL_CONTEXT_HANDLE, int);
-        // This function sets the adapter index for a specified primary display adapter.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_Primary_Set(IntPtr ADLContextHandle, int primaryAdapterIndex);
-
-        //typedef int (* ADL2_ADAPTER_PRIMARY_GET) (ADL_CONTEXT_HANDLE, int*);
-        // This function retrieves the adapter index for the primary display adapter.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_Primary_Get(IntPtr ADLContextHandle, out int primaryAdapterIndex);
-
-        //typedef int (* ADL2_ADAPTER_ACTIVE_SET) (ADL_CONTEXT_HANDLE, int, int, int*);
-        // This function enables or disables extended desktop mode for a specified display.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_Active_Set(IntPtr ADLContextHandle, int primaryAdapterIndex, int desiredStatus, out int newlyActivated);
+        public static extern NVAPI_STATUS NvAPI_DISP_GetDisplayConfig(ref ulong pathInfoCount, out NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 pathInfo);
 
 
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_NumberOfAdapters_Get(IntPtr contextHandle, out int numAdapters);
 
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_Active_Get(IntPtr ADLContextHandle, int adapterIndex, out int status);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_AdapterX2_Caps(IntPtr ADLContextHandle, int adapterIndex, out ADL_ADAPTER_CAPSX2 adapterCapabilities);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_AdapterInfo_Get(IntPtr ADLContextHandle, int inputSize, out IntPtr AdapterInfoArray);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_AdapterInfoX2_Get(IntPtr ADLContextHandle, out IntPtr AdapterInfoArray);
-
-        //typedef int (* ADL2_ADAPTER_ADAPTERINFOX3_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* numAdapters, AdapterInfo** lppAdapterInfo);
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_AdapterInfoX3_Get(IntPtr ADLContextHandle, int adapterIndex, out int numAdapters, out IntPtr AdapterInfoArray);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_AdapterInfoX4_Get(IntPtr ADLContextHandle, int adapterIndex, out int numAdapters, out IntPtr AdapterInfoX2Array);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_DDCInfo2_Get(IntPtr contextHandle, int adapterIndex, int displayIndex, out ADL_DDC_INFO2 DDCInfo);
-
-        //typedef int (* ADL2_DISPLAY_DISPLAYINFO_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpNumDisplays, ADLDisplayInfo** lppInfo, int iForceDetect);
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_DisplayInfo_Get(IntPtr ADLContextHandle, int adapterIndex, out int numDisplays, out IntPtr displayInfoArray, int forceDetect);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_DeviceConfig_Get(IntPtr ADLContextHandle, int adapterIndex, int displayIndex, out ADL_DISPLAY_CONFIG displayConfig);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_HDRState_Get(IntPtr ADLContextHandle, int adapterIndex, ADL_DISPLAY_ID displayID, out int support, out int enable);
-                               
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_DisplayMapConfig_PossibleAddAndRemove(IntPtr ADLContextHandle, int adapterIndex, int numDisplayMap, in ADL_DISPLAY_MAP displayMap, int numDisplayTarget, in ADL_DISPLAY_TARGET displayTarget, out int numPossibleAddTarget, out IntPtr possibleAddTarget, out int numPossibleRemoveTarget, out IntPtr possibleRemoveTarget);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_Desktop_Caps(IntPtr ADLContextHandle, int adapterIndex, out int DesktopCapsValue, out int DesktopCapsMask);
-       
-        // Function to retrieve active desktop supported SLS grid size.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Adapter_Desktop_SupportedSLSGridTypes_Get(IntPtr ADLContextHandle, int adapterIndex, int numDisplayTargetToUse, ref ADL_DISPLAY_TARGET displayTargetToUse, out int numSLSGrid, out ADL_DISPLAY_TARGET SLSGrid, out int option);
-
-        // Function to get the current supported SLS grid patterns (MxN) for a GPU.
-        // This function gets a list of supported SLS grids for a specified input adapter based on display devices currently connected to the GPU.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSGrid_Caps(IntPtr ADLContextHandle, int adapterIndex, ref int NumSLSGrid, out IntPtr SLSGrid, int option);
-
-        // Function to get the active SLS map index list for a given GPU.
-        // This function retrieves a list of active SLS map indexes for a specified input GPU.            
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapIndexList_Get(IntPtr ADLContextHandle, int adapterIndex, ref int numSLSMapIndexList, out IntPtr SLSMapIndexList, int option);
-
-        // Definitions of the used function pointers. Add more if you use other ADL APIs
-        // SLS functions
-        //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_VALID) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLSLSMap slsMap, int iNumDisplayTarget, ADLSLSTarget* lpSLSTarget, int* lpSupportedSLSLayoutImageMode, int* lpReasonForNotSupportSLS, int iOption);
-        // Function to Set SLS configuration for each display index the controller and the adapter is being mapped to.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapConfig_Valid(IntPtr ADLContextHandle, int adapterIndex, ADL_SLS_MAP SLSMap, int numDisplayTarget, ADL_DISPLAY_TARGET[] displayTarget, out int supportedSLSLayoutImageMode, out int reasonForNotSupportingSLS, int option);
-
-        //typedef int (* ADL2_DISPLAY_SLSMAPINDEX_GET) (ADL_CONTEXT_HANDLE, int, int, ADLDisplayTarget*, int*);
-        // Function to get a SLS map index based on a group of displays that are connected in the given adapter. The driver only searches the active SLS grid database.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapIndex_Get(IntPtr ADLContextHandle, int adapterIndex, int numDisplayTarget, ADL_DISPLAY_TARGET[] displayTarget, out int SLSMapIndex);
-
-        //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_GET) (ADL_CONTEXT_HANDLE, int, int, ADLSLSMap*, int*, ADLSLSTarget**, int*, ADLSLSMode**, int*, ADLBezelTransientMode**, int*, ADLBezelTransientMode**, int*, ADLSLSOffset**, int);
-        // This function retrieves an SLS configuration, which includes the, SLS map, SLS targets, SLS standard modes, bezel modes or a transient mode, and offsets.           
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapConfig_Get(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, out ADL_SLS_MAP SLSMap, out int NumSLSTarget, out IntPtr SLSTargetArray, out int lpNumNativeMode, out IntPtr NativeMode, out int NumBezelMode, out IntPtr BezelMode, out int NumTransientMode, out IntPtr TransientMode, out int NumSLSOffset, out IntPtr SLSOffset, int iOption);
-
-        // typedef int ADL2_Display_SLSMapConfigX2_Get(ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iSLSMapIndex, ADLSLSMap* lpSLSMap, int* lpNumSLSTarget, ADLSLSTarget** lppSLSTarget, int* lpNumNativeMode, ADLSLSMode** lppNativeMode, int* lpNumNativeModeOffsets, ADLSLSOffset** lppNativeModeOffsets, int* lpNumBezelMode, ADLBezelTransientMode** lppBezelMode, int* lpNumTransientMode, ADLBezelTransientMode** lppTransientMode, int* lpNumSLSOffset, ADLSLSOffset** lppSLSOffset, int iOption)
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapConfigX2_Get(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, out ADL_SLS_MAP SLSMap, out int NumSLSTarget, out IntPtr SLSTargetArray, out int lpNumNativeMode, out IntPtr NativeMode, out int NumNativeModeOffsets, out IntPtr NativeModeOffsets, out int NumBezelMode, out IntPtr BezelMode, out int NumTransientMode, out IntPtr TransientMode, out int NumSLSOffset, out IntPtr SLSOffset, int option);
-
-        //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_DELETE) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iSLSMapIndex);
-        // This function deletes an SLS map from the driver database based on the input SLS map index.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_SLSMapConfig_Delete(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex);
-
-
-        //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_CREATE) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLSLSMap SLSMap, int iNumTarget, ADLSLSTarget* lpSLSTarget, int iBezelModePercent, int* lpSLSMapIndex, int iOption);
-        // This function creates an SLS configuration with a given grid, targets, and bezel mode percent. It will output an SLS map index if the SLS map is successfully created.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapConfig_Create(IntPtr ADLContextHandle, int adapterIndex, ADL_SLS_MAP[] SLSMap, int numDisplayTarget, ref ADL_DISPLAY_TARGET[] displayTarget, int bezelModePercent, out int SLSMapIndex, int option);
-
-        //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_REARRANGE) (ADL_CONTEXT_HANDLE, int, int, int, ADLSLSTarget*, ADLSLSMap, int);
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapConfig_Rearrange(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, int numDisplayTarget, ref ADL_DISPLAY_TARGET[] displayTarget, ADL_SLS_MAP[] SLSMap, int option);
-
-        //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_SETSTATE) (ADL_CONTEXT_HANDLE, int, int, int);
-        // This is used to set the SLS Grid we want from the SLSMap by selecting the one we want and supplying that as an index.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapConfig_SetState(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, int State);
-
-
-        //typedef int 	ADL2_Display_SLSRecords_Get (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLDisplayID displayID, int *lpNumOfRecords, int **lppGridIDList)
-        // This is used to set the SLS Grid we want from the SLSMap by selecting the one we want and supplying that as an index.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSRecords_Get(IntPtr ADLContextHandle, int adapterIndex, ADL_DISPLAY_ID displayID, out int numOfRecords, out IntPtr gridIDList);
-
-        //typedef int (* ADL2_DISPLAY_SLSMAPINDEXLIST_GET) (ADL_CONTEXT_HANDLE, int, int*, int**, int);
-        // This function retrieves a list of active SLS map indexes for a specified input GPU.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_SLSMapIndexList_Get(IntPtr ADLContextHandle, int AdapterIndex, out int numSLSMapIndexList, IntPtr SLSMapIndexList, int option);
-
-        //typedef int (* ADL2_DISPLAY_MODES_GET) (ADL_CONTEXT_HANDLE, int, int, int*, ADLMode**);
-        // This function retrieves the current display mode information.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_Modes_Get(IntPtr ADLContextHandle, int adapterIndex, int displayIndex, out int numModes, out IntPtr modes);
-
-
-        //typedef int (* ADL2_DISPLAY_MODES_SET) (ADL_CONTEXT_HANDLE, int, int, int, ADLMode*);
-        // This function sets the current display mode information.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_Modes_Set(IntPtr ADLContextHandle, int adapterIndex, int displayIndex, int numModes, ref ADL_MODE modes);
-
-        //typedef int (* ADL2_DISPLAY_BEZELOFFSET_SET) (ADL_CONTEXT_HANDLE, int, int, int, LPADLSLSOffset, ADLSLSMap, int);
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_BezelOffset_Set(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, int numBezelOffset, ref ADL_SLS_OFFSET displayTargetToUse, ADL_SLS_MAP SLSMap, int option);
-
-        //display map functions
-        //typedef int (* ADL2_DISPLAY_DISPLAYMAPCONFIG_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpNumDisplayMap, ADLDisplayMap** lppDisplayMap, int* lpNumDisplayTarget, ADLDisplayTarget** lppDisplayTarget, int iOptions);
-        // This function retrieves the current display map configurations, including the controllers and adapters mapped to each display.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_DisplayMapConfig_Get(IntPtr ADLContextHandle, int adapterIndex, out int numDisplayMap, out IntPtr displayMap, out int numDisplayTarget, out IntPtr displayTarget, int options);
-
-        //typedef int (* ADL2_DISPLAY_DISPLAYMAPCONFIG_SET) (ADL_CONTEXT_HANDLE, int, int, ADLDisplayMap*, int, ADLDisplayTarget*);
-        // This function sets the current display configurations for each display, including the controller and adapter mapped to each display.
-        // Possible display configurations are single, clone, extended desktop, and stretch mode.
-        // If clone mode is desired and the current display configuration is extended desktop mode, the function disables extended desktop mode in order to enable clone mode.
-        // If extended display mode is desired and the current display configuration is single mode, this function enables extended desktop.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_DisplayMapConfig_Set(IntPtr ADLContextHandle, int adapterIndex, int numDisplayMap, ADL_DISPLAY_MAP[] displayMap, int numDisplayTarget, ADL_DISPLAY_TARGET[] displayTarget);
-
-        // This function validate the list of the display configurations for a specified input adapter. This function is applicable to all OS platforms.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL2_Display_DisplayMapConfig_Validate(IntPtr ADLContextHandle, int adapterIndex, int numPossibleMap, ref ADL_POSSIBLE_MAP possibleMaps, out int numPossibleMapResult, out IntPtr possibleMapResult);
-
-
-        // ======================================
-
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Main_Control_Create(ADL_Main_Memory_Alloc_Delegate callback, int enumConnectedAdapters);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Main_Control_Destroy();
-
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Main_Control_IsFunctionValid(HMODULE module, string procName);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern FARPROC ADL_Main_Control_GetProcAddress(HMODULE module, string procName);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Adapter_NumberOfAdapters_Get(ref int numAdapters);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Adapter_AdapterInfo_Get(out IntPtr info, int inputSize);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Adapter_Active_Get(int adapterIndex, ref int status);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Adapter_ID_Get(int adapterIndex, ref int adapterId);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_AdapterX2_Caps(int adapterIndex, out ADL_ADAPTER_CAPSX2 adapterCapabilities);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_DisplayInfo_Get(int adapterIndex, ref int numDisplays, out IntPtr displayInfoArray, int forceDetect);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_DeviceConfig_Get(int adapterIndex, int displayIndex, out ADL_DISPLAY_CONFIG displayConfig);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_EdidData_Get(int adapterIndex, int displayIndex, ref ADL_DISPLAY_EDID_DATA EDIDData);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_DisplayMapConfig_Get(int adapterIndex, out int numDisplayMap, out IntPtr displayMap, out int numDisplayTarget, out IntPtr displayTarget, int options);
-
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_DisplayMapConfig_PossibleAddAndRemove(int adapterIndex, int numDisplayMap, ADL_DISPLAY_MAP displayMap, int numDisplayTarget, ADL_DISPLAY_TARGET displayTarget, out int numPossibleAddTarget, out IntPtr possibleAddTarget, out int numPossibleRemoveTarget, out IntPtr possibleRemoveTarget);
-
-        //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_GET) (ADL_CONTEXT_HANDLE, int, int, ADLSLSMap*, int*, ADLSLSTarget**, int*, ADLSLSMode**, int*, ADLBezelTransientMode**, int*, ADLBezelTransientMode**, int*, ADLSLSOffset**, int);
-        // This function retrieves an SLS configuration, which includes the, SLS map, SLS targets, SLS standard modes, bezel modes or a transient mode, and offsets.           
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_SLSMapConfig_Get(int adapterIndex, int SLSMapIndex, out ADL_SLS_MAP SLSMap, out int NumSLSTarget, out IntPtr SLSTargetArray, out int lpNumNativeMode, out IntPtr NativeMode, out int NumBezelMode, out IntPtr BezelMode, out int NumTransientMode, out IntPtr TransientMode, out int NumSLSOffset, out IntPtr SLSOffset, int iOption);
-
-        // typedef int ADL2_Display_SLSMapConfigX2_Get(ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iSLSMapIndex, ADLSLSMap* lpSLSMap, int* lpNumSLSTarget, ADLSLSTarget** lppSLSTarget, int* lpNumNativeMode, ADLSLSMode** lppNativeMode, int* lpNumNativeModeOffsets, ADLSLSOffset** lppNativeModeOffsets, int* lpNumBezelMode, ADLBezelTransientMode** lppBezelMode, int* lpNumTransientMode, ADLBezelTransientMode** lppTransientMode, int* lpNumSLSOffset, ADLSLSOffset** lppSLSOffset, int iOption)
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_SLSMapConfigX2_Get(int adapterIndex, int SLSMapIndex, out ADL_SLS_MAP SLSMap, out int NumSLSTarget, out IntPtr SLSTargetArray, out int lpNumNativeMode, out IntPtr NativeMode, out int NumNativeModeOffsets, out IntPtr NativeModeOffsets, out int NumBezelMode, out IntPtr BezelMode, out int NumTransientMode, out IntPtr TransientMode, out int NumSLSOffset, out IntPtr SLSOffset, int option);
-
-        // This is used to set the SLS Grid we want from the SLSMap by selecting the one we want and supplying that as an index.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_SLSMapConfig_SetState(int AdapterIndex, int SLSMapIndex, int State);
-
-        // Function to get the current supported SLS grid patterns (MxN) for a GPU.
-        // This function gets a list of supported SLS grids for a specified input adapter based on display devices currently connected to the GPU.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_SLSGrid_Caps(int adapterIndex, ref int NumSLSGrid, out IntPtr SLSGrid, int option);
-
-        // Function to get the active SLS map index list for a given GPU.
-        // This function retrieves a list of active SLS map indexes for a specified input GPU.            
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_SLSMapIndexList_Get(int adapterIndex, ref int numSLSMapIndexList, out IntPtr SLSMapIndexList, int options);
-
-        // Function to get the active SLS map index list for a given GPU.
-        // This function retrieves a list of active SLS map indexes for a specified input GPU.            
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS ADL_Display_SLSMapIndex_Get(int adapterIndex, int ADLNumDisplayTarget, ref ADL_DISPLAY_TARGET displayTarget, ref int SLSMapIndex);*/
 
         #endregion DLLImport
 
-        public static ADL_Main_Memory_Alloc_Delegate ADL_Main_Memory_Alloc = ADL_Main_Memory_Alloc_Function;
+        /*public static ADL_Main_Memory_Alloc_Delegate ADL_Main_Memory_Alloc = ADL_Main_Memory_Alloc_Function;
         /// <summary> Build in memory allocation function</summary>
         /// <param name="size">input size</param>
         /// <returns>return the memory buffer</returns>
@@ -479,7 +606,7 @@ namespace DisplayMagicianShared.NVIDIA
             //Console.WriteLine($"\nCallback called with param: {size}");
             IntPtr result = Marshal.AllocCoTaskMem(size);           
             return result;
-        }
+        }*/
 
-    }        
+    }
 }
