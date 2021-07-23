@@ -1,6 +1,6 @@
 # NVIDIAInfo
 
-NVIDIAInfo is a test programme designed to exercise the CCD library that I developed for DisplayMagician. This little programme helps me validate that the library is working properly, and that it will work when added to the main DisplayMagician code.
+NVIDIAInfo is a test programme designed to exercise the NVAPI library that I developed for DisplayMagician. This little programme helps me validate that the library is working properly, and that it will work when added to the main DisplayMagician code.
 
 This codebase is unlikely to be supported once DisplayMagician is working, but feel free to fork if you would like. Also feel free to send in suggestions for fixes to the C# NVIDIA library interface. Any help is appreciated!
 
