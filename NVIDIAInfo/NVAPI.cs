@@ -446,15 +446,15 @@ namespace DisplayMagicianShared.NVIDIA
         public uint refreshRate1K;  //!< (IN) Non-interlaced Refresh Rate of the mode, multiplied by 1000, 0 = ignored
                                     //!< This is the value which driver reports to the OS.
                                     // Flags
-        public uint interlaced:1;   //!< (IN) Interlaced mode flag, ignored if refreshRate == 0
-        public uint primary:1;      //!< (IN) Declares primary display in clone configuration. This is *NOT* GDI Primary.
+        //public uint interlaced:1;   //!< (IN) Interlaced mode flag, ignored if refreshRate == 0
+        //public uint primary:1;      //!< (IN) Declares primary display in clone configuration. This is *NOT* GDI Primary.
                                     //!< Only one target can be primary per source. If no primary is specified, the first
                                     //!< target will automatically be primary.
-        public uint isPanAndScanTarget:1; //!< Whether on this target Pan and Scan is enabled or has to be enabled. Valid only
+        //public uint isPanAndScanTarget:1; //!< Whether on this target Pan and Scan is enabled or has to be enabled. Valid only
                                           //!< when the target is part of clone topology.
-        public uint disableVirtualModeSupport:1;
-        public uint isPreferredUnscaledTarget:1;
-        public uint reserved:27;
+        //public uint disableVirtualModeSupport:1;
+        //public uint isPreferredUnscaledTarget:1;
+        //public uint reserved:27;
         // TV format information
         public NV_GPU_CONNECTOR_TYPE connector;      //!< Specify connector type. For TV only, ignored if tvFormat == NV_DISPLAY_TV_FORMAT_NONE
         public NV_DISPLAY_TV_FORMAT tvFormat;       //!< (IN) to choose the last TV format set this value to NV_DISPLAY_TV_FORMAT_NONE
@@ -487,9 +487,9 @@ namespace DisplayMagicianShared.NVIDIA
         public uint TargetInfoCount;            //!< Number of elements in targetInfo array
         public NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[] TargetInfo;
         public NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1[] sourceModeInfo;             //!< May be NULL if mode info is not important
-        public uint IsNonNVIDIAAdapter : 1;     //!< True for non-NVIDIA adapter.
-        public uint reserved : 31;              //!< Must be 0
-        public LUID pOSAdapterID;              //!< Used by Non-NVIDIA adapter for pointer to OS Adapter of LUID
+        //public uint IsNonNVIDIAAdapter : 1;     //!< True for non-NVIDIA adapter.
+        //public uint reserved : 31;              //!< Must be 0
+        //public LUID pOSAdapterID;              //!< Used by Non-NVIDIA adapter for pointer to OS Adapter of LUID
                                      //!< type, type casted to void *.
     }
 
@@ -501,10 +501,10 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_POSITION position;                   //!< Is all positions are 0 or invalid, displays will be automatically
                                                        //!< positioned from left to right with GDI Primary at 0,0, and all
                                                        //!< other displays in the order of the path array.
-        public NV_DISPLAYCONFIG_SPANNING_ORIENTATION spanningOrientation;        //!< Spanning is only supported on XP
-        public uint bGDIPrimary : 1;
-        public uint bSLIFocus : 1;
-        public uint reserved : 30;              //!< Must be 0
+        //public NV_DISPLAYCONFIG_SPANNING_ORIENTATION spanningOrientation;        //!< Spanning is only supported on XP
+        //public uint bGDIPrimary : 1;
+        //public uint bSLIFocus : 1;
+        //public uint reserved : 30;              //!< Must be 0
     }
 
 

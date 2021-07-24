@@ -84,47 +84,62 @@ namespace DisplayMagicianShared.NVIDIA
         static NVIDIALibrary() { }
         public NVIDIALibrary()
         {
-            NVAPI_STATUS NVStatus;
-            SharedLogger.logger.Trace("NVIDIALibrary/NVIDIALibrary: Intialising NVIDIA NVAPI library interface");
-            // Step 1: Initialise the NVAPI
-            try
-            {                
-                NVStatus = NVImport.NvAPI_Initialize();
-                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                {
-                    _initialised = true;
-                    SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was initialised successfully");
-                }
-                else
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error intialising NVIDIA NVAPI library. NvAPI_Initialize() returned error code {NVStatus}");
-                }
-            }
-            catch(Exception ex)
-            {
-                SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception intialising NVIDIA NVAPI library. NvAPI_Initialize() caused an exception.");
-            }
 
-            // Step 2: Get a session handle that we can use for all other interactions
             try
             {
-                NVStatus = NVImport.NvAPI_DRS_CreateSession(out _nvapiSessionHandle);
-                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                {
-                    _haveSessionHandle = true;
-                    SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library DRS session handle was created successfully");
-                }
-                else
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error creating a NVAPI library DRS session handle. NvAPI_DRS_CreateSession() returned error code {NVStatus}");
-                }
-            }
-            catch(Exception ex)
-            {
-                SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception creating a NVAPI library DRS session handle. NvAPI_DRS_CreateSession() caused an exception.");
-            }
+                SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Attempting to load the NVIDIA NVAPI DLL {NVImport.NVAPI_DLL}");
+                // Attempt to prelink all of the NVAPI functions
+                Marshal.PrelinkAll(typeof(NVImport));
 
-            _winLibrary = WinLibrary.GetLibrary();
+                // If we get here then we definitely have the NVIDIA driver available.
+                NVAPI_STATUS NVStatus;
+                SharedLogger.logger.Trace("NVIDIALibrary/NVIDIALibrary: Intialising NVIDIA NVAPI library interface");
+                // Step 1: Initialise the NVAPI
+                try
+                {
+                    NVStatus = NVImport.NvAPI_Initialize();
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        _initialised = true;
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was initialised successfully");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error intialising NVIDIA NVAPI library. NvAPI_Initialize() returned error code {NVStatus}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception intialising NVIDIA NVAPI library. NvAPI_Initialize() caused an exception.");
+                }
+
+                // Step 2: Get a session handle that we can use for all other interactions
+                try
+                {
+                    NVStatus = NVImport.NvAPI_DRS_CreateSession(out _nvapiSessionHandle);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        _haveSessionHandle = true;
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library DRS session handle was created successfully");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error creating a NVAPI library DRS session handle. NvAPI_DRS_CreateSession() returned error code {NVStatus}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception creating a NVAPI library DRS session handle. NvAPI_DRS_CreateSession() caused an exception.");
+                }
+
+                _winLibrary = WinLibrary.GetLibrary();
+
+            }
+            catch (DllNotFoundException ex)
+            {
+                // If this fires, then the DLL isn't available, so we need don't try to do anything else
+                SharedLogger.logger.Info(ex, $"NVIDIALibrary/NVIDIALibrary: Exception trying to load the NVIDIA NVAPI DLL {NVImport.NVAPI_DLL}. This generally means you don't have the NVIDIA driver installed.");
+            }                        
 
         }
 
