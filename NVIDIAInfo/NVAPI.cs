@@ -1656,10 +1656,11 @@ namespace DisplayMagicianShared.NVIDIA
         private static readonly EnumPhysicalGPUsDelegate EnumPhysicalGPUsInternal;
 
         /// <summary>
-        /// This function returns the handle of an unattached NVIDIA display that is associated with the given display name (such as "\\DISPLAY1").
+        /// This function returns an array of physical GPU handles. Each handle represents a physical GPU present in the system. That GPU may be part of an SLI configuration, or may not be visible to the OS directly.
+        /// At least one GPU must be present in the system and running an NVIDIA display driver. The array nvGPUHandle will be filled with physical GPU handle values. The returned gpuCount determines how many entries in the array are valid..
         /// </summary>
-        /// <param name="szDisplayName"></param>
-        /// <param name="pNvUnAttachedDispHandle"></param>
+        /// <param name="NvGPUHandle"></param>
+        /// <param name="pGPUCount"></param>
         /// <returns></returns>
         public static NVAPI_STATUS NvAPI_EnumPhysicalGPUs(ref PhysicalGpuHandle[] NvGPUHandle, out uint pGPUCount)
         {
