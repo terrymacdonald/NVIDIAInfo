@@ -83,21 +83,32 @@ namespace DisplayMagicianShared.NVIDIA
 
         static NVIDIALibrary() { }
         public NVIDIALibrary()
-        {
+        {           
 
             try
             {
                 SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Attempting to load the NVIDIA NVAPI DLL {NVImport.NVAPI_DLL}");
                 // Attempt to prelink all of the NVAPI functions
-                Marshal.PrelinkAll(typeof(NVImport));
+                //Marshal.PrelinkAll(typeof(NVImport));
 
                 // If we get here then we definitely have the NVIDIA driver available.
-                NVAPI_STATUS NVStatus;
+                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
                 SharedLogger.logger.Trace("NVIDIALibrary/NVIDIALibrary: Intialising NVIDIA NVAPI library interface");
                 // Step 1: Initialise the NVAPI
                 try
                 {
-                    NVStatus = NVImport.NvAPI_Initialize();
+                    if (NVImport.IsAvailable())
+                    {
+                        _initialised = true;
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was initialised successfully");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error intialising NVIDIA NVAPI library. NvAPI_Initialize() returned error code {NVStatus}");
+                    }
+
+                    string description;
+                    NVStatus = NVImport.NvAPI_GetInterfaceVersionString(out description);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         _initialised = true;
@@ -116,7 +127,7 @@ namespace DisplayMagicianShared.NVIDIA
                 // Step 2: Get a session handle that we can use for all other interactions
                 try
                 {
-                    NVStatus = NVImport.NvAPI_DRS_CreateSession(out _nvapiSessionHandle);
+                    //NVStatus = NVImport.NvAPI_DRS_CreateSession(out _nvapiSessionHandle);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         _haveSessionHandle = true;
@@ -149,13 +160,13 @@ namespace DisplayMagicianShared.NVIDIA
             // If the NVAPI library was initialised, then we need to free it up.
             if (_initialised)
             {
-                NVAPI_STATUS NVStatus;
+                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
                 // If we have a session handle we need to free it up first
                 if (_haveSessionHandle)
                 {
                     try
                     {
-                        NVStatus = NVImport.NvAPI_DRS_DestorySession(_nvapiSessionHandle);
+                        //NVStatus = NVImport.NvAPI_DRS_DestorySession(_nvapiSessionHandle);
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
                             _haveSessionHandle = true;
@@ -174,7 +185,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                 try
                 {
-                    NVImport.NvAPI_Unload();
+                    //NVImport.NvAPI_Unload();
                     SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was unloaded successfully");
                 }
                 catch(Exception ex)

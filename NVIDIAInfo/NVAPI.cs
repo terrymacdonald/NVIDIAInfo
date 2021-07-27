@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using FARPROC = System.IntPtr;
 using HMODULE = System.IntPtr;
 
@@ -517,7 +518,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    class NVImport
+    static class NVImport
     {
 
         public const uint NV_MAX_HEADS = 4;
@@ -548,19 +549,22 @@ namespace DisplayMagicianShared.NVIDIA
 
         #region Internal Constant
         /// <summary> Nvapi64_FileName </summary>
-        public const string NVAPI_DLL = "nvapi64.dll";
+        public const string NVAPI_DLL = @"nvapi64.dll";
         /// <summary> Kernel32_FileName </summary>
-        public const string Kernel32_FileName = "kernel32.dll";
+        //public const string Kernel32_FileName = "kernel32.dll";
         #endregion Internal Constant
 
         #region DLLImport
-        [DllImport(Kernel32_FileName)]
-        public static extern HMODULE GetModuleHandle(string moduleName);
+        
+        /*[DllImport(Kernel32_FileName)]
+        public static extern HMODULE GetModuleHandle(string moduleName);*/
 
+
+        /*// Delegate
         // This function initializes the NvAPI library (if not already initialized) but always increments the ref-counter.
         // This must be called before calling other NvAPI_ functions. Note: It is now mandatory to call NvAPI_Initialize before calling any other NvAPI. NvAPI_Unload should be called to unload the NVAPI Library.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS NvAPI_Initialize();
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate NVAPI_STATUS NvAPI_Initialize();
 
         //DESCRIPTION: Decrements the ref-counter and when it reaches ZERO, unloads NVAPI library.This must be called in pairs with NvAPI_Initialize.
         // If the client wants unload functionality, it is recommended to always call NvAPI_Initialize and NvAPI_Unload in pairs.
@@ -591,22 +595,991 @@ namespace DisplayMagicianShared.NVIDIA
         // Third Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect to number of targetInfoCount(from Second Pass).
         [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern NVAPI_STATUS NvAPI_DISP_GetDisplayConfig(ref ulong pathInfoCount, out NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 pathInfo);
-
-
-
+*/
 
         #endregion DLLImport
 
-        /*public static ADL_Main_Memory_Alloc_Delegate ADL_Main_Memory_Alloc = ADL_Main_Memory_Alloc_Function;
-        /// <summary> Build in memory allocation function</summary>
-        /// <param name="size">input size</param>
-        /// <returns>return the memory buffer</returns>
-        public static IntPtr ADL_Main_Memory_Alloc_Function(int size)
-        {
-            //Console.WriteLine($"\nCallback called with param: {size}");
-            IntPtr result = Marshal.AllocCoTaskMem(size);           
-            return result;
-        }*/
 
+        #region Defines
+
+        
+        #endregion
+
+        
+
+        #region Initialization code
+        private static bool available = false;
+
+        public static bool IsAvailable() { return NVImport.available; }
+
+        static NVImport()
+        {
+            DllImportAttribute attribute = new DllImportAttribute(GetDllName());
+            attribute.CallingConvention = CallingConvention.Cdecl;
+            attribute.PreserveSig = true;
+            attribute.EntryPoint = "nvapi_QueryInterface";
+            PInvokeDelegateFactory.CreateDelegate(attribute, out QueryInterface);
+
+            try
+            {
+                GetDelegate(NvId_Initialize, out InitializeInternal);
+            }
+            catch (DllNotFoundException) { return; }
+            catch (EntryPointNotFoundException) { return; }
+            catch (ArgumentNullException) { return; }
+
+            if (InitializeInternal() == NVAPI_STATUS.NVAPI_OK)
+            {
+                GetDelegate(NvId_Unload, out UnloadInternal);
+                GetDelegate(NvId_GetInterfaceVersionString, out GetInterfaceVersionStringInternal);
+                GetDelegate(NvId_GetErrorMessage, out GetErrorMessageInternal);
+
+                // Display
+                GetDelegate(NvId_EnumNvidiaDisplayHandle, out EnumNvidiaDisplayHandleInternal);
+                GetDelegate(NvId_EnumNvidiaUnAttachedDisplayHandle, out EnumNvidiaUnAttachedDisplayHandleInternal);
+                GetDelegate(NvId_GetAssociatedNvidiaDisplayHandle, out GetAssociatedNvidiaDisplayHandleInternal);
+                GetDelegate(NvId_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle, out GetAssociatedUnAttachedNvidiaDisplayHandleInternal);
+
+                available = true;
+            }
+
+            AppDomain.CurrentDomain.ProcessExit += NVImport.OnExit;
+        }
+
+        private static void GetDelegate<T>(uint id, out T newDelegate) where T : class
+        {
+            IntPtr ptr = QueryInterface(id);
+            if (ptr != IntPtr.Zero)
+            {
+                newDelegate = Marshal.GetDelegateForFunctionPointer(ptr, typeof(T)) as T;
+            }
+            else
+            {
+                newDelegate = null;
+            }
+        }
+
+        private static string GetDllName()
+        {
+            if (IntPtr.Size == 4)
+            {
+                return "nvapi.dll";
+            }
+            else
+            {
+                return "nvapi64.dll";
+            }
+        }
+
+        private static void OnExit(object sender, EventArgs e)
+        {
+            available = false;
+
+            if (NVImport.UnloadInternal != null) { NVImport.UnloadInternal(); }
+        }
+
+        public static TResult BitWiseConvert<TResult, T>(T source)
+            where TResult : struct, IConvertible
+            where T : struct, IConvertible
+        {
+            if (typeof(T) == typeof(TResult))
+            {
+                return (TResult)(object)source;
+            }
+
+            var sourceSize = Marshal.SizeOf(typeof(T));
+            var destinationSize = Marshal.SizeOf(typeof(TResult));
+            var minSize = Math.Min(sourceSize, destinationSize);
+            var sourcePointer = Marshal.AllocHGlobal(sourceSize);
+            Marshal.StructureToPtr(source, sourcePointer, false);
+            var bytes = new byte[destinationSize];
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Marshal.Copy(sourcePointer, bytes, 0, minSize);
+            }
+            else
+            {
+                Marshal.Copy(sourcePointer + (sourceSize - minSize), bytes, destinationSize - minSize, minSize);
+            }
+
+            Marshal.FreeHGlobal(sourcePointer);
+            var destinationPointer = Marshal.AllocHGlobal(destinationSize);
+            Marshal.Copy(bytes, 0, destinationPointer, destinationSize);
+            var destination = (TResult)Marshal.PtrToStructure(destinationPointer, typeof(TResult));
+            Marshal.FreeHGlobal(destinationPointer);
+
+            return destination;
+        }
+
+        public static bool GetBit<T>(this T integer, int index) where T : struct, IConvertible
+        {
+            var bigInteger = BitWiseConvert<ulong, T>(integer);
+            var mask = 1ul << index;
+
+            return (bigInteger & mask) > 0;
+        }
+
+        public static ulong GetBits<T>(this T integer, int index, int count) where T : struct, IConvertible
+        {
+            var bigInteger = BitWiseConvert<ulong, T>(integer);
+
+            if (index > 0)
+            {
+                bigInteger >>= index;
+            }
+
+            count = 64 - count;
+            bigInteger <<= count;
+            bigInteger >>= count;
+
+            return bigInteger;
+        }
+        #endregion
+
+
+        // -------------------------------------------------
+        // Public NvAPI Functions - found by Soroush Falahati
+        // -------------------------------------------------
+
+        #region Public NvAPI Functions
+
+        private const uint NvId_CreateDisplayFromUnAttachedDisplay = 0x63F9799E;
+        private const uint NvId_D3D_BeginResourceRendering = 0x91123D6A;
+        private const uint NvId_D3D_ConfigureAnsel = 0x341C6C7F;
+        private const uint NvId_D3D_CreateLateLatchObject = 0x2DB27D09;
+        private const uint NvId_D3D_EndResourceRendering = 0x37E7191C;
+        private const uint NvId_D3D_GetCurrentSLIState = 0x4B708B54;
+        private const uint NvId_D3D_GetObjectHandleForResource = 0xFCEAC864;
+        private const uint NvId_D3D_ImplicitSLIControl = 0x2AEDE111;
+        private const uint NvId_D3D_InitializeSMPAssist = 0x42763D0C;
+        private const uint NvId_D3D_IsGSyncActive = 0xE942B0FF;
+        private const uint NvId_D3D_IsGSyncCapable = 0x9C1EED78;
+        private const uint NvId_D3D_QueryLateLatchSupport = 0x8CECA0EC;
+        private const uint NvId_D3D_QueryModifiedWSupport = 0xCBF9F4F5;
+        private const uint NvId_D3D_QueryMultiViewSupport = 0xB6E0A41C;
+        private const uint NvId_D3D_QuerySinglePassStereoSupport = 0x6F5F0A6D;
+        private const uint NvId_D3D_QuerySMPAssistSupport = 0xC57921DE;
+        private const uint NvId_D3D_RegisterDevice = 0x8C02C4D0;
+        private const uint NvId_D3D_SetFPSIndicatorState = 0xA776E8DB;
+        private const uint NvId_D3D_SetModifiedWMode = 0x6EA4BF4;
+        private const uint NvId_D3D_SetMultiViewMode = 0x8285C8DA;
+        private const uint NvId_D3D_SetResourceHint = 0x6C0ED98C;
+        private const uint NvId_D3D_SetSinglePassStereoMode = 0xA39E6E6E;
+        private const uint NvId_D3D10_SetDepthBoundsTest = 0x4EADF5D2;
+        private const uint NvId_D3D11_AliasMSAATexture2DAsNonMSAA = 0xF1C54FC9;
+        private const uint NvId_D3D11_BeginUAVOverlap = 0x65B93CA8;
+        private const uint NvId_D3D11_BeginUAVOverlapEx = 0xBA08208A;
+        private const uint NvId_D3D11_CopyTileMappings = 0xC09EE6BC;
+        private const uint NvId_D3D11_CreateDevice = 0x6A16D3A0;
+        private const uint NvId_D3D11_CreateDeviceAndSwapChain = 0xBB939EE5;
+        private const uint NvId_D3D11_CreateDomainShaderEx = 0xA0D7180D;
+        private const uint NvId_D3D11_CreateFastGeometryShader = 0x525D43BE;
+        private const uint NvId_D3D11_CreateFastGeometryShaderExplicit = 0x71AB7C9C;
+        private const uint NvId_D3D11_CreateGeometryShaderEx_2 = 0x99ED5C1C;
+        private const uint NvId_D3D11_CreateHullShaderEx = 0xB53CAB00;
+        private const uint NvId_D3D11_CreateMultiGPUDevice = 0xBDB20007;
+        private const uint NvId_D3D11_CreatePixelShaderEx_2 = 0x4162822B;
+        private const uint NvId_D3D11_CreateRasterizerState = 0xDB8D28AF;
+        private const uint NvId_D3D11_CreateShadingRateResourceView = 0x99CA2DFF;
+        private const uint NvId_D3D11_CreateTiledTexture2DArray = 0x7886981A;
+        private const uint NvId_D3D11_CreateVertexShaderEx = 0xBEAA0B2;
+        private const uint NvId_D3D11_EndUAVOverlap = 0x2216A357;
+        private const uint NvId_D3D11_IsNvShaderExtnOpCodeSupported = 0x5F68DA40;
+        private const uint NvId_D3D11_MultiDrawIndexedInstancedIndirect = 0x59E890F9;
+        private const uint NvId_D3D11_MultiDrawInstancedIndirect = 0xD4E26BBF;
+        private const uint NvId_D3D11_MultiGPU_GetCaps = 0xD2D25687;
+        private const uint NvId_D3D11_MultiGPU_Init = 0x17BE49E;
+        private const uint NvId_D3D11_RSGetPixelShadingRateSampleOrder = 0x92442A1;
+        private const uint NvId_D3D11_RSSetExclusiveScissorRects = 0xAE4D73EF;
+        private const uint NvId_D3D11_RSSetPixelShadingRateSampleOrder = 0xA942373A;
+        private const uint NvId_D3D11_RSSetShadingRateResourceView = 0x1B0C2F83;
+        private const uint NvId_D3D11_RSSetViewportsPixelShadingRates = 0x34F7938F;
+        private const uint NvId_D3D11_SetDepthBoundsTest = 0x7AAF7A04;
+        private const uint NvId_D3D11_SetNvShaderExtnSlot = 0x8E90BB9F;
+        private const uint NvId_D3D11_SetNvShaderExtnSlotLocalThread = 0xE6482A0;
+        private const uint NvId_D3D11_TiledResourceBarrier = 0xD6839099;
+        private const uint NvId_D3D11_TiledTexture2DArrayGetDesc = 0xF1A2B9D5;
+        private const uint NvId_D3D11_UpdateTileMappings = 0x9A06EA07;
+        private const uint NvId_D3D12_CopyTileMappings = 0x47F78194;
+        private const uint NvId_D3D12_CreateComputePipelineState = 0x2762DEAC;
+        private const uint NvId_D3D12_CreateGraphicsPipelineState = 0x2FC28856;
+        private const uint NvId_D3D12_CreateHeap = 0x5CB397CF;
+        private const uint NvId_D3D12_CreateReservedResource = 0x2C85F101;
+        private const uint NvId_D3D12_IsNvShaderExtnOpCodeSupported = 0x3DFACEC8;
+        private const uint NvId_D3D12_Mosaic_GetCompanionAllocations = 0xA46022C7;
+        private const uint NvId_D3D12_Mosaic_GetViewportAndGpuPartitions = 0xB092B818;
+        private const uint NvId_D3D12_QueryModifiedWSupport = 0x51235248;
+        private const uint NvId_D3D12_QuerySinglePassStereoSupport = 0x3B03791B;
+        private const uint NvId_D3D12_ReservedResourceGetDesc = 0x9AA2AABB;
+        private const uint NvId_D3D12_ResourceAliasingBarrier = 0xB942BAB7;
+        private const uint NvId_D3D12_SetDepthBoundsTestValues = 0xB9333FE9;
+        private const uint NvId_D3D12_SetModifiedWMode = 0xE1FDABA7;
+        private const uint NvId_D3D12_SetSinglePassStereoMode = 0x83556D87;
+        private const uint NvId_D3D12_UpdateTileMappings = 0xC6017A7D;
+        private const uint NvId_D3D12_UseDriverHeapPriorities = 0xF0D978A8;
+        private const uint NvId_D3D1x_CreateSwapChain = 0x1BC21B66;
+        private const uint NvId_D3D1x_DisableShaderDiskCache = 0xD0CBCA7D;
+        private const uint NvId_D3D1x_GetGraphicsCapabilities = 0x52B1499A;
+        private const uint NvId_D3D9_AliasSurfaceAsTexture = 0xE5CEAE41;
+        private const uint NvId_D3D9_ClearRT = 0x332D3942;
+        private const uint NvId_D3D9_CreateSwapChain = 0x1A131E09;
+        private const uint NvId_D3D9_GetSurfaceHandle = 0xF2DD3F2;
+        private const uint NvId_D3D9_RegisterResource = 0xA064BDFC;
+        private const uint NvId_D3D9_StretchRectEx = 0x22DE03AA;
+        private const uint NvId_D3D9_UnregisterResource = 0xBB2B17AA;
+        private const uint NvId_D3D9_VideoSetStereoInfo = 0xB852F4DB;
+        private const uint NvId_DisableHWCursor = 0xAB163097;
+        private const uint NvId_Disp_ColorControl = 0x92F9D80D;
+        private const uint NvId_DISP_DeleteCustomDisplay = 0x552E5B9B;
+        private const uint NvId_DISP_EnumCustomDisplay = 0xA2072D59;
+        private const uint NvId_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle = 0xA70503B2;
+        private const uint NvId_DISP_GetDisplayConfig = 0x11ABCCF8;
+        private const uint NvId_DISP_GetDisplayIdByDisplayName = 0xAE457190;
+        private const uint NvId_DISP_GetGDIPrimaryDisplayId = 0x1E9D8A31;
+        private const uint NvId_Disp_GetHdrCapabilities = 0x84F2A8DF;
+        private const uint NvId_DISP_GetMonitorCapabilities = 0x3B05C7E1;
+        private const uint NvId_DISP_GetMonitorColorCapabilities = 0x6AE4CFB5;
+        private const uint NvId_DISP_GetTiming = 0x175167E9;
+        private const uint NvId_Disp_HdrColorControl = 0x351DA224;
+        private const uint NvId_Disp_InfoFrameControl = 0x6067AF3F;
+        private const uint NvId_DISP_RevertCustomDisplayTrial = 0xCBBD40F0;
+        private const uint NvId_DISP_SaveCustomDisplay = 0x49882876;
+        private const uint NvId_DISP_SetDisplayConfig = 0x5D8CF8DE;
+        private const uint NvId_DISP_TryCustomDisplay = 0x1F7DB630;
+        private const uint NvId_DRS_CreateApplication = 0x4347A9DE;
+        private const uint NvId_DRS_CreateProfile = 0xCC176068;
+        private const uint NvId_DRS_CreateSession = 0x694D52E;
+        private const uint NvId_DRS_DeleteApplication = 0x2C694BC6;
+        private const uint NvId_DRS_DeleteApplicationEx = 0xC5EA85A1;
+        private const uint NvId_DRS_DeleteProfile = 0x17093206;
+        private const uint NvId_DRS_DeleteProfileSetting = 0xE4A26362;
+        private const uint NvId_DRS_DestroySession = 0xDAD9CFF8;
+        private const uint NvId_DRS_EnumApplications = 0x7FA2173A;
+        private const uint NvId_DRS_EnumAvailableSettingIds = 0xF020614A;
+        private const uint NvId_DRS_EnumAvailableSettingValues = 0x2EC39F90;
+        private const uint NvId_DRS_EnumProfiles = 0xBC371EE0;
+        private const uint NvId_DRS_EnumSettings = 0xAE3039DA;
+        private const uint NvId_DRS_FindApplicationByName = 0xEEE566B2;
+        private const uint NvId_DRS_FindProfileByName = 0x7E4A9A0B;
+        private const uint NvId_DRS_GetApplicationInfo = 0xED1F8C69;
+        private const uint NvId_DRS_GetBaseProfile = 0xDA8466A0;
+        private const uint NvId_DRS_GetCurrentGlobalProfile = 0x617BFF9F;
+        private const uint NvId_DRS_GetNumProfiles = 0x1DAE4FBC;
+        private const uint NvId_DRS_GetProfileInfo = 0x61CD6FD6;
+        private const uint NvId_DRS_GetSetting = 0x73BF8338;
+        private const uint NvId_DRS_GetSettingIdFromName = 0xCB7309CD;
+        private const uint NvId_DRS_GetSettingNameFromId = 0xD61CBE6E;
+        private const uint NvId_DRS_LoadSettings = 0x375DBD6B;
+        private const uint NvId_DRS_LoadSettingsFromFile = 0xD3EDE889;
+        private const uint NvId_DRS_RestoreAllDefaults = 0x5927B094;
+        private const uint NvId_DRS_RestoreProfileDefault = 0xFA5F6134;
+        private const uint NvId_DRS_RestoreProfileDefaultSetting = 0x53F0381E;
+        private const uint NvId_DRS_SaveSettings = 0xFCBC7E14;
+        private const uint NvId_DRS_SaveSettingsToFile = 0x2BE25DF8;
+        private const uint NvId_DRS_SetCurrentGlobalProfile = 0x1C89C5DF;
+        private const uint NvId_DRS_SetProfileInfo = 0x16ABD3A9;
+        private const uint NvId_DRS_SetSetting = 0x577DD202;
+        private const uint NvId_EnableCurrentMosaicTopology = 0x74073CC9;
+        private const uint NvId_EnableHWCursor = 0x2863148D;
+        private const uint NvId_EnumLogicalGPUs = 0x48B3EA59;
+        private const uint NvId_EnumNvidiaDisplayHandle = 0x9ABDD40D;
+        private const uint NvId_EnumNvidiaUnAttachedDisplayHandle = 0x20DE9260;
+        private const uint NvId_EnumPhysicalGPUs = 0xE5AC921F;
+        private const uint NvId_EnumTCCPhysicalGPUs = 0xD9930B07;
+        private const uint NvId_GetAssociatedDisplayOutputId = 0xD995937E;
+        private const uint NvId_GetAssociatedNvidiaDisplayHandle = 0x35C29134;
+        private const uint NvId_GetAssociatedNvidiaDisplayName = 0x22A78B05;
+        private const uint NvId_GetCurrentMosaicTopology = 0xF60852BD;
+        private const uint NvId_GetDisplayDriverVersion = 0xF951A4D1;
+        private const uint NvId_GetDisplayPortInfo = 0xC64FF367;
+        private const uint NvId_GetErrorMessage = 0x6C2D048C;
+        private const uint NvId_GetHDMISupportInfo = 0x6AE16EC3;
+        private const uint NvId_GetInterfaceVersionString = 0x1053FA5;
+        private const uint NvId_GetLogicalGPUFromDisplay = 0xEE1370CF;
+        private const uint NvId_GetLogicalGPUFromPhysicalGPU = 0xADD604D1;
+        private const uint NvId_GetPhysicalGPUFromUnAttachedDisplay = 0x5018ED61;
+        private const uint NvId_GetPhysicalGPUsFromDisplay = 0x34EF9506;
+        private const uint NvId_GetPhysicalGPUsFromLogicalGPU = 0xAEA3FA32;
+        private const uint NvId_GetSupportedMosaicTopologies = 0x410B5C25;
+        private const uint NvId_GetSupportedViews = 0x66FB7FC0;
+        private const uint NvId_GetUnAttachedAssociatedDisplayName = 0x4888D790;
+        private const uint NvId_GetVBlankCounter = 0x67B5DB55;
+        private const uint NvId_GetView = 0xD6B99D89;
+        private const uint NvId_GetViewEx = 0xDBBC0AF4;
+        private const uint NvId_GPU_ClientIllumDevicesGetControl = 0x73C01D58;
+        private const uint NvId_GPU_ClientIllumDevicesGetInfo = 0xD4100E58;
+        private const uint NvId_GPU_ClientIllumDevicesSetControl = 0x57024C62;
+        private const uint NvId_GPU_ClientIllumZonesGetControl = 0x3DBF5764;
+        private const uint NvId_GPU_ClientIllumZonesGetInfo = 0x4B81241B;
+        private const uint NvId_GPU_ClientIllumZonesSetControl = 0x197D065E;
+        private const uint NvId_GPU_GetActiveOutputs = 0xE3E89B6F;
+        private const uint NvId_GPU_GetAGPAperture = 0x6E042794;
+        private const uint NvId_GPU_GetAllClockFrequencies = 0xDCB616C3;
+        private const uint NvId_GPU_GetAllDisplayIds = 0x785210A2;
+        private const uint NvId_GPU_GetAllOutputs = 0x7D554F8E;
+        private const uint NvId_GPU_GetBoardInfo = 0x22D54523;
+        private const uint NvId_GPU_GetBusId = 0x1BE0B8E5;
+        private const uint NvId_GPU_GetBusSlotId = 0x2A0A350F;
+        private const uint NvId_GPU_GetBusType = 0x1BB18724;
+        private const uint NvId_GPU_GetConnectedDisplayIds = 0x78DBA2;
+        private const uint NvId_GPU_GetConnectedOutputs = 0x1730BFC9;
+        private const uint NvId_GPU_GetConnectedOutputsWithLidState = 0xCF8CAF39;
+        private const uint NvId_GPU_GetConnectedSLIOutputs = 0x680DE09;
+        private const uint NvId_GPU_GetConnectedSLIOutputsWithLidState = 0x96043CC7;
+        private const uint NvId_GPU_GetCurrentAGPRate = 0xC74925A0;
+        private const uint NvId_GPU_GetCurrentPCIEDownstreamWidth = 0xD048C3B1;
+        private const uint NvId_GPU_GetCurrentPstate = 0x927DA4F6;
+        private const uint NvId_GPU_GetDynamicPstatesInfoEx = 0x60DED2ED;
+        private const uint NvId_GPU_GetECCConfigurationInfo = 0x77A796F3;
+        private const uint NvId_GPU_GetECCErrorInfo = 0xC71F85A6;
+        private const uint NvId_GPU_GetECCStatusInfo = 0xCA1DDAF3;
+        private const uint NvId_GPU_GetEDID = 0x37D32E69;
+        private const uint NvId_GPU_GetFullName = 0xCEEE8E9F;
+        private const uint NvId_GPU_GetGpuCoreCount = 0xC7026A87;
+        private const uint NvId_GPU_GetGPUType = 0xC33BAEB1;
+        private const uint NvId_GPU_GetHDCPSupportStatus = 0xF089EEF5;
+        private const uint NvId_GPU_GetIllumination = 0x9A1B9365;
+        private const uint NvId_GPU_GetIRQ = 0xE4715417;
+        private const uint NvId_GPU_GetMemoryInfo = 0x7F9B368;
+        private const uint NvId_GPU_GetOutputType = 0x40A505E4;
+        private const uint NvId_GPU_GetPCIIdentifiers = 0x2DDFB66E;
+        private const uint NvId_GPU_GetPerfDecreaseInfo = 0x7F7F4600;
+        private const uint NvId_GPU_GetPhysicalFrameBufferSize = 0x46FBEB03;
+        private const uint NvId_GPU_GetPstates20 = 0x6FF81213;
+        private const uint NvId_GPU_GetPstatesInfoEx = 0x843C0256;
+        private const uint NvId_GPU_GetQuadroStatus = 0xE332FA47;
+        private const uint NvId_GPU_GetScanoutCompositionParameter = 0x58FE51E6;
+        private const uint NvId_GPU_GetScanoutConfiguration = 0x6A9F5B63;
+        private const uint NvId_GPU_GetScanoutConfigurationEx = 0xE2E1E6F0;
+        private const uint NvId_GPU_GetScanoutIntensityState = 0xE81CE836;
+        private const uint NvId_GPU_GetScanoutWarpingState = 0x6F5435AF;
+        private const uint NvId_GPU_GetShaderSubPipeCount = 0xBE17923;
+        private const uint NvId_GPU_GetSystemType = 0xBAAABFCC;
+        private const uint NvId_GPU_GetTachReading = 0x5F608315;
+        private const uint NvId_GPU_GetThermalSettings = 0xE3640A56;
+        private const uint NvId_GPU_GetVbiosOEMRevision = 0x2D43FB31;
+        private const uint NvId_GPU_GetVbiosRevision = 0xACC3DA0A;
+        private const uint NvId_GPU_GetVbiosVersionString = 0xA561FD7D;
+        private const uint NvId_GPU_GetVirtualFrameBufferSize = 0x5A04B644;
+        private const uint NvId_GPU_QueryIlluminationSupport = 0xA629DA31;
+        private const uint NvId_GPU_ResetECCErrorInfo = 0xC02EEC20;
+        private const uint NvId_GPU_SetECCConfiguration = 0x1CF639D9;
+        private const uint NvId_GPU_SetEDID = 0xE83D6456;
+        private const uint NvId_GPU_SetIllumination = 0x254A187;
+        private const uint NvId_GPU_SetScanoutCompositionParameter = 0xF898247D;
+        private const uint NvId_GPU_SetScanoutIntensity = 0xA57457A4;
+        private const uint NvId_GPU_SetScanoutWarping = 0xB34BAB4F;
+        private const uint NvId_GPU_ValidateOutputCombination = 0x34C9C2D4;
+        private const uint NvId_GPU_WorkstationFeatureQuery = 0x4537DF;
+        private const uint NvId_GPU_WorkstationFeatureSetup = 0x6C1F3FE4;
+        private const uint NvId_GSync_AdjustSyncDelay = 0x2D11FF51;
+        private const uint NvId_GSync_EnumSyncDevices = 0xD9639601;
+        private const uint NvId_GSync_GetControlParameters = 0x16DE1C6A;
+        private const uint NvId_GSync_GetStatusParameters = 0x70D404EC;
+        private const uint NvId_GSync_GetSyncStatus = 0xF1F5B434;
+        private const uint NvId_GSync_GetTopology = 0x4562BC38;
+        private const uint NvId_GSync_QueryCapabilities = 0x44A3F1D1;
+        private const uint NvId_GSync_SetControlParameters = 0x8BBFF88B;
+        private const uint NvId_GSync_SetSyncStateSettings = 0x60ACDFDD;
+        private const uint NvId_I2CRead = 0x2FDE12C5;
+        private const uint NvId_I2CWrite = 0xE812EB07;
+        private const uint NvId_Mosaic_EnableCurrentTopo = 0x5F1AA66C;
+        private const uint NvId_Mosaic_EnumDisplayGrids = 0xDF2887AF;
+        private const uint NvId_Mosaic_EnumDisplayModes = 0x78DB97D7;
+        private const uint NvId_Mosaic_GetCurrentTopo = 0xEC32944E;
+        private const uint NvId_Mosaic_GetDisplayViewportsByResolution = 0xDC6DC8D3;
+        private const uint NvId_Mosaic_GetOverlapLimits = 0x989685F0;
+        private const uint NvId_Mosaic_GetSupportedTopoInfo = 0xFDB63C81;
+        private const uint NvId_Mosaic_GetTopoGroup = 0xCB89381D;
+        private const uint NvId_Mosaic_SetCurrentTopo = 0x9B542831;
+        private const uint NvId_Mosaic_SetDisplayGrids = 0x4D959A89;
+        private const uint NvId_Mosaic_ValidateDisplayGrids = 0xCF43903D;
+        private const uint NvId_OGL_ExpertModeDefaultsGet = 0xAE921F12;
+        private const uint NvId_OGL_ExpertModeDefaultsSet = 0xB47A657E;
+        private const uint NvId_OGL_ExpertModeGet = 0x22ED9516;
+        private const uint NvId_OGL_ExpertModeSet = 0x3805EF7A;
+        private const uint NvId_SetCurrentMosaicTopology = 0xD54B8989;
+        private const uint NvId_SetDisplayPort = 0xFA13E65A;
+        private const uint NvId_SetRefreshRateOverride = 0x3092AC32;
+        private const uint NvId_SetView = 0x957D7B6;
+        private const uint NvId_SetViewEx = 0x6B89E68;
+        private const uint NvId_Stereo_Activate = 0xF6A1AD68;
+        private const uint NvId_Stereo_CaptureJpegImage = 0x932CB140;
+        private const uint NvId_Stereo_CapturePngImage = 0x8B7E99B5;
+        private const uint NvId_Stereo_CreateConfigurationProfileRegistryKey = 0xBE7692EC;
+        private const uint NvId_Stereo_CreateHandleFromIUnknown = 0xAC7E37F4;
+        private const uint NvId_Stereo_Deactivate = 0x2D68DE96;
+        private const uint NvId_Stereo_Debug_WasLastDrawStereoized = 0xED4416C5;
+        private const uint NvId_Stereo_DecreaseConvergence = 0x4C87E317;
+        private const uint NvId_Stereo_DecreaseSeparation = 0xDA044458;
+        private const uint NvId_Stereo_DeleteConfigurationProfileRegistryKey = 0xF117B834;
+        private const uint NvId_Stereo_DeleteConfigurationProfileValue = 0x49BCEECF;
+        private const uint NvId_Stereo_DestroyHandle = 0x3A153134;
+        private const uint NvId_Stereo_Disable = 0x2EC50C2B;
+        private const uint NvId_Stereo_Enable = 0x239C4545;
+        private const uint NvId_Stereo_GetConvergence = 0x4AB00934;
+        private const uint NvId_Stereo_GetDefaultProfile = 0x624E21C2;
+        private const uint NvId_Stereo_GetEyeSeparation = 0xCE653127;
+        private const uint NvId_Stereo_GetFrustumAdjustMode = 0xE6839B43;
+        private const uint NvId_Stereo_GetSeparation = 0x451F2134;
+        private const uint NvId_Stereo_GetStereoSupport = 0x296C434D;
+        private const uint NvId_Stereo_GetSurfaceCreationMode = 0x36F1C736;
+        private const uint NvId_Stereo_IncreaseConvergence = 0xA17DAABE;
+        private const uint NvId_Stereo_IncreaseSeparation = 0xC9A8ECEC;
+        private const uint NvId_Stereo_InitActivation = 0xC7177702;
+        private const uint NvId_Stereo_IsActivated = 0x1FB0BC30;
+        private const uint NvId_Stereo_IsEnabled = 0x348FF8E1;
+        private const uint NvId_Stereo_IsWindowedModeSupported = 0x40C8ED5E;
+        private const uint NvId_Stereo_ReverseStereoBlitControl = 0x3CD58F89;
+        private const uint NvId_Stereo_SetActiveEye = 0x96EEA9F8;
+        private const uint NvId_Stereo_SetConfigurationProfileValue = 0x24409F48;
+        private const uint NvId_Stereo_SetConvergence = 0x3DD6B54B;
+        private const uint NvId_Stereo_SetDefaultProfile = 0x44F0ECD1;
+        private const uint NvId_Stereo_SetDriverMode = 0x5E8F0BEC;
+        private const uint NvId_Stereo_SetFrustumAdjustMode = 0x7BE27FA2;
+        private const uint NvId_Stereo_SetNotificationMessage = 0x6B9B409E;
+        private const uint NvId_Stereo_SetSeparation = 0x5C069FA3;
+        private const uint NvId_Stereo_SetSurfaceCreationMode = 0xF5DCFCBA;
+        private const uint NvId_Stereo_Trigger_Activation = 0xD6C6CD2;
+        private const uint NvId_SYS_GetChipSetInfo = 0x53DABBCA;
+        private const uint NvId_SYS_GetDisplayIdFromGpuAndOutputId = 0x8F2BAB4;
+        private const uint NvId_SYS_GetDriverAndBranchVersion = 0x2926AAAD;
+        private const uint NvId_SYS_GetGpuAndOutputIdFromDisplayId = 0x112BA1A5;
+        private const uint NvId_SYS_GetLidAndDockInfo = 0xCDA14D8A;
+        private const uint NvId_SYS_GetPhysicalGpuFromDisplayId = 0x9EA74659;
+        private const uint NvId_VIO_Close = 0xD01BD237;
+        private const uint NvId_VIO_EnumDataFormats = 0x221FA8E8;
+        private const uint NvId_VIO_EnumDevices = 0xFD7C5557;
+        private const uint NvId_VIO_EnumSignalFormats = 0xEAD72FE4;
+        private const uint NvId_VIO_GetCapabilities = 0x1DC91303;
+        private const uint NvId_VIO_GetConfig = 0xD34A789B;
+        private const uint NvId_VIO_GetCSC = 0x7B0D72A3;
+        private const uint NvId_VIO_GetGamma = 0x51D53D06;
+        private const uint NvId_VIO_GetPCIInfo = 0xB981D935;
+        private const uint NvId_VIO_GetSyncDelay = 0x462214A9;
+        private const uint NvId_VIO_IsFrameLockModeCompatible = 0x7BF0A94D;
+        private const uint NvId_VIO_IsRunning = 0x96BD040E;
+        private const uint NvId_VIO_Open = 0x44EE4841;
+        private const uint NvId_VIO_QueryTopology = 0x869534E2;
+        private const uint NvId_VIO_SetConfig = 0xE4EEC07;
+        private const uint NvId_VIO_SetCSC = 0xA1EC8D74;
+        private const uint NvId_VIO_SetGamma = 0x964BF452;
+        private const uint NvId_VIO_SetSyncDelay = 0x2697A8D1;
+        private const uint NvId_VIO_Start = 0xCDE8E1A3;
+        private const uint NvId_VIO_Status = 0xE6CE4F1;
+        private const uint NvId_VIO_Stop = 0x6BA2A5D6;
+        private const uint NvId_VIO_SyncFormatDetect = 0x118D48A3;
+
+        #endregion
+
+        // -------------------------------------------------
+        // Private Internal NvAPI Functions
+        // -------------------------------------------------
+
+        #region Private Internal NvAPI Functions
+
+        private const uint NvId_3D_GetProperty = 0x8061A4B1;
+        private const uint NvId_3D_GetPropertyRange = 0x0B85DE27C;
+        private const uint NvId_3D_SetProperty = 0x0C9175E8D;
+        private const uint NvId_AccessDisplayDriverRegistry = 0xF5579360;
+        private const uint NvId_Coproc_GetApplicationCoprocInfo = 0x79232685;
+        private const uint NvId_Coproc_GetCoprocInfoFlagsEx = 0x69A9874D;
+        private const uint NvId_Coproc_GetCoprocStatus = 0x1EFC3957;
+        private const uint NvId_Coproc_NotifyCoprocPowerState = 0x0CADCB956;
+        private const uint NvId_Coproc_SetCoprocInfoFlagsEx = 0x0F4C863AC;
+        private const uint NvId_CreateUnAttachedDisplayFromDisplay = 0xA0C72EE4;
+        private const uint NvId_D3D_CreateQuery = 0x5D19BCA4;
+        private const uint NvId_D3D_DestroyQuery = 0x0C8FF7258;
+        private const uint NvId_D3D_Query_Begin = 0x0E5A9AAE0;
+        private const uint NvId_D3D_Query_End = 0x2AC084FA;
+        private const uint NvId_D3D_Query_GetData = 0x0F8B53C69;
+        private const uint NvId_D3D_Query_GetDataSize = 0x0F2A54796;
+        private const uint NvId_D3D_Query_GetType = 0x4ACEEAF7;
+        private const uint NvId_D3D_RegisterApp = 0x0D44D3C4E;
+        private const uint NvId_D3D10_AliasPrimaryAsTexture = 0x8AAC133D;
+        private const uint NvId_D3D10_BeginShareResource = 0x35233210;
+        private const uint NvId_D3D10_BeginShareResourceEx = 0x0EF303A9D;
+        private const uint NvId_D3D10_CreateDevice = 0x2DE11D61;
+        private const uint NvId_D3D10_CreateDeviceAndSwapChain = 0x5B803DAF;
+        private const uint NvId_D3D10_EndShareResource = 0x0E9C5853;
+        private const uint NvId_D3D10_GetRenderedCursorAsBitmap = 0x0CAC3CE5D;
+        private const uint NvId_D3D10_ProcessCallbacks = 0x0AE9C2019;
+        private const uint NvId_D3D10_SetPrimaryFlipChainCallbacks = 0x73EB9329;
+        private const uint NvId_D3D11_BeginShareResource = 0x121BDC6;
+        private const uint NvId_D3D11_EndShareResource = 0x8FFB8E26;
+        private const uint NvId_D3D1x_BindSwapBarrier = 0x9DE8C729;
+        private const uint NvId_D3D1x_IFR_SetUpTargetBufferToSys = 0x473F7828;
+        private const uint NvId_D3D1x_IFR_TransferRenderTarget = 0x9FBAE4EB;
+        private const uint NvId_D3D1x_JoinSwapGroup = 0x14610CD7;
+        private const uint NvId_D3D1x_Present = 0x3B845A1;
+        private const uint NvId_D3D1x_QueryFrameCount = 0x9152E055;
+        private const uint NvId_D3D1x_QueryMaxSwapGroup = 0x9BB9D68F;
+        private const uint NvId_D3D1x_QuerySwapGroup = 0x407F67AA;
+        private const uint NvId_D3D1x_ResetFrameCount = 0x0FBBB031A;
+        private const uint NvId_D3D9_AliasPrimaryAsTexture = 0x13C7112E;
+        private const uint NvId_D3D9_AliasPrimaryFromDevice = 0x7C20C5BE;
+        private const uint NvId_D3D9_BindSwapBarrier = 0x9C39C246;
+        private const uint NvId_D3D9_CreatePathContextNV = 0x0A342F682;
+        private const uint NvId_D3D9_CreatePathNV = 0x71329DF3;
+        private const uint NvId_D3D9_CreateRenderTarget = 0x0B3827C8;
+        private const uint NvId_D3D9_CreateTexture = 0x0D5E13573;
+        private const uint NvId_D3D9_CreateVideo = 0x89FFD9A3;
+        private const uint NvId_D3D9_CreateVideoBegin = 0x84C9D553;
+        private const uint NvId_D3D9_CreateVideoEnd = 0x0B476BF61;
+        private const uint NvId_D3D9_DeletePathNV = 0x73E0019A;
+        private const uint NvId_D3D9_DestroyPathContextNV = 0x667C2929;
+        private const uint NvId_D3D9_DMA = 0x962B8AF6;
+        private const uint NvId_D3D9_DrawPathNV = 0x13199B3D;
+        private const uint NvId_D3D9_EnableStereo = 0x492A6954;
+        private const uint NvId_D3D9_EnumVideoFeatures = 0x1DB7C52C;
+        private const uint NvId_D3D9_FreeVideo = 0x3111BED1;
+        private const uint NvId_D3D9_GetCurrentRenderTargetHandle = 0x22CAD61;
+        private const uint NvId_D3D9_GetCurrentZBufferHandle = 0x0B380F218;
+        private const uint NvId_D3D9_GetIndexBufferHandle = 0x0FC5A155B;
+        private const uint NvId_D3D9_GetOverlaySurfaceHandles = 0x6800F5FC;
+        private const uint NvId_D3D9_GetSLIInfo = 0x694BFF4D;
+        private const uint NvId_D3D9_GetTextureHandle = 0x0C7985ED5;
+        private const uint NvId_D3D9_GetVertexBufferHandle = 0x72B19155;
+        private const uint NvId_D3D9_GetVideoCapabilities = 0x3D596B93;
+        private const uint NvId_D3D9_GetVideoState = 0x0A4527BF8;
+        private const uint NvId_D3D9_GPUBasedCPUSleep = 0x0D504DDA7;
+        private const uint NvId_D3D9_GpuSyncAcquire = 0x0D00B8317;
+        private const uint NvId_D3D9_GpuSyncEnd = 0x754033F0;
+        private const uint NvId_D3D9_GpuSyncGetHandleSize = 0x80C9FD3B;
+        private const uint NvId_D3D9_GpuSyncInit = 0x6D6FDAD4;
+        private const uint NvId_D3D9_GpuSyncMapIndexBuffer = 0x12EE68F2;
+        private const uint NvId_D3D9_GpuSyncMapSurfaceBuffer = 0x2AB714AB;
+        private const uint NvId_D3D9_GpuSyncMapTexBuffer = 0x0CDE4A28A;
+        private const uint NvId_D3D9_GpuSyncMapVertexBuffer = 0x0DBC803EC;
+        private const uint NvId_D3D9_GpuSyncRelease = 0x3D7A86BB;
+        private const uint NvId_D3D9_IFR_SetUpTargetBufferToNV12BLVideoSurface = 0x0CFC92C15;
+        private const uint NvId_D3D9_IFR_SetUpTargetBufferToSys = 0x55255D05;
+        private const uint NvId_D3D9_IFR_TransferRenderTarget = 0x0AB7C2DC;
+        private const uint NvId_D3D9_IFR_TransferRenderTargetToNV12BLVideoSurface = 0x5FE72F64;
+        private const uint NvId_D3D9_JoinSwapGroup = 0x7D44BB54;
+        private const uint NvId_D3D9_Lock = 0x6317345C;
+        private const uint NvId_D3D9_NVFBC_GetStatus = 0x0bd3eb475;
+        private const uint NvId_D3D9_PathClearDepthNV = 0x157E45C4;
+        private const uint NvId_D3D9_PathDepthNV = 0x0FCB16330;
+        private const uint NvId_D3D9_PathEnableColorWriteNV = 0x3E2804A2;
+        private const uint NvId_D3D9_PathEnableDepthTestNV = 0x0E99BA7F3;
+        private const uint NvId_D3D9_PathMatrixNV = 0x0D2F6C499;
+        private const uint NvId_D3D9_PathParameterfNV = 0x0F7FF00C1;
+        private const uint NvId_D3D9_PathParameteriNV = 0x0FC31236C;
+        private const uint NvId_D3D9_PathVerticesNV = 0x0C23DF926;
+        private const uint NvId_D3D9_Present = 0x5650BEB;
+        private const uint NvId_D3D9_PresentSurfaceToDesktop = 0x0F7029C5;
+        private const uint NvId_D3D9_PresentVideo = 0x5CF7F862;
+        private const uint NvId_D3D9_QueryAAOverrideMode = 0x0DDF5643C;
+        private const uint NvId_D3D9_QueryFrameCount = 0x9083E53A;
+        private const uint NvId_D3D9_QueryMaxSwapGroup = 0x5995410D;
+        private const uint NvId_D3D9_QuerySwapGroup = 0x0EBA4D232;
+        private const uint NvId_D3D9_QueryVideoInfo = 0x1E6634B3;
+        private const uint NvId_D3D9_ResetFrameCount = 0x0FA6A0675;
+        private const uint NvId_D3D9_SetGamutData = 0x2BBDA32E;
+        private const uint NvId_D3D9_SetPitchSurfaceCreation = 0x18CDF365;
+        private const uint NvId_D3D9_SetResourceHint = 0x905F5C27;
+        private const uint NvId_D3D9_SetSLIMode = 0x0BFDC062C;
+        private const uint NvId_D3D9_SetSurfaceCreationLayout = 0x5609B86A;
+        private const uint NvId_D3D9_SetVideoState = 0x0BD4BC56F;
+        private const uint NvId_D3D9_StretchRect = 0x0AEAECD41;
+        private const uint NvId_D3D9_Unlock = 0x0C182027E;
+        private const uint NvId_D3D9_VideoSurfaceEncryptionControl = 0x9D2509EF;
+        private const uint NvId_DeleteCustomDisplay = 0x0E7CB998D;
+        private const uint NvId_DeleteUnderscanConfig = 0x0F98854C8;
+        private const uint NvId_Disp_DpAuxChannelControl = 0x8EB56969;
+        private const uint NvId_DISP_EnumHDMIStereoModes = 0x0D2CCF5D6;
+        private const uint NvId_DISP_GetDisplayBlankingState = 0x63E5D8DB;
+        private const uint NvId_DISP_GetHCloneTopology = 0x47BAD137;
+        private const uint NvId_DISP_GetVirtualModeData = 0x3230D69A;
+        private const uint NvId_DISP_OverrideDisplayModeList = 0x291BFF2;
+        private const uint NvId_DISP_SetDisplayBlankingState = 0x1E17E29B;
+        private const uint NvId_DISP_SetHCloneTopology = 0x61041C24;
+        private const uint NvId_DISP_ValidateHCloneTopology = 0x5F4C2664;
+        private const uint NvId_EnumCustomDisplay = 0x42892957;
+        private const uint NvId_EnumUnderscanConfig = 0x4144111A;
+        private const uint NvId_Event_RegisterCallback = 0x0E6DBEA69;
+        private const uint NvId_Event_UnregisterCallback = 0x0DE1F9B45;
+        private const uint NvId_GetDisplayDriverBuildTitle = 0x7562E947;
+        private const uint NvId_GetDisplayDriverCompileType = 0x988AEA78;
+        private const uint NvId_GetDisplayDriverMemoryInfo = 0x774AA982;
+        private const uint NvId_GetDisplayDriverRegistryPath = 0x0E24CEEE;
+        private const uint NvId_GetDisplayDriverSecurityLevel = 0x9D772BBA;
+        private const uint NvId_GetDisplayFeatureConfig = 0x8E985CCD;
+        private const uint NvId_GetDisplayFeatureConfigDefaults = 0x0F5F4D01;
+        private const uint NvId_GetDisplayPosition = 0x6BB1EE5D;
+        private const uint NvId_GetDisplaySettings = 0x0DC27D5D4;
+        private const uint NvId_GetDriverMemoryInfo = 0x2DC95125;
+        private const uint NvId_GetDriverModel = 0x25EEB2C4;
+        private const uint NvId_GetDVCInfo = 0x4085DE45;
+        private const uint NvId_GetDVCInfoEx = 0x0E45002D;
+        private const uint NvId_GetGPUIDfromPhysicalGPU = 0x6533EA3E;
+        private const uint NvId_GetHDCPLinkParameters = 0x0B3BB0772;
+        private const uint NvId_GetHUEInfo = 0x95B64341;
+        private const uint NvId_GetHybridMode = 0x0E23B68C1;
+        private const uint NvId_GetImageSharpeningInfo = 0x9FB063DF;
+        private const uint NvId_GetInfoFrame = 0x9734F1D;
+        private const uint NvId_GetInfoFrameState = 0x41511594;
+        private const uint NvId_GetInfoFrameStatePvt = 0x7FC17574;
+        private const uint NvId_GetInvalidGpuTopologies = 0x15658BE6;
+        private const uint NvId_GetLoadedMicrocodePrograms = 0x919B3136;
+        private const uint NvId_GetPhysicalGPUFromDisplay = 0x1890E8DA;
+        private const uint NvId_GetPhysicalGPUFromGPUID = 0x5380AD1A;
+        private const uint NvId_GetPVExtName = 0x2F5B08E0;
+        private const uint NvId_GetPVExtProfile = 0x1B1B9A16;
+        private const uint NvId_GetScalingCaps = 0x8E875CF9;
+        private const uint NvId_GetTiming = 0x0AFC4833E;
+        private const uint NvId_GetTopologyDisplayGPU = 0x813D89A8;
+        private const uint NvId_GetTVEncoderControls = 0x5757474A;
+        private const uint NvId_GetTVOutputBorderColor = 0x6DFD1C8C;
+        private const uint NvId_GetTVOutputInfo = 0x30C805D5;
+        private const uint NvId_GetUnAttachedDisplayDriverRegistryPath = 0x633252D8;
+        private const uint NvId_GetValidGpuTopologies = 0x5DFAB48A;
+        private const uint NvId_GetVideoState = 0x1C5659CD;
+        private const uint NvId_GPS_GetPerfSensors = 0x271C1109;
+        private const uint NvId_GPS_GetPowerSteeringStatus = 0x540EE82E;
+        private const uint NvId_GPS_GetThermalLimit = 0x583113ED;
+        private const uint NvId_GPS_GetVPStateCap = 0x71913023;
+        private const uint NvId_GPS_SetPowerSteeringStatus = 0x9723D3A2;
+        private const uint NvId_GPS_SetThermalLimit = 0x0C07E210F;
+        private const uint NvId_GPS_SetVPStateCap = 0x68888EB4;
+        private const uint NvId_GPU_ClearPCIELinkAERInfo = 0x521566BB;
+        private const uint NvId_GPU_ClearPCIELinkErrorInfo = 0x8456FF3D;
+        private const uint NvId_GPU_ClientPowerPoliciesGetInfo = 0x34206D86;
+        private const uint NvId_GPU_ClientPowerPoliciesGetStatus = 0x70916171;
+        private const uint NvId_GPU_ClientPowerPoliciesSetStatus = 0x0AD95F5ED;
+        private const uint NvId_GPU_ClientPowerTopologyGetInfo = 0x0A4DFD3F2;
+        private const uint NvId_GPU_ClientPowerTopologyGetStatus = 0x0EDCF624E;
+        private const uint NvId_GPU_CudaEnumComputeCapableGpus = 0x5786CC6E;
+        private const uint NvId_GPU_EnableDynamicPstates = 0x0FA579A0F;
+        private const uint NvId_GPU_EnableOverclockedPstates = 0x0B23B70EE;
+        private const uint NvId_GPU_Get_DisplayPort_DongleInfo = 0x76A70E8D;
+        private const uint NvId_GPU_GetAllClocks = 0x1BD69F49;
+        private const uint NvId_GPU_GetAllGpusOnSameBoard = 0x4DB019E6;
+        private const uint NvId_GPU_GetArchInfo = 0xD8265D24;
+        private const uint NvId_GPU_GetBarInfo = 0xE4B701E3;
+        private const uint NvId_GPU_GetClockBoostLock = 0xe440b867; // unknown name; private const uint NvId_ID_CURVE_GET
+        private const uint NvId_GPU_GetClockBoostMask = 0x507b4b59;
+        private const uint NvId_GPU_GetClockBoostRanges = 0x64b43a6a;
+        private const uint NvId_GPU_GetClockBoostTable = 0x23f1b133;
+        private const uint NvId_GPU_GetColorSpaceConversion = 0x8159E87A;
+        private const uint NvId_GPU_GetConnectorInfo = 0x4ECA2C10;
+        private const uint NvId_GPU_GetCoolerPolicyTable = 0x518A32C;
+        private const uint NvId_GPU_GetCoolerSettings = 0x0DA141340;
+        private const uint NvId_GPU_GetCoreVoltageBoostPercent = 0x9df23ca1;
+        private const uint NvId_GPU_GetCurrentFanSpeedLevel = 0x0BD71F0C9;
+        private const uint NvId_GPU_GetCurrentThermalLevel = 0x0D2488B79;
+        private const uint NvId_GPU_GetCurrentVoltage = 0x465f9bcf;
+        private const uint NvId_GPU_GetDeepIdleState = 0x1AAD16B4;
+        private const uint NvId_GPU_GetDeviceDisplayMode = 0x0D2277E3A;
+        private const uint NvId_GPU_GetDisplayUnderflowStatus = 0xED9E8057;
+        private const uint NvId_GPU_GetDitherControl = 0x932AC8FB;
+        private const uint NvId_GPU_GetExtendedMinorRevision = 0x25F17421;
+        private const uint NvId_GPU_GetFBWidthAndLocation = 0x11104158;
+        private const uint NvId_GPU_GetFlatPanelInfo = 0x36CFF969;
+        private const uint NvId_GPU_GetFoundry = 0x5D857A00;
+        private const uint NvId_GPU_GetFrameBufferCalibrationLockFailures = 0x524B9773;
+        private const uint NvId_GPU_GetHardwareQualType = 0xF91E777B;
+        private const uint NvId_GPU_GetHybridControllerInfo = 0xD26B8A58;
+        private const uint NvId_GPU_GetLogicalFBWidthAndLocation = 0x8efc0978;
+        private const uint NvId_GPU_GetManufacturingInfo = 0xA4218928;
+        private const uint NvId_GPU_GetMemPartitionMask = 0x329D77CD;
+        private const uint NvId_GPU_GetMXMBlock = 0xB7AB19B9;
+        private const uint NvId_GPU_GetPartitionCount = 0x86F05D7A;
+        private const uint NvId_GPU_GetPCIEInfo = 0xE3795199;
+        private const uint NvId_GPU_GetPerfClocks = 0x1EA54A3B;
+        private const uint NvId_GPU_GetPerfHybridMode = 0x5D7CCAEB;
+        private const uint NvId_GPU_GetPerGpuTopologyStatus = 0x0A81F8992;
+        private const uint NvId_GPU_GetPixelClockRange = 0x66AF10B7;
+        private const uint NvId_GPU_GetPowerMizerInfo = 0x76BFA16B;
+        private const uint NvId_GPU_GetPSFloorSweepStatus = 0xDEE047AB;
+        private const uint NvId_GPU_GetPstateClientLimits = 0x88C82104;
+        private const uint NvId_GPU_GetPstatesInfo = 0x0BA94C56E;
+        private const uint NvId_GPU_GetRamBankCount = 0x17073A3C;
+        private const uint NvId_GPU_GetRamBusWidth = 0x7975C581;
+        private const uint NvId_GPU_GetRamConfigStrap = 0x51CCDB2A;
+        private const uint NvId_GPU_GetRamMaker = 0x42aea16a;
+        private const uint NvId_GPU_GetRamType = 0x57F7CAAC;
+        private const uint NvId_GPU_GetRawFuseData = 0xE0B1DCE9;
+        private const uint NvId_GPU_GetROPCount = 0xfdc129fa;
+        private const uint NvId_GPU_GetSampleType = 0x32E1D697;
+        private const uint NvId_GPU_GetSerialNumber = 0x14B83A5F;
+        private const uint NvId_GPU_GetShaderPipeCount = 0x63E2F56F;
+        private const uint NvId_GPU_GetShortName = 0xD988F0F3;
+        private const uint NvId_GPU_GetSMMask = 0x0EB7AF173;
+        private const uint NvId_GPU_GetTargetID = 0x35B5FD2F;
+        private const uint NvId_GPU_GetThermalPoliciesInfo = 0x00D258BB5; // private const uint NvId_GPU_ClientThermalPoliciesGetInfo
+        private const uint NvId_GPU_GetThermalPoliciesStatus = 0x0E9C425A1;
+        private const uint NvId_GPU_GetThermalTable = 0xC729203C;
+        private const uint NvId_GPU_GetTotalSMCount = 0x0AE5FBCFE;
+        private const uint NvId_GPU_GetTotalSPCount = 0x0B6D62591;
+        private const uint NvId_GPU_GetTotalTPCCount = 0x4E2F76A8;
+        private const uint NvId_GPU_GetTPCMask = 0x4A35DF54;
+        private const uint NvId_GPU_GetUsages = 0x189a1fdf;
+        private const uint NvId_GPU_GetVbiosImage = 0xFC13EE11;
+        private const uint NvId_GPU_GetVbiosMxmVersion = 0xE1D5DABA;
+        private const uint NvId_GPU_GetVFPCurve = 0x21537ad4;
+        private const uint NvId_GPU_GetVoltageDomainsStatus = 0x0C16C7E2C;
+        private const uint NvId_GPU_GetVoltages = 0x7D656244;
+        private const uint NvId_GPU_GetVoltageStep = 0x28766157; // unsure of the name
+        private const uint NvId_GPU_GetVPECount = 0xD8CBF37B;
+        private const uint NvId_GPU_GetVSFloorSweepStatus = 0xD4F3944C;
+        private const uint NvId_GPU_GPIOQueryLegalPins = 0x0FAB69565;
+        private const uint NvId_GPU_GPIOReadFromPin = 0x0F5E10439;
+        private const uint NvId_GPU_GPIOWriteToPin = 0x0F3B11E68;
+        private const uint NvId_GPU_PerfPoliciesGetInfo = 0x409d9841;
+        private const uint NvId_GPU_PerfPoliciesGetStatus = 0x3d358a0c;
+        private const uint NvId_GPU_PhysxQueryRecommendedState = 0x7A4174F4;
+        private const uint NvId_GPU_PhysxSetState = 0x4071B85E;
+        private const uint NvId_GPU_QueryActiveApps = 0x65B1C5F5;
+        private const uint NvId_GPU_RestoreCoolerPolicyTable = 0x0D8C4FE63;
+        private const uint NvId_GPU_RestoreCoolerSettings = 0x8F6ED0FB;
+        private const uint NvId_GPU_SetClockBoostLock = 0x39442cfb; // unknown name; private const uint NvId_ID_CURVE_SET
+        private const uint NvId_GPU_SetClockBoostTable = 0x0733e009;
+        private const uint NvId_GPU_SetClocks = 0x6F151055;
+        private const uint NvId_GPU_SetColorSpaceConversion = 0x0FCABD23A;
+        private const uint NvId_GPU_SetCoolerLevels = 0x891FA0AE;
+        private const uint NvId_GPU_SetCoolerPolicyTable = 0x987947CD;
+        private const uint NvId_GPU_SetCoreVoltageBoostPercent = 0xb9306d9b;
+        private const uint NvId_GPU_SetCurrentPCIESpeed = 0x3BD32008;
+        private const uint NvId_GPU_SetCurrentPCIEWidth = 0x3F28E1B9;
+        private const uint NvId_GPU_SetDeepIdleState = 0x568A2292;
+        private const uint NvId_GPU_SetDisplayUnderflowMode = 0x387B2E41;
+        private const uint NvId_GPU_SetDitherControl = 0x0DF0DFCDD;
+        private const uint NvId_GPU_SetPerfClocks = 0x7BCF4AC;
+        private const uint NvId_GPU_SetPerfHybridMode = 0x7BC207F8;
+        private const uint NvId_GPU_SetPixelClockRange = 0x5AC7F8E5;
+        private const uint NvId_GPU_SetPowerMizerInfo = 0x50016C78;
+        private const uint NvId_GPU_SetPstateClientLimits = 0x0FDFC7D49;
+        private const uint NvId_GPU_SetPstates20 = 0x0F4DAE6B;
+        private const uint NvId_GPU_SetPstatesInfo = 0x0CDF27911;
+        private const uint NvId_GPU_SetThermalPoliciesStatus = 0x034C0B13D;
+        private const uint NvId_Hybrid_IsAppMigrationStateChangeable = 0x584CB0B6;
+        private const uint NvId_Hybrid_QueryBlockedMigratableApps = 0x0F4C2F8CC;
+        private const uint NvId_Hybrid_QueryUnblockedNonMigratableApps = 0x5F35BCB5;
+        private const uint NvId_Hybrid_SetAppMigrationState = 0x0FA0B9A59;
+        private const uint NvId_I2CReadEx = 0x4D7B0709;
+        private const uint NvId_I2CWriteEx = 0x283AC65A;
+        private const uint NvId_LoadMicrocode = 0x3119F36E;
+        private const uint NvId_Mosaic_ChooseGpuTopologies = 0x0B033B140;
+        private const uint NvId_Mosaic_EnumGridTopologies = 0x0A3C55220;
+        private const uint NvId_Mosaic_GetDisplayCapabilities = 0x0D58026B9;
+        private const uint NvId_Mosaic_GetMosaicCapabilities = 0x0DA97071E;
+        private const uint NvId_Mosaic_GetMosaicViewports = 0x7EBA036;
+        private const uint NvId_Mosaic_SetGridTopology = 0x3F113C77;
+        private const uint NvId_Mosaic_ValidateDisplayGridsWithSLI = 0x1ECFD263;
+        private const uint NvId_QueryNonMigratableApps = 0x0BB9EF1C3;
+        private const uint NvId_QueryUnderscanCap = 0x61D7B624;
+        private const uint NvId_RestartDisplayDriver = 0xB4B26B65;
+        private const uint NvId_RevertCustomDisplayTrial = 0x854BA405;
+        private const uint NvId_SaveCustomDisplay = 0x0A9062C78;
+        private const uint NvId_SetDisplayFeatureConfig = 0x0F36A668D;
+        private const uint NvId_SetDisplayPosition = 0x57D9060F;
+        private const uint NvId_SetDisplaySettings = 0x0E04F3D86;
+        private const uint NvId_SetDVCLevel = 0x172409B4;
+        private const uint NvId_SetDVCLevelEx = 0x4A82C2B1;
+        private const uint NvId_SetFrameRateNotify = 0x18919887;
+        private const uint NvId_SetGpuTopologies = 0x25201F3D;
+        private const uint NvId_SetHUEAngle = 0x0F5A0F22C;
+        private const uint NvId_SetHybridMode = 0x0FB22D656;
+        private const uint NvId_SetImageSharpeningLevel = 0x3FC9A59C;
+        private const uint NvId_SetInfoFrame = 0x69C6F365;
+        private const uint NvId_SetInfoFrameState = 0x67EFD887;
+        private const uint NvId_SetPVExtName = 0x4FEEB498;
+        private const uint NvId_SetPVExtProfile = 0x8354A8F4;
+        private const uint NvId_SetTopologyDisplayGPU = 0xF409D5E5;
+        private const uint NvId_SetTopologyFocusDisplayAndView = 0x0A8064F9;
+        private const uint NvId_SetTVEncoderControls = 0x0CA36A3AB;
+        private const uint NvId_SetTVOutputBorderColor = 0x0AED02700;
+        private const uint NvId_SetUnderscanConfig = 0x3EFADA1D;
+        private const uint NvId_SetVideoState = 0x54FE75A;
+        private const uint NvId_Stereo_AppHandShake = 0x8C610BDA;
+        private const uint NvId_Stereo_ForceToScreenDepth = 0x2D495758;
+        private const uint NvId_Stereo_GetCursorSeparation = 0x72162B35;
+        private const uint NvId_Stereo_GetPixelShaderConstantB = 0x0C79333AE;
+        private const uint NvId_Stereo_GetPixelShaderConstantF = 0x0D4974572;
+        private const uint NvId_Stereo_GetPixelShaderConstantI = 0x0ECD8F8CF;
+        private const uint NvId_Stereo_GetStereoCaps = 0x0DFC063B7;
+        private const uint NvId_Stereo_GetVertexShaderConstantB = 0x712BAA5B;
+        private const uint NvId_Stereo_GetVertexShaderConstantF = 0x622FDC87;
+        private const uint NvId_Stereo_GetVertexShaderConstantI = 0x5A60613A;
+        private const uint NvId_Stereo_HandShake_Message_Control = 0x315E0EF0;
+        private const uint NvId_Stereo_HandShake_Trigger_Activation = 0x0B30CD1A7;
+        private const uint NvId_Stereo_Is3DCursorSupported = 0x0D7C9EC09;
+        private const uint NvId_Stereo_SetCursorSeparation = 0x0FBC08FC1;
+        private const uint NvId_Stereo_SetPixelShaderConstantB = 0x0BA6109EE;
+        private const uint NvId_Stereo_SetPixelShaderConstantF = 0x0A9657F32;
+        private const uint NvId_Stereo_SetPixelShaderConstantI = 0x912AC28F;
+        private const uint NvId_Stereo_SetVertexShaderConstantB = 0x5268716F;
+        private const uint NvId_Stereo_SetVertexShaderConstantF = 0x416C07B3;
+        private const uint NvId_Stereo_SetVertexShaderConstantI = 0x7923BA0E;
+        private const uint NvId_SYS_GetChipSetTopologyStatus = 0x8A50F126;
+        private const uint NvId_SYS_GetSliApprovalCookie = 0xB539A26E;
+        private const uint NvId_SYS_SetPostOutput = 0xD3A092B1;
+        private const uint NvId_SYS_VenturaGetCoolingBudget = 0x0C9D86E33;
+        private const uint NvId_SYS_VenturaGetPowerReading = 0x63685979;
+        private const uint NvId_SYS_VenturaGetState = 0x0CB7C208D;
+        private const uint NvId_SYS_VenturaSetCoolingBudget = 0x85FF5A15;
+        private const uint NvId_SYS_VenturaSetState = 0x0CE2E9D9;
+        private const uint NvId_TryCustomDisplay = 0x0BF6C1762;
+        private const uint NvId_VideoGetStereoInfo = 0x8E1F8CFE;
+        private const uint NvId_VideoSetStereoInfo = 0x97063269;
+        private const uint NvId_GPU_ClientFanCoolersGetInfo = 0xfb85b01e;
+        private const uint NvId_GPU_ClientFanCoolersGetStatus = 0x35aed5e8;
+        private const uint NvId_GPU_ClientFanCoolersGetControl = 0x814b209f;
+        private const uint NvId_GPU_ClientFanCoolersSetControl = 0xa58971a5;
+
+
+        #endregion
+
+        private const uint NvId_Unload = 0xD22BDD7E;
+        private const uint NvId_Initialize = 0x150E828;
+
+        #region General NVAPI Functions
+        // QueryInterface
+        private delegate IntPtr QueryInterfaceDelegate(uint id);
+        private static readonly QueryInterfaceDelegate QueryInterface;
+
+        // Initialize
+        private delegate NVAPI_STATUS InitializeDelegate();
+        private static readonly InitializeDelegate InitializeInternal;
+
+        // Unload
+        private delegate NVAPI_STATUS UnloadDelegate();
+        private static readonly UnloadDelegate UnloadInternal;
+
+        // GetErrorMessage
+        private delegate NVAPI_STATUS GetErrorMessageDelegate(NVAPI_STATUS nr, StringBuilder szDesc);
+        private static readonly GetErrorMessageDelegate GetErrorMessageInternal;
+
+        /// <summary>
+        /// This function converts an NvAPI error code into a null terminated string.
+        /// </summary>
+        /// <param name="nr">The error code to convert</param>
+        /// <param name="szDesc">The string corresponding to the error code</param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GetErrorMessage(NVAPI_STATUS nr, out string szDesc)
+        {
+            StringBuilder builder = new StringBuilder((int)NV_SHORT_STRING_MAX);
+
+            NVAPI_STATUS status;
+            if (GetErrorMessageInternal != null) { status = GetErrorMessageInternal(nr, builder); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            szDesc = builder.ToString();
+
+            return status;
+        }
+
+        // GetInterfaceVersionString
+        private delegate NVAPI_STATUS GetInterfaceVersionStringDelegate(StringBuilder szDesc);
+        private static readonly GetInterfaceVersionStringDelegate GetInterfaceVersionStringInternal;
+
+        /// <summary>
+        /// This function returns a string describing the version of the NvAPI library. The contents of the string are human readable. Do not assume a fixed format.
+        /// </summary>
+        /// <param name="szDesc">User readable string giving NvAPI version information</param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GetInterfaceVersionString(out string szDesc)
+        {
+            StringBuilder builder = new StringBuilder((int)NV_SHORT_STRING_MAX);
+
+            NVAPI_STATUS status;
+            if (GetErrorMessageInternal != null) { status = GetInterfaceVersionStringInternal(builder); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            szDesc = builder.ToString();
+
+            return status;
+        }
+        #endregion
+
+
+        #region Display NVAPI Functions
+        // EnumNvidiaDisplayHandle
+        private delegate NVAPI_STATUS EnumNvidiaDisplayHandleDelegate(int thisEnum, ref DisplayHandle displayHandle);
+        private static readonly EnumNvidiaDisplayHandleDelegate EnumNvidiaDisplayHandleInternal;
+
+        /// <summary>
+        /// This function returns the handle of the NVIDIA display specified by the enum index (thisEnum). The client should keep enumerating until it returns NVAPI_END_ENUMERATION.
+        /// Note: Display handles can get invalidated on a modeset, so the calling applications need to renum the handles after every modeset.
+        /// </summary>
+        /// <param name="thisEnum">The index of the NVIDIA display.</param>
+        /// <param name="displayHandle">Pointer to the NVIDIA display handle.</param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_EnumNvidiaDisplayHandle(int thisEnum, ref DisplayHandle displayHandle)
+        {
+            NVAPI_STATUS status;
+            if (EnumNvidiaDisplayHandleInternal != null) { status = EnumNvidiaDisplayHandleInternal(thisEnum, ref displayHandle); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            return status;
+        }
+
+        // EnumNvidiaUnAttachedDisplayHandle
+        private delegate NVAPI_STATUS EnumNvidiaUnAttachedDisplayHandleDelegate(int thisEnum, ref UnAttachedDisplayHandle pNvDispHandle);
+        private static readonly EnumNvidiaUnAttachedDisplayHandleDelegate EnumNvidiaUnAttachedDisplayHandleInternal;
+
+        /// <summary>
+        /// This function returns the handle of the NVIDIA unattached display specified by the enum index (thisEnum). The client should keep enumerating until it returns error. Note: Display handles can get invalidated on a modeset, so the calling applications need to renum the handles after every modeset.
+        /// </summary>
+        /// <param name="thisEnum">The index of the NVIDIA display.</param>
+        /// <param name="pNvDispHandle">Pointer to the NVIDIA display handle of the unattached display.</param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_EnumNvidiaUnAttachedDisplayHandle(int thisEnum, ref UnAttachedDisplayHandle pNvDispHandle)
+        {
+            NVAPI_STATUS status;
+            if (EnumNvidiaUnAttachedDisplayHandleInternal != null) { status = EnumNvidiaUnAttachedDisplayHandleInternal(thisEnum, ref pNvDispHandle); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            return status;
+        }
+
+        // GetAssociatedUnAttachedNvidiaDisplayHandle
+        private delegate NVAPI_STATUS GetAssociatedNvidiaDisplayHandleDelegate(StringBuilder szDisplayName, ref DisplayHandle pNvDispHandle);
+        private static readonly GetAssociatedNvidiaDisplayHandleDelegate GetAssociatedNvidiaDisplayHandleInternal;
+
+        /// <summary>
+        /// This function returns the handle of the NVIDIA display that is associated with the given display "name" (such as "\\.\DISPLAY1").
+        /// </summary>
+        /// <param name="szDisplayName"></param>
+        /// <param name="pNvDispHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GetAssociatedNvidiaDisplayHandle(string szDisplayName, ref DisplayHandle pNvDispHandle)
+        {
+            StringBuilder builder = new StringBuilder((int)NV_SHORT_STRING_MAX);
+            builder.Append(szDisplayName);
+
+            NVAPI_STATUS status;
+            if (GetAssociatedNvidiaDisplayHandleInternal != null) { status = GetAssociatedNvidiaDisplayHandleInternal(builder, ref pNvDispHandle); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            szDisplayName = builder.ToString();
+
+            return status;
+        }
+
+        // GetAssociatedUnAttachedNvidiaDisplayHandle
+        private delegate NVAPI_STATUS GetAssociatedUnAttachedNvidiaDisplayHandleDelegate(StringBuilder szDisplayName, ref UnAttachedDisplayHandle pNvUnAttachedDispHandle);
+        private static readonly GetAssociatedUnAttachedNvidiaDisplayHandleDelegate GetAssociatedUnAttachedNvidiaDisplayHandleInternal;
+
+        /// <summary>
+        /// This function returns the handle of an unattached NVIDIA display that is associated with the given display name (such as "\\DISPLAY1").
+        /// </summary>
+        /// <param name="szDisplayName"></param>
+        /// <param name="pNvUnAttachedDispHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GetAssociatedUnAttachedNvidiaDisplayHandle(string szDisplayName, ref UnAttachedDisplayHandle pNvUnAttachedDispHandle)
+        {
+            StringBuilder builder = new StringBuilder((int)NV_SHORT_STRING_MAX);
+            builder.Append(szDisplayName);
+
+            NVAPI_STATUS status;
+            if (GetAssociatedUnAttachedNvidiaDisplayHandleInternal != null) { status = GetAssociatedUnAttachedNvidiaDisplayHandleInternal(builder, ref pNvUnAttachedDispHandle); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            szDisplayName = builder.ToString();
+
+            Console.WriteLine(pNvUnAttachedDispHandle.ptr);
+
+            return status;
+        }
+        #endregion
     }
+
 }
