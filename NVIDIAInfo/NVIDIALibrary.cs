@@ -107,8 +107,9 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error intialising NVIDIA NVAPI library. NvAPI_Initialize() returned error code {NVStatus}");
                     }
 
-                    string description;
-                    NVStatus = NVImport.NvAPI_GetInterfaceVersionString(out description);
+                    PhysicalGpuHandle[] physicalGpus = new PhysicalGpuHandle[NVImport.NV_MAX_PHYSICAL_GPUS];
+                    uint gpuCount = 0;
+                    NVStatus = NVImport.NvAPI_EnumPhysicalGPUs(ref physicalGpus, out gpuCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         _initialised = true;
