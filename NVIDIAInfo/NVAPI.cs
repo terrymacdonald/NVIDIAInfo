@@ -642,7 +642,9 @@ namespace DisplayMagicianShared.NVIDIA
 
                 // GPUs
                 GetDelegate(NvId_EnumPhysicalGPUs, out EnumPhysicalGPUsInternal);
+                GetDelegate(NvId_GPU_GetQuadroStatus, out GetQuadroStatusInternal);
 
+                // Set the availability
                 available = true;
             }
 
@@ -1669,6 +1671,28 @@ namespace DisplayMagicianShared.NVIDIA
             if (EnumPhysicalGPUsInternal != null) { status = EnumPhysicalGPUsInternal(NvGPUHandle, out retGPUCount); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
             pGPUCount = retGPUCount;
+            return status;
+        }
+
+        // GetQuadroStatus
+        private delegate NVAPI_STATUS GetQuadroStatusDelegate(
+            [In] PhysicalGpuHandle gpuHandle,
+            [Out] out uint status);
+        private static readonly GetQuadroStatusDelegate GetQuadroStatusInternal;
+
+        /// <summary>
+        /// This function retrieves the Quadro status for the GPU (1 if Quadro, 0 if GeForce)
+        /// </summary>
+        /// <param name="NvGPUHandle"></param>
+        /// <param name="pStatus"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GPU_GetQuadroStatus(PhysicalGpuHandle NvGPUHandle, out uint pStatus)
+        {
+            NVAPI_STATUS status;
+            uint retStatus = 0;
+            if (GetQuadroStatusInternal != null) { status = GetQuadroStatusInternal(NvGPUHandle, out retStatus); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            pStatus = retStatus;
             return status;
         }
     }

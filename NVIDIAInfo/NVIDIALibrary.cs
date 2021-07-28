@@ -106,19 +106,7 @@ namespace DisplayMagicianShared.NVIDIA
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error intialising NVIDIA NVAPI library. NvAPI_Initialize() returned error code {NVStatus}");
                     }
-
-                    PhysicalGpuHandle[] physicalGpus = new PhysicalGpuHandle[NVImport.NV_MAX_PHYSICAL_GPUS];
-                    uint gpuCount = 0;
-                    NVStatus = NVImport.NvAPI_EnumPhysicalGPUs(ref physicalGpus, out gpuCount);
-                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                    {
-                        _initialised = true;
-                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was initialised successfully");
-                    }
-                    else
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error intialising NVIDIA NVAPI library. NvAPI_Initialize() returned error code {NVStatus}");
-                    }
+                    
                 }
                 catch (Exception ex)
                 {
@@ -249,7 +237,43 @@ namespace DisplayMagicianShared.NVIDIA
             myDisplayConfig.AdapterConfigs = new List<NVIDIA_ADAPTER_CONFIG>();
 
             if (_initialised)
-            {                
+            {
+
+                PhysicalGpuHandle[] physicalGpus = new PhysicalGpuHandle[NVImport.NV_MAX_PHYSICAL_GPUS];
+                uint gpuCount = 0;
+                NVAPI_STATUS NVStatus = NVImport.NvAPI_EnumPhysicalGPUs(ref physicalGpus, out gpuCount);
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_EnumPhysicalGPUs returned {gpuCount} Physical GPUs");
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting physical GPU count. NvAPI_EnumPhysicalGPUs() returned error code {NVStatus}");
+                }
+
+                //This function retrieves the Quadro status for the GPU (1 if Quadro, 0 if GeForce)
+                uint QuadroStatus = 0;
+                NVStatus = NVImport.NvAPI_GPU_GetQuadroStatus(physicalGpus[0],out QuadroStatus);
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                {
+                    if (QuadroStatus == 0)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is one from the GeForce range");
+                    }
+                    else if (QuadroStatus == 1)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is one from the Quadro range");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is neither a GeForce or Quadro range vodeo card (QuadroStatus = {QuadroStatus})");
+                    }
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error GETTING qUADRO STATUS. NvAPI_GPU_GetQuadroStatus() returned error code {NVStatus}");
+                }
+
                 // We want to get the Windows CCD information and store it for later so that we record
                 // display sizes, and screen positions and the like.
                 //myDisplayConfig.WindowsDisplayConfig = _winLibrary.GetActiveConfig();
