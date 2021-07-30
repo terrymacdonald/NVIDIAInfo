@@ -373,6 +373,15 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                     }
 
+                    for (int row =0; row < mosaicTopoGroup.Topos[0].RowCount; row++)
+                    {
+                        for (int col = 0; col < mosaicTopoGroup.Topos[0].ColCount; col++)
+                        {
+                            NV_MOSAIC_TOPO_GPU_LAYOUT_CELL oneCell = mosaicTopoGroup.Topos[0].GPULayout[row, col];
+                            Console.WriteLine($"Row {row}, Column {col}: {oneCell}");
+                        }
+                    }
+
                 }
                 else
                 {

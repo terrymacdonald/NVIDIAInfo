@@ -665,12 +665,13 @@ namespace DisplayMagicianShared.NVIDIA
     //!
     //! You can then look at the detailed values within the structure.  There are no
     //! entrypoints which take this structure as input (effectively making it read-only).
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_MOSAIC_TOPO_GROUP : IEquatable<NV_MOSAIC_TOPO_GROUP> // Note: Version 1 of NV_MOSAIC_TOPO_GROUP structure
     {
         public uint Version;                        // Version of this structure - MUST BE SET TO 1
         public NV_MOSAIC_TOPO_BRIEF Brief;          //!< The brief details of this topo
         public uint Count;                          //!< Number of topos in array below
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
         public NV_MOSAIC_TOPO_DETAILS[] Topos;      //!< Topo Array with 1 or 2 entries in it
 
         public bool Equals(NV_MOSAIC_TOPO_GROUP other)
@@ -687,7 +688,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_MOSAIC_TOPO_DETAILS : IEquatable<NV_MOSAIC_TOPO_DETAILS> // Note: Version 1 of NV_MOSAIC_TOPO_DETAILS structure
     {
         public uint Version;            // Version of this structure - MUST BE SET TO 1 size is 4
@@ -697,19 +698,19 @@ namespace DisplayMagicianShared.NVIDIA
         public uint RowCount;         //!< Number of displays in a row. size is 4
         public uint ColCount;         //!< Number of displays in a column. size is 4
         //[MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)] // 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)] // 
-        public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[] GPULayout;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64, ArraySubType=UnmanagedType.ByValArray, MarshalTypeRef = typeof(NV_MOSAIC_TOPO_GPU_LAYOUT_CELL))] // 
+        public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[,] GPULayout;
 
-        /*public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[][] GPULayout
+        /*public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[][] Layout
         {
             get
             {
                 var columns = (int)ColCount;
 
-                return GPULayoutRows.Take((int)RowCount).Select(row => row.GPULayoutColumns.Take(columns).ToArray()).ToArray();
+                return GPULayout.Take((int)RowCount).Select(row => row.GPULayoutColumns.Take(columns).ToArray()).ToArray();
             }
-        }
-*/
+        }*/
+
         public bool Equals(NV_MOSAIC_TOPO_DETAILS other)
         => Version == other.Version &&
            LogicalGPUHandle.Equals(other.LogicalGPUHandle) &&
@@ -740,7 +741,7 @@ namespace DisplayMagicianShared.NVIDIA
             return (GPULayoutColumns).GetHashCode();
         }
 
-        *//* public bool SequenceEqual(NV_MOSAIC_TOPO_GPU_LAYOUT[][] other)
+        *//*public bool SequenceEqual(NV_MOSAIC_TOPO_GPU_LAYOUT[][] other)
          => PhysicalGPUHandle.Equals(other.PhysicalGPUHandle) &&
             DisplayOutputId == other.DisplayOutputId &&
              OverlapX == other.OverlapX &&
@@ -748,16 +749,12 @@ namespace DisplayMagicianShared.NVIDIA
 
     }*/
 
-    [StructLayout(LayoutKind.Explicit, Size=18)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct NV_MOSAIC_TOPO_GPU_LAYOUT_CELL : IEquatable<NV_MOSAIC_TOPO_GPU_LAYOUT_CELL>
     {
-        [FieldOffset(0)]
         public PhysicalGpuHandle PhysicalGPUHandle;     //!< Physical GPU to be used in the topology (0 if GPU missing) size is 8
-        [FieldOffset(8)]
         public uint DisplayOutputId;            //!< Connected display target(0 if no display connected) size is 4
-        [FieldOffset(10)]
         public int OverlapX;         //!< Pixels of overlap on left of target: (+overlap, -gap) size is 4
-        [FieldOffset(14)]
         public int OverlapY;         //!< Pixels of overlap on top of target: (+overlap, -gap) size is 4
 
         public bool Equals(NV_MOSAIC_TOPO_GPU_LAYOUT_CELL other)
@@ -2103,12 +2100,15 @@ namespace DisplayMagicianShared.NVIDIA
             pTopoGroup.Topos = new NV_MOSAIC_TOPO_DETAILS[NV_MOSAIC_MAX_TOPO_PER_TOPO_GROUP];
             for (int i = 0; i < NV_MOSAIC_MAX_TOPO_PER_TOPO_GROUP; i++)
             {
-                pTopoGroup.Topos[i].Version = new StructureVersion(NVImport.NV_MOSAIC_TOPO_DETAILS_VER, typeof(NV_MOSAIC_TOPO_DETAILS)).Version;  // set the NV_MOSAIC_TOPO_DETAILS structure version
-                pTopoGroup.Topos[i].GPULayout = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[totalGpuLayoutCount];
-                /*for (int y = 0; y < NVAPI_MAX_MOSAIC_DISPLAY_ROWS; y++)
+                
+                NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[,] gpuLayout = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[NVAPI_MAX_MOSAIC_DISPLAY_ROWS,NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS];
+                pTopoGroup.Topos[i].GPULayout = gpuLayout; 
+                /*for (int y = 0; y < NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS; y++)
                 {
-                    pTopoGroup.Topos[i].GPULayoutRows[y].GPULayoutColumns = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS];
+                    //NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[] gpuColumns = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS];
+                    pTopoGroup.Topos[i].GPULayout[y].GPULayoutColumns = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS]; 
                 }*/
+                pTopoGroup.Topos[i].Version = new StructureVersion(NVImport.NV_MOSAIC_TOPO_DETAILS_VER, typeof(NV_MOSAIC_TOPO_DETAILS)).Version;  // set the NV_MOSAIC_TOPO_DETAILS structure version
             }
 
             if (Mosaic_GetTopoGroupInternal != null) { status = Mosaic_GetTopoGroupInternal(in pTopoBrief, ref pTopoGroup); }
