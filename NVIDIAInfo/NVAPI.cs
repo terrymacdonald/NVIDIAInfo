@@ -687,24 +687,18 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Explicit, Size = 1176)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct NV_MOSAIC_TOPO_DETAILS : IEquatable<NV_MOSAIC_TOPO_DETAILS> // Note: Version 1 of NV_MOSAIC_TOPO_DETAILS structure
     {
-        [FieldOffset(0)]
         public uint Version;            // Version of this structure - MUST BE SET TO 1 size is 4
-        [FieldOffset(4)]
         public LogicalGpuHandle LogicalGPUHandle;     //!< Logical GPU for this topology  size is 8
-        [FieldOffset(12)]
         public uint ValidityMask;            //!< 0 means topology is valid with the current hardware. size is 4
                                              //! If not 0, inspect bits against NV_MOSAIC_TOPO_VALIDITY_*.
-        [FieldOffset(16)]
         public uint RowCount;         //!< Number of displays in a row. size is 4
-        [FieldOffset(20)]
         public uint ColCount;         //!< Number of displays in a column. size is 4
         //[MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)] // 
-        [MarshalAs(UnmanagedType.LPArray, ArraySubType= UnmanagedType.ByValArray, SizeParamIndex= 1, SizeConst = 64)] // 
-        [FieldOffset(24)]
-        public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[,] GPULayout;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)] // 
+        public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[] GPULayout;
 
         /*public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[][] GPULayout
         {
@@ -2110,7 +2104,7 @@ namespace DisplayMagicianShared.NVIDIA
             for (int i = 0; i < NV_MOSAIC_MAX_TOPO_PER_TOPO_GROUP; i++)
             {
                 pTopoGroup.Topos[i].Version = new StructureVersion(NVImport.NV_MOSAIC_TOPO_DETAILS_VER, typeof(NV_MOSAIC_TOPO_DETAILS)).Version;  // set the NV_MOSAIC_TOPO_DETAILS structure version
-                pTopoGroup.Topos[i].GPULayout = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[NVAPI_MAX_MOSAIC_DISPLAY_ROWS, NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS];
+                pTopoGroup.Topos[i].GPULayout = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[totalGpuLayoutCount];
                 /*for (int y = 0; y < NVAPI_MAX_MOSAIC_DISPLAY_ROWS; y++)
                 {
                     pTopoGroup.Topos[i].GPULayoutRows[y].GPULayoutColumns = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS];
