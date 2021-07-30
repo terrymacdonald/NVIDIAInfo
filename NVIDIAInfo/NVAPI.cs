@@ -457,26 +457,26 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential)]
     public struct DisplayHandle
     {
-        private readonly IntPtr ptr;
+        public IntPtr ptr;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct UnAttachedDisplayHandle
     {
-        public readonly IntPtr ptr;
+        public  IntPtr ptr;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct PhysicalGpuHandle
     {
-        private readonly IntPtr ptr;
+        public IntPtr ptr;
     }
 
 
     [StructLayout(LayoutKind.Sequential)]
     public struct LogicalGpuHandle
     {
-        private readonly IntPtr ptr;
+        public IntPtr ptr;
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -699,7 +699,7 @@ namespace DisplayMagicianShared.NVIDIA
         public uint ColCount;         //!< Number of displays in a column. size is 4
         //[MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)] // 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64, ArraySubType=UnmanagedType.ByValArray, MarshalTypeRef = typeof(NV_MOSAIC_TOPO_GPU_LAYOUT_CELL))] // 
-        public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[,] GPULayout;
+        public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[] GPULayout;
 
         /*public NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[][] Layout
         {
@@ -2080,7 +2080,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         // NVAPI_INTERFACE NvAPI_Mosaic_GetTopoGroup(NV_MOSAIC_TOPO_BRIEF* pTopoBrief, NV_MOSAIC_TOPO_GROUP* pTopoGroup)
         private delegate NVAPI_STATUS Mosaic_GetTopoGroupDelegate(
-            [In] in NV_MOSAIC_TOPO_BRIEF pTopoBrief,
+            [In]  NV_MOSAIC_TOPO_BRIEF pTopoBrief,
             [In][Out] ref NV_MOSAIC_TOPO_GROUP pTopoGroup);
         private static readonly Mosaic_GetTopoGroupDelegate Mosaic_GetTopoGroupInternal;
 
@@ -2091,7 +2091,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="pTopoBrief"></param>
         /// <param name="pTopoGroup"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_GetTopoGroup(in NV_MOSAIC_TOPO_BRIEF pTopoBrief, ref NV_MOSAIC_TOPO_GROUP pTopoGroup)
+        public static NVAPI_STATUS NvAPI_Mosaic_GetTopoGroup(NV_MOSAIC_TOPO_BRIEF pTopoBrief, ref NV_MOSAIC_TOPO_GROUP pTopoGroup)
         {
             uint totalGpuLayoutCount = NVAPI_MAX_MOSAIC_DISPLAY_ROWS * NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS;
             NVAPI_STATUS status;
@@ -2101,7 +2101,7 @@ namespace DisplayMagicianShared.NVIDIA
             for (int i = 0; i < NV_MOSAIC_MAX_TOPO_PER_TOPO_GROUP; i++)
             {
                 
-                NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[,] gpuLayout = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[NVAPI_MAX_MOSAIC_DISPLAY_ROWS,NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS];
+                NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[] gpuLayout = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[totalGpuLayoutCount];
                 pTopoGroup.Topos[i].GPULayout = gpuLayout; 
                 /*for (int y = 0; y < NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS; y++)
                 {
@@ -2111,8 +2111,19 @@ namespace DisplayMagicianShared.NVIDIA
                 pTopoGroup.Topos[i].Version = new StructureVersion(NVImport.NV_MOSAIC_TOPO_DETAILS_VER, typeof(NV_MOSAIC_TOPO_DETAILS)).Version;  // set the NV_MOSAIC_TOPO_DETAILS structure version
             }
 
-            if (Mosaic_GetTopoGroupInternal != null) { status = Mosaic_GetTopoGroupInternal(in pTopoBrief, ref pTopoGroup); }
+            if (Mosaic_GetTopoGroupInternal != null) { status = Mosaic_GetTopoGroupInternal(pTopoBrief, ref pTopoGroup); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            /*if (status == NVAPI_STATUS.NVAPI_OK)
+            {                
+
+                for (int i = 0; i < NV_MOSAIC_MAX_TOPO_PER_TOPO_GROUP; i++)                            
+                {
+                    NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[,] gpuLayout = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[NVAPI_MAX_MOSAIC_DISPLAY_ROWS, NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS];
+                    gpuLayout = (NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[])pTopoGroup.Topos[i].GPULayout;
+                }                
+            }*/
+            
 
             return status;
         }

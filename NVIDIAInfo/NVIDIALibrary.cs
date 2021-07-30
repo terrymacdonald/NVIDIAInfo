@@ -339,7 +339,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                     // Get more Mosaic Topology detailed settings
                     NV_MOSAIC_TOPO_GROUP mosaicTopoGroup = new NV_MOSAIC_TOPO_GROUP();
-                    NVStatus = NVImport.NvAPI_Mosaic_GetTopoGroup(in mosaicTopoBrief, ref mosaicTopoGroup);
+                    NVStatus = NVImport.NvAPI_Mosaic_GetTopoGroup(mosaicTopoBrief, ref mosaicTopoGroup);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
@@ -377,7 +377,7 @@ namespace DisplayMagicianShared.NVIDIA
                     {
                         for (int col = 0; col < mosaicTopoGroup.Topos[0].ColCount; col++)
                         {
-                            NV_MOSAIC_TOPO_GPU_LAYOUT_CELL oneCell = mosaicTopoGroup.Topos[0].GPULayout[row, col];
+                            NV_MOSAIC_TOPO_GPU_LAYOUT_CELL oneCell = mosaicTopoGroup.Topos[0].GPULayout[0];
                             Console.WriteLine($"Row {row}, Column {col}: {oneCell}");
                         }
                     }
