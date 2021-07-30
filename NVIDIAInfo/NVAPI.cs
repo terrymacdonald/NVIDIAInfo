@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Text;
 using FARPROC = System.IntPtr;
@@ -351,6 +352,106 @@ namespace DisplayMagicianShared.NVIDIA
         NV_TIMING_OVRRIDE_MAX,
     }
 
+
+    //
+    //! This is a complete list of supported Mosaic topologies.
+    //!
+    //! Using a "Basic" topology combines multiple monitors to create a single desktop.
+    //!
+    //! Using a "Passive" topology combines multiples monitors to create a passive stereo desktop.
+    //! In passive stereo, two identical topologies combine - one topology is used for the right eye and the other identical //! topology (targeting different displays) is used for the left eye.  \n  
+    //! NOTE: common\inc\nvEscDef.h shadows a couple PASSIVE_STEREO enums.  If this
+    //!       enum list changes and effects the value of NV_MOSAIC_TOPO_BEGIN_PASSIVE_STEREO
+    //!       please update the corresponding value in nvEscDef.h
+    public enum NV_MOSAIC_TOPO : uint
+    {
+        NV_MOSAIC_TOPO_NONE,
+
+        // 'BASIC' topos start here
+        //
+        // The result of using one of these Mosaic topos is that multiple monitors
+        // will combine to create a single desktop.
+        //
+        NV_MOSAIC_TOPO_BEGIN_BASIC,
+        NV_MOSAIC_TOPO_1x2_BASIC = NV_MOSAIC_TOPO_BEGIN_BASIC,
+        NV_MOSAIC_TOPO_2x1_BASIC,
+        NV_MOSAIC_TOPO_1x3_BASIC,
+        NV_MOSAIC_TOPO_3x1_BASIC,
+        NV_MOSAIC_TOPO_1x4_BASIC,
+        NV_MOSAIC_TOPO_4x1_BASIC,
+        NV_MOSAIC_TOPO_2x2_BASIC,
+        NV_MOSAIC_TOPO_2x3_BASIC,
+        NV_MOSAIC_TOPO_2x4_BASIC,
+        NV_MOSAIC_TOPO_3x2_BASIC,
+        NV_MOSAIC_TOPO_4x2_BASIC,
+        NV_MOSAIC_TOPO_1x5_BASIC,
+        NV_MOSAIC_TOPO_1x6_BASIC,
+        NV_MOSAIC_TOPO_7x1_BASIC,
+
+        // Add padding for 10 more entries. 6 will be enough room to specify every
+        // possible topology with 8 or fewer displays, so this gives us a little
+        // extra should we need it.
+        NV_MOSAIC_TOPO_END_BASIC = NV_MOSAIC_TOPO_7x1_BASIC + 9,
+
+        // 'PASSIVE_STEREO' topos start here
+        //
+        // The result of using one of these Mosaic topos is that multiple monitors
+        // will combine to create a single PASSIVE STEREO desktop.  What this means is
+        // that there will be two topos that combine to create the overall desktop.
+        // One topo will be used for the left eye, and the other topo (of the
+        // same rows x cols), will be used for the right eye.  The difference between
+        // the two topos is that different GPUs and displays will be used.
+        //
+        NV_MOSAIC_TOPO_BEGIN_PASSIVE_STEREO,    // value shadowed in nvEscDef.h
+        NV_MOSAIC_TOPO_1x2_PASSIVE_STEREO = NV_MOSAIC_TOPO_BEGIN_PASSIVE_STEREO,
+        NV_MOSAIC_TOPO_2x1_PASSIVE_STEREO,
+        NV_MOSAIC_TOPO_1x3_PASSIVE_STEREO,
+        NV_MOSAIC_TOPO_3x1_PASSIVE_STEREO,
+        NV_MOSAIC_TOPO_1x4_PASSIVE_STEREO,
+        NV_MOSAIC_TOPO_4x1_PASSIVE_STEREO,
+        NV_MOSAIC_TOPO_2x2_PASSIVE_STEREO,
+        NV_MOSAIC_TOPO_END_PASSIVE_STEREO = NV_MOSAIC_TOPO_2x2_PASSIVE_STEREO + 4,
+
+
+        //
+        // Total number of topos.  Always leave this at the end of the enumeration.
+        //
+        NV_MOSAIC_TOPO_MAX  //! Total number of topologies.
+
+    }
+
+    // From Soroush Falahati's NVAPIWrapper
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct StructureVersion
+    {
+        private readonly uint _version;
+
+        public uint Version
+        {
+            get => _version;
+        }
+
+        public int VersionNumber
+        {
+            get => (int)(_version >> 16);
+        }
+
+        public int StructureSize
+        {
+            get => (int)(_version & ~(0xFFFF << 16));
+        }
+
+        public StructureVersion(int version, Type structureType)
+        {
+            _version = (uint)(Marshal.SizeOf(structureType) | (version << 16));
+        }
+
+        public override string ToString()
+        {
+            return $"Structure Size: {StructureSize} Bytes, Version: {VersionNumber}";
+        }
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct DisplayHandle
     {
@@ -518,6 +619,51 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_MOSAIC_TOPO_BRIEF : IEquatable<NV_MOSAIC_TOPO_BRIEF> // Note: Version 1 of NV_MOSAIC_TOPO_BRIEF structure
+    {
+        public uint Version;            // Version of this structure - MUST BE SET TO 1
+        public NV_MOSAIC_TOPO Topo;     //!< The topology
+        public uint Enabled;            //!< 1 if topo is enabled, else 0
+        public uint IsPossible;         //!< 1 if topo *can* be enabled, else 0
+
+        public bool Equals(NV_MOSAIC_TOPO_BRIEF other)
+        => Version == other.Version &&
+           Topo.Equals(other.Topo) &&
+           Enabled == other.Enabled &&
+           IsPossible == other.IsPossible ;
+
+        public override int GetHashCode()
+        {
+            return (Version, Topo, Enabled, IsPossible).GetHashCode();
+        }
+
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_MOSAIC_DISPLAY_SETTING : IEquatable<NV_MOSAIC_DISPLAY_SETTING> // Note: Version 2 of NV_MOSAIC_DISPLAY_SETTING structure
+    {
+        public uint Version;            // Version of this structure - MUST BE SET TO 2
+        public uint Width;              //!< Per-display width
+        public uint Height;             //!< Per-display height
+        public uint Bpp;                //!< Bits per pixel
+        public uint Freq;               //!< Display frequency
+        public uint Rrx1k;              //!< Display frequency in x1k
+
+        public bool Equals(NV_MOSAIC_DISPLAY_SETTING other)
+        => Version == other.Version &&
+           Width == other.Width &&
+           Height == other.Height &&
+           Bpp == other.Bpp &&
+           Freq == other.Freq &&
+           Rrx1k == other.Rrx1k;
+
+        public override int GetHashCode()
+        {
+            return (Version, Width, Height, Bpp, Freq, Rrx1k).GetHashCode();
+        }
+    }
+
     static class NVImport
     {
 
@@ -545,7 +691,28 @@ namespace DisplayMagicianShared.NVIDIA
         public const uint NV_SYSTEM_HWBC_INVALID_ID = 0xffffffff;
         public const uint NV_SYSTEM_MAX_DISPLAYS = NV_MAX_PHYSICAL_GPUS * NV_MAX_HEADS;
         public const uint NV_SYSTEM_MAX_HWBCS = 128;
+        public const uint NV_MOSAIC_DISPLAY_SETTINGS_MAX = 40;
+        public const uint NV_MOSAIC_TOPO_IDX_DEFAULT = 0;
+        public const uint NV_MOSAIC_TOPO_IDX_LEFT_EYE = 0;
+        public const uint NV_MOSAIC_TOPO_IDX_RIGHT_EYE = 1;
+        public const uint NV_MOSAIC_TOPO_NUM_EYES = 2;
+        public const uint NVAPI_MAX_MOSAIC_DISPLAY_ROWS = 8;
+        public const uint NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS = 8;
+        //
+        // These bits are used to describe the validity of a topo.
+        //
+        public const uint NV_MOSAIC_TOPO_VALIDITY_VALID = 0x00000000;  //!< The topology is valid
+        public const uint NV_MOSAIC_TOPO_VALIDITY_MISSING_GPU = 0x00000001;  //!< Not enough SLI GPUs were found to fill the entire
+                                                                             //! topology. hPhysicalGPU will be 0 for these.
+        public const uint NV_MOSAIC_TOPO_VALIDITY_MISSING_DISPLAY = 0x00000002;  //!< Not enough displays were found to fill the entire
+                                                                                 //! topology. displayOutputId will be 0 for these.
+        public const uint NV_MOSAIC_TOPO_VALIDITY_MIXED_DISPLAY_TYPES = 0x00000004;  //!< The topoogy is only possible with displays of the same
+        //! NV_GPU_OUTPUT_TYPE. Check displayOutputIds to make
+        //! sure they are all CRTs, or all DFPs.
 
+        // Version Constants
+        public const int NV_MOSAIC_TOPO_BRIEF_VER = 1; // We're using structure version 1
+        public const int NV_MOSAIC_DISPLAY_SETTING_VER = 2; // We're using structure version 2
 
         #region Internal Constant
         /// <summary> Nvapi64_FileName </summary>
@@ -644,6 +811,10 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_EnumPhysicalGPUs, out EnumPhysicalGPUsInternal);
                 GetDelegate(NvId_GPU_GetQuadroStatus, out GetQuadroStatusInternal);
 
+                // Mosaic
+                GetDelegate(NvId_Mosaic_GetCurrentTopo, out Mosaic_GetCurrentTopoInternal);
+                
+
                 // Set the availability
                 available = true;
             }
@@ -740,6 +911,35 @@ namespace DisplayMagicianShared.NVIDIA
 
             return bigInteger;
         }
+
+        /*public static class Utils
+        {
+            public static int SizeOf<T>(T obj)
+            {
+                return SizeOfCache<T>.SizeOf;
+            }
+
+            private static class SizeOfCache<T>
+            {
+                public static readonly int SizeOf;
+
+                static SizeOfCache()
+                {
+                    var dm = new DynamicMethod("func", typeof(int),
+                                               Type.EmptyTypes, typeof(Utils));
+
+                    ILGenerator il = dm.GetILGenerator();
+                    il.Emit(OpCodes.Sizeof, typeof(T));
+                    il.Emit(OpCodes.Ret);
+
+                    var func = (Func<int>)dm.CreateDelegate(typeof(Func<int>));
+                    SizeOf = func();
+                }
+            }
+        }*/
+
+
+        
         #endregion
 
 
@@ -1695,6 +1895,41 @@ namespace DisplayMagicianShared.NVIDIA
             pStatus = retStatus;
             return status;
         }
-    }
 
+
+        // NVAPI_INTERFACE NvAPI_Mosaic_GetCurrentTopo(NV_MOSAIC_TOPO_BRIEF* pTopoBrief, NV_MOSAIC_DISPLAY_SETTING* pDisplaySetting, NvS32* pOverlapX, NvS32* pOverlapY);
+        // GetQuadroStatus
+        private delegate NVAPI_STATUS Mosaic_GetCurrentTopoDelegate(
+            [In][Out] ref NV_MOSAIC_TOPO_BRIEF pTopoBrief,
+            [In][Out] ref NV_MOSAIC_DISPLAY_SETTING pDisplaySetting,
+            [Out] out int pOverlapX,
+            [Out] out int pOverlapY);
+        private static readonly Mosaic_GetCurrentTopoDelegate Mosaic_GetCurrentTopoInternal;
+
+        /// <summary>
+        ///  This API returns information for the current Mosaic topology. This includes topology, display settings, and overlap values.
+        ///  You can call NvAPI_Mosaic_GetTopoGroup() with the topology if you require more information. If there isn't a current topology, then pTopoBrief->topo will be NV_MOSAIC_TOPO_NONE.
+        /// </summary>
+        /// <param name="pTopoBrief"></param>
+        /// <param name="pDisplaySetting"></param>
+        /// <param name="pOverlapX"></param>
+        /// <param name="pOverlapY"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Mosaic_GetCurrentTopo(ref NV_MOSAIC_TOPO_BRIEF pTopoBrief, ref NV_MOSAIC_DISPLAY_SETTING pDisplaySetting, out int pOverlapX, out int pOverlapY)
+        {
+            NVAPI_STATUS status;
+            pOverlapX = 0;
+            pOverlapY = 0;
+            pTopoBrief = new NV_MOSAIC_TOPO_BRIEF();
+            pTopoBrief.Version = new StructureVersion(NVImport.NV_MOSAIC_TOPO_BRIEF_VER, typeof(NV_MOSAIC_TOPO_BRIEF)).Version; // set the structure version
+            pDisplaySetting = new NV_MOSAIC_DISPLAY_SETTING();
+            pDisplaySetting.Version =  new StructureVersion(NVImport.NV_MOSAIC_DISPLAY_SETTING_VER, typeof(NV_MOSAIC_DISPLAY_SETTING)).Version;  // set the structure version
+            
+            if (Mosaic_GetCurrentTopoInternal != null) { status = Mosaic_GetCurrentTopoInternal(ref pTopoBrief, ref pDisplaySetting, out pOverlapX, out pOverlapY ); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+    }    
 }

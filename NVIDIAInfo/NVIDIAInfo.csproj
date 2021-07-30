@@ -73,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CCD.cs" />
+    <Compile Include="ExtensionMethods.cs" />
     <Compile Include="NVAPI.cs" />
     <Compile Include="NVIDIALibrary.cs" />
     <Compile Include="PInvokeDelegateFactory.cs" />
