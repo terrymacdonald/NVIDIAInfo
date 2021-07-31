@@ -393,25 +393,19 @@ namespace DisplayMagicianShared.NVIDIA
                     // Get Current Mosaic Grid settings
                     NV_MOSAIC_GRID_TOPO mosaicGridTopo = new NV_MOSAIC_GRID_TOPO();
                     mosaicGridTopo.displays = new NV_MOSAIC_GRID_TOPO_DISPLAY[mosaicGridCount];
-                    for (int i = 0; i < mosaicGridCount; i++)
+                    /*for (int i = 0; i < mosaicGridCount; i++)
                     {
                         mosaicGridTopo.displays[i].Version = (uint)Marshal.SizeOf(mosaicGridTopo.displays[i]) | 0x20000;
-                    }
+                    }*/
                     // Now set the version as it's the different size 
                     
                     int sizeOfMosaicGridTopo = Marshal.SizeOf(mosaicGridTopo);
                     int sizeOfMosaicGridTopoDisplays = Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_DISPLAY))*(int)mosaicGridCount;
                     int sizeOfMosaicGridTopoDisplaySettings = Marshal.SizeOf(mosaicGridTopo.displaySettings);
                     int totalSize = sizeOfMosaicGridTopo + sizeOfMosaicGridTopoDisplays + sizeOfMosaicGridTopoDisplaySettings;
-                    mosaicGridTopo.Version = (uint)Marshal.SizeOf(mosaicGridTopo) | 0x10000;
+                    mosaicGridTopo.Version = NVImport.NV_MOSAIC_GRID_TOPO_VER;
 
-                    NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(mosaicGridTopo, ref mosaicGridCount);
-                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
-                    }                    
-                    
-                    NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(mosaicGridTopo, ref mosaicGridCount);
+                    NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopo, ref mosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");

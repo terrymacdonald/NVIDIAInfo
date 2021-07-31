@@ -468,32 +468,32 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }*/
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct DisplayHandle
     {
         public IntPtr ptr;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct UnAttachedDisplayHandle
     {
         public  IntPtr ptr;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct PhysicalGpuHandle
     {
         public IntPtr ptr;
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct LogicalGpuHandle
     {
         public IntPtr ptr;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct NV_TIMINGEXT
     {
         public uint flag;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
@@ -502,11 +502,11 @@ namespace DisplayMagicianShared.NVIDIA
         public uint aspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
         public ushort rep;           //!< Bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
         public uint status;        //!< Timing standard
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (int)NVImport.NVAPI_UNICODE_STRING_MAX)]
         public string name;      //!< Timing name
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_TIMING
     {
         // VESA scan out timing parameters:
@@ -532,7 +532,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_POSITION
     {
         public int x;
@@ -540,7 +540,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_RESOLUTION
     {
         public uint width;
@@ -548,7 +548,7 @@ namespace DisplayMagicianShared.NVIDIA
         public uint colorDepth;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_VIEWPORTF
     {
         public float x;    //!<  x-coordinate of the viewport top-left point
@@ -557,7 +557,7 @@ namespace DisplayMagicianShared.NVIDIA
         public float h;    //!<  Height of the viewport
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO
     {
         public uint version;
@@ -594,7 +594,7 @@ namespace DisplayMagicianShared.NVIDIA
                                       //!< tweak this value for HDTV, stereo, etc., before reporting it to the OS.
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2
     {
         public uint  displayId;  //!< Display ID
@@ -602,7 +602,7 @@ namespace DisplayMagicianShared.NVIDIA
         public uint targetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_INFO_V2
     {
         public uint Version;
@@ -617,7 +617,7 @@ namespace DisplayMagicianShared.NVIDIA
                                      //!< type, type casted to void *.
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1
     {
         public NV_RESOLUTION resolution;
@@ -632,7 +632,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO
     {
         public uint displayId;  //!< Display ID
@@ -641,7 +641,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_MOSAIC_TOPO_BRIEF : IEquatable<NV_MOSAIC_TOPO_BRIEF> // Note: Version 1 of NV_MOSAIC_TOPO_BRIEF structure
     {
         public uint Version;            // Version of this structure - MUST BE SET TO 1
@@ -702,7 +702,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_MOSAIC_TOPO_DETAILS : IEquatable<NV_MOSAIC_TOPO_DETAILS> // Note: Version 1 of NV_MOSAIC_TOPO_DETAILS structure
     {
         public uint Version;            // Version of this structure - MUST BE SET TO 1 size is 4
@@ -764,7 +764,7 @@ namespace DisplayMagicianShared.NVIDIA
 
     }*/
 
-    [StructLayout(LayoutKind.Sequential ,Size=32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_MOSAIC_TOPO_GPU_LAYOUT_CELL : IEquatable<NV_MOSAIC_TOPO_GPU_LAYOUT_CELL>
     {
         public PhysicalGpuHandle PhysicalGPUHandle;     //!< Physical GPU to be used in the topology (0 if GPU missing) size is 8
@@ -791,7 +791,7 @@ namespace DisplayMagicianShared.NVIDIA
 
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_MOSAIC_DISPLAY_SETTING : IEquatable<NV_MOSAIC_DISPLAY_SETTING> // Note: Version 2 of NV_MOSAIC_DISPLAY_SETTING structure
     {
         public uint Version;            // Version of this structure - MUST BE SET TO 2
@@ -815,7 +815,7 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
-    [StructLayout(LayoutKind.Sequential ,Pack =8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_MOSAIC_GRID_TOPO : IEquatable<NV_MOSAIC_GRID_TOPO> // Note: Version 2 of NV_MOSAIC_GRID_TOPO structure
     {
         public uint Version;            // Version of this structure - MUST BE SET TO 2
@@ -849,8 +849,30 @@ namespace DisplayMagicianShared.NVIDIA
             return (Version, Rows, Columns, DisplayCount, Flags, displays, displaySettings).GetHashCode();
         }
     }
-    
-    [StructLayout(LayoutKind.Sequential, Pack =8)]
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_MOSAIC_GRID_TOPO_DISPLAY : IEquatable<NV_MOSAIC_GRID_TOPO_DISPLAY> // Note: Version 1 of NV_MOSAIC_GRID_TOPO_DISPLAY structure
+    {
+        public uint DisplayId;              //!< DisplayID of the display
+        public int OverlapX;             //!< (+overlap, -gap)
+        public int OverlapY;                //!< (+overlap, -gap)
+        public NV_ROTATE Rotation;                //!< Rotation of display
+        public uint CloneGroup;                //!< Reserved, must be 0
+
+        public bool Equals(NV_MOSAIC_GRID_TOPO_DISPLAY other)
+        => DisplayId == other.DisplayId &&
+           OverlapX == other.OverlapX &&
+           OverlapY == other.OverlapY &&
+           Rotation == other.Rotation &&
+           CloneGroup == other.CloneGroup;
+
+        public override int GetHashCode()
+        {
+            return (DisplayId, OverlapX, OverlapY, Rotation, CloneGroup).GetHashCode();
+        }
+    }
+
+    /*[StructLayout(LayoutKind.Sequential, Pack=8)]
     public struct NV_MOSAIC_GRID_TOPO_DISPLAY : IEquatable<NV_MOSAIC_GRID_TOPO_DISPLAY> // Note: Version 2 of NV_MOSAIC_GRID_TOPO_DISPLAY structure
     {
         public uint Version;            // Version of this structure - MUST BE SET TO 2
@@ -875,7 +897,7 @@ namespace DisplayMagicianShared.NVIDIA
             return (Version, DisplayId, OverlapX, OverlapY, Rotation, CloneGroup, PixelShiftType).GetHashCode();
         }
     }
-
+*/
     static class NVImport
     {
 
@@ -910,6 +932,14 @@ namespace DisplayMagicianShared.NVIDIA
         public const uint NV_MOSAIC_TOPO_NUM_EYES = 2;
         public const uint NVAPI_MAX_MOSAIC_DISPLAY_ROWS = 8;
         public const uint NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS = 8;
+        public const uint NVAPI_GENERIC_STRING_MAX = 4096;
+        public const uint NVAPI_LONG_STRING_MAX = 256;
+        public const uint NVAPI_SHORT_STRING_MAX = 64;
+        public const uint NVAPI_MAX_PHYSICAL_GPUS = 64;
+        public const uint NVAPI_UNICODE_STRING_MAX = 2048;
+        public const uint NVAPI_BINARY_DATA_MAX = 4096;
+        public const uint NVAPI_SETTING_MAX_VALUES = 100;
+        
         //
         //! This defines the maximum number of topos that can be in a topo group.
         //! At this time, it is set to 2 because our largest topo group (passive
@@ -931,22 +961,62 @@ namespace DisplayMagicianShared.NVIDIA
         //! sure they are all CRTs, or all DFPs.
 
         // Version Constants
-        public static readonly uint NV_MOSAIC_TOPO_BRIEF_VER = (uint)Marshal.SizeOf(typeof(NV_MOSAIC_TOPO_BRIEF)) | 0x10000;// We're using structure version 1
+        public static uint NV_MOSAIC_TOPO_BRIEF_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_TOPO_BRIEF>(1);
+        public static uint NV_MOSAIC_DISPLAY_SETTING_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_DISPLAY_SETTING>(2);
+        public static uint NV_MOSAIC_TOPO_GROUP_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_TOPO_GROUP>(1);
+        public static uint NV_MOSAIC_TOPO_DETAILS_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_TOPO_DETAILS>(1);
+        public static uint NV_MOSAIC_GRID_TOPO_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO>(2);
+        public static uint NV_MOSAIC_GRID_TOPO_DISPLAY_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO_DISPLAY>(1);
+        /*//public static readonly uint NV_MOSAIC_TOPO_BRIEF_VER = (uint)Marshal.SizeOf(typeof(NV_MOSAIC_TOPO_BRIEF)) | 0x10000;// We're using structure version 1
         public static readonly uint NV_MOSAIC_DISPLAY_SETTING_VER = (uint)Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_SETTING)) | 0x20000;// We're using structure version 2
         public static readonly uint NV_MOSAIC_TOPO_GROUP_VER = (uint)Marshal.SizeOf(typeof(NV_MOSAIC_TOPO_GROUP)) | 0x10000;// We're using structure version 1
         public static readonly uint NV_MOSAIC_TOPO_DETAILS_VER = (uint)Marshal.SizeOf(typeof(NV_MOSAIC_TOPO_DETAILS)) | 0x10000;// We're using structure version 1
         public static readonly uint NV_MOSAIC_GRID_TOPO_VER = (uint)Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO)) | 0x20000;// We're using structure version 2
-        public static readonly uint NV_MOSAIC_GRID_TOPO_DISPLAY_VER = (uint)Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_DISPLAY)) | 0x20000;// We're using structure version 2        
+        public static readonly uint NV_MOSAIC_GRID_TOPO_DISPLAY_VER = (uint)Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_DISPLAY)) | 0x20000;// We're using structure version 2        */
 
         #region Internal Constant
         /// <summary> Nvapi64_FileName </summary>
         public const string NVAPI_DLL = @"nvapi64.dll";
         /// <summary> Kernel32_FileName </summary>
         //public const string Kernel32_FileName = "kernel32.dll";
+
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr LoadLibrary(String dllname);
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetProcAddress(IntPtr hModule, String procname);
         #endregion Internal Constant
 
+        private static uint MAKE_NVAPI_VERSION<T>(int version)
+        {
+            return (UInt32)((Marshal.SizeOf(typeof(T))) | (int)(version << 16));
+        }       
+
+        private static void GetDelegate<T>(uint id, out T newDelegate) where T : class
+        {
+            IntPtr ptr = QueryInterface(id);
+            if (ptr != IntPtr.Zero)
+            {
+                newDelegate = Marshal.GetDelegateForFunctionPointer(ptr, typeof(T)) as T;
+            }
+            else
+            {
+                newDelegate = null;
+            }
+        }
+
+        private static T GetDelegateOfFunction<T>(IntPtr pLib, string signature)
+        {
+            T FuncT = default(T);
+            IntPtr FuncAddr = GetProcAddress(pLib, signature);
+            if (FuncAddr != IntPtr.Zero)
+                FuncT = (T)(object)Marshal.GetDelegateForFunctionPointer(FuncAddr, typeof(T));
+            return FuncT;
+        }
+
         #region DLLImport
-        
+
         /*[DllImport(Kernel32_FileName)]
         public static extern HMODULE GetModuleHandle(string moduleName);*/
 
@@ -993,10 +1063,10 @@ namespace DisplayMagicianShared.NVIDIA
 
         #region Defines
 
-        
+
         #endregion
 
-        
+
 
         #region Initialization code
         private static bool available = false;
@@ -1048,19 +1118,6 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
             AppDomain.CurrentDomain.ProcessExit += NVImport.OnExit;
-        }
-
-        private static void GetDelegate<T>(uint id, out T newDelegate) where T : class
-        {
-            IntPtr ptr = QueryInterface(id);
-            if (ptr != IntPtr.Zero)
-            {
-                newDelegate = Marshal.GetDelegateForFunctionPointer(ptr, typeof(T)) as T;
-            }
-            else
-            {
-                newDelegate = null;
-            }
         }
 
         private static string GetDllName()
@@ -2127,7 +2184,7 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayGrids(__inout_ecount_part_opt*,* pGridCount NV_MOSAIC_GRID_TOPO* pGridTopologies,__inout NvU32 * 	pGridCount)
         // NvAPIMosaic_EnumDisplayGrids
         private delegate NVAPI_STATUS Mosaic_EnumDisplayGridsDelegate(
-            [In][Out] NV_MOSAIC_GRID_TOPO pGridTopologies,
+            [In][Out] IntPtr pGridTopologies,
             [In][Out] ref uint pGridCount);            
         private static readonly Mosaic_EnumDisplayGridsDelegate Mosaic_EnumDisplayGridsInternal;
 
@@ -2140,12 +2197,43 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="pOverlapX"></param>
         /// <param name="pOverlapY"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayGrids(NV_MOSAIC_GRID_TOPO pGridTopologies, ref uint pGridCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayGrids(ref NV_MOSAIC_GRID_TOPO GridTopologies, ref uint GridCount)
         {
             NVAPI_STATUS status;
-            
-            if (Mosaic_EnumDisplayGridsInternal != null) { status = Mosaic_EnumDisplayGridsInternal(pGridTopologies, ref pGridCount); }
-            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            /*IntPtr pGridTopologies;
+            NativeArrayHelper.SetArrayItemData(GridTopologies, out pGridTopologies);
+            try
+            {
+                if (Mosaic_EnumDisplayGridsInternal != null) { status = Mosaic_EnumDisplayGridsInternal(pGridTopologies, ref GridCount); }
+                else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+                GridTopologies = NativeArrayHelper.GetArrayItemData<NV_MOSAIC_GRID_TOPO>(pGridTopologies);
+                //GridTopologies = (NV_MOSAIC_GRID_TOPO)Marshal.PtrToStructure(pGridTopologies,typeof(NV_MOSAIC_GRID_TOPO));
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(pGridTopologies);
+            }
+*/
+            int sizeOfBuffer = Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO)) + (Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO)) * (int)GridCount);
+            var GridTopologiesBuffer = Marshal.AllocHGlobal(sizeOfBuffer);
+            try
+            {
+                GridTopologies.displays = new NV_MOSAIC_GRID_TOPO_DISPLAY[(int)GridCount];
+                /*for (int i = 0; i < NV_MAX_DISPLAYS; i++)
+                {
+                    GridTopologies.displays[i].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_VER;
+                }*/
+                GridTopologies.Version = NVImport.NV_MOSAIC_GRID_TOPO_VER;
+                Marshal.StructureToPtr(GridTopologies, GridTopologiesBuffer, true);
+                if (Mosaic_EnumDisplayGridsInternal != null) { status = Mosaic_EnumDisplayGridsInternal(GridTopologiesBuffer, ref GridCount); }
+                else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+                GridTopologies = (NV_MOSAIC_GRID_TOPO)Marshal.PtrToStructure(GridTopologiesBuffer, typeof(NV_MOSAIC_GRID_TOPO));
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(GridTopologiesBuffer);
+            }
 
             return status;
         }
