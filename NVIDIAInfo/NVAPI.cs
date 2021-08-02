@@ -1138,7 +1138,8 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_EnumPhysicalGPUs, out EnumPhysicalGPUsInternal);
                 GetDelegate(NvId_GPU_GetQuadroStatus, out GetQuadroStatusInternal);
 
-                // Mosaic
+                // Mosaic                
+                GetDelegate(NvId_Mosaic_EnableCurrentTopo, out Mosaic_EnableCurrentTopoInternal);
                 GetDelegate(NvId_Mosaic_SetCurrentTopo, out Mosaic_SetCurrentTopoInternal);
                 GetDelegate(NvId_Mosaic_GetCurrentTopo, out Mosaic_GetCurrentTopoInternal);
                 //GetDelegate(NvId_Mosaic_GetTopoGroup, out Mosaic_GetTopoGroupInternal);
@@ -2337,6 +2338,28 @@ namespace DisplayMagicianShared.NVIDIA
             pDisplaySetting.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V2_VER;
 
             if (Mosaic_GetSupportedTopoInfoInternal != null) { status = Mosaic_GetSupportedTopoInfoInternal(ref pTopoBrief, ref pDisplaySetting, out pOverlapX, out pOverlapY); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_Mosaic_EnableCurrentTopo(NvU32 enable)	
+        private delegate NVAPI_STATUS Mosaic_EnableCurrentTopoDelegate(
+            [In] UInt32 enable);
+        private static readonly Mosaic_EnableCurrentTopoDelegate Mosaic_EnableCurrentTopoInternal;
+
+        /// <summary>
+        ///  This API enables or disables the current Mosaic topology based on the setting of the incoming 'enable' parameter.
+        ///  An "enable" setting enables the current(previously set) Mosaic topology.Note that when the current Mosaic topology is retrieved, it must have an isPossible value of 1 or an error will occur.
+        ///  A "disable" setting disables the current Mosaic topology. The topology information will persist, even across reboots.To re-enable the Mosaic topology, call this function again with the enable parameter set to 1.
+        /// </summary>
+        /// <param name="enable"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Mosaic_EnableCurrentTopo(UInt32 enable)
+        {
+            NVAPI_STATUS status;
+
+            if (Mosaic_EnableCurrentTopoInternal != null) { status = Mosaic_EnableCurrentTopoInternal(enable); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;

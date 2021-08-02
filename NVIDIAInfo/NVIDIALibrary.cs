@@ -780,12 +780,12 @@ namespace DisplayMagicianShared.NVIDIA
                 // We want to check the NVIDIA Surround (Mosaic) config is valid
                 SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Testing whether the display configuration is valid");
                 // 
-                if (displayConfig.MosaicConfig.IsMosaicEnabled && currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
+                if (displayConfig.MosaicConfig.IsMosaicEnabled)
                 {
-                    // We are on a Mosaic profile now, and we need to change to another Mosaic profile
-                    // We need to change the Mosaic Topology
+                    // We are either on a Mosaic profile now or not, but either way we need to change to another Mosaic profile
+                    // We need to apply the new Mosaic Topology
 
-                    // Set the current display
+                    // Set the current display config mosaic topology
                     uint enable = 1;
                     NVStatus = NVImport.NvAPI_Mosaic_SetCurrentTopo(ref currentDisplayConfig.MosaicConfig.MosaicTopologyBrief, ref currentDisplayConfig.MosaicConfig.MosaicDisplaySettings, currentDisplayConfig.MosaicConfig.OverlapX, currentDisplayConfig.MosaicConfig.OverlapY, enable);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
@@ -829,20 +829,59 @@ namespace DisplayMagicianShared.NVIDIA
                     else
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                    }
+                    }                   
 
-                    
-
-                }
-                else if (displayConfig.MosaicConfig.IsMosaicEnabled && !currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
-                {
-                    // We are on a non-Mosaic profile now, and we need to change to a Mosaic profile
-                    // We need to enable the Mosaic Topology
-                }
+                }                
                 else if (!displayConfig.MosaicConfig.IsMosaicEnabled && currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
                 {
                     // We are on a Mosaic profile now, and we need to change to a non-Mosaic profile
                     // We need to disable the Mosaic Topology
+
+                    // Turn off Mosaic
+                    uint enable = 0;
+                    NVStatus = NVImport.NvAPI_Mosaic_EnableCurrentTopo(enable);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_TOPO_NOT_POSSIBLE)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology passed in is not currently possible. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: There was an error disabling the display mode. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
                 }
                 else if (!displayConfig.MosaicConfig.IsMosaicEnabled && !currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
                 {
@@ -853,6 +892,93 @@ namespace DisplayMagicianShared.NVIDIA
                 // We want to set the NVIDIA HDR settings
 
                 // We want to apply the Windows CCD layout info and HDR
+
+                /*// Get the all possible windows display configs
+                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Generating a list of all the current display configs");
+                WINDOWS_DISPLAY_CONFIG allWindowsDisplayConfig = WinLibrary.GetWindowsDisplayConfig(QDC.QDC_ALL_PATHS);
+
+                // Now we go through the Paths to update the LUIDs as per Soroush's suggestion
+                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Patching the adapter IDs to make the saved config valid");
+                PatchAdapterIDs(ref displayConfig, allWindowsDisplayConfig.displayAdapters);
+
+                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Testing whether the display configuration is valid");
+                // Test whether a specified display configuration is supported on the computer                    
+                uint myPathsCount = (uint)displayConfig.displayConfigPaths.Length;
+                uint myModesCount = (uint)displayConfig.displayConfigModes.Length;
+                WIN32STATUS err = CCDImport.SetDisplayConfig(myPathsCount, displayConfig.displayConfigPaths, myModesCount, displayConfig.displayConfigModes, SDC.DISPLAYMAGICIAN_VALIDATE);
+                if (err == WIN32STATUS.ERROR_SUCCESS)
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Successfully validated that the display configuration supplied would work!");
+                }
+                else
+                {
+                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: ERROR - SetDisplayConfig couldn't validate the display configuration supplied. This display configuration wouldn't work.");
+                    return false;
+                }
+
+                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Yay! The display configuration is valid! Attempting to set the Display Config now");
+                // Now set the specified display configuration for this computer                    
+                err = CCDImport.SetDisplayConfig(myPathsCount, displayConfig.displayConfigPaths, myModesCount, displayConfig.displayConfigModes, SDC.DISPLAYMAGICIAN_SET);
+                if (err == WIN32STATUS.ERROR_SUCCESS)
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Successfully set the display configuration to the settings supplied!");
+                }
+                else
+                {
+                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: ERROR - SetDisplayConfig couldn't set the display configuration using the settings supplied. Something is wrong.");
+                    throw new NVIDIALibraryException($"SetDisplayConfig couldn't set the display configuration using the settings supplied. Something is wrong.");
+                }
+
+                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: SUCCESS! The display configuration has been successfully applied");
+
+                foreach (ADVANCED_HDR_INFO_PER_PATH myHDRstate in displayConfig.displayHDRStates)
+                {
+                    SharedLogger.logger.Trace($"Trying to get information whether HDR color is in use now on Display {myHDRstate.Id}.");
+                    // Get advanced HDR info
+                    var colorInfo = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
+                    colorInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
+                    colorInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
+                    colorInfo.Header.AdapterId = myHDRstate.AdapterId;
+                    colorInfo.Header.Id = myHDRstate.Id;
+                    err = CCDImport.DisplayConfigGetDeviceInfo(ref colorInfo);
+                    if (err == WIN32STATUS.ERROR_SUCCESS)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Advanced Color Info gathered from Display {myHDRstate.Id}");
+
+                        if (myHDRstate.AdvancedColorInfo.AdvancedColorSupported && colorInfo.AdvancedColorEnabled != myHDRstate.AdvancedColorInfo.AdvancedColorEnabled)
+                        {
+                            SharedLogger.logger.Trace($"HDR is available for use on Display {myHDRstate.Id}, and we want it set to {myHDRstate.AdvancedColorInfo.AdvancedColorEnabled} but is currently {colorInfo.AdvancedColorEnabled}.");
+
+                            var setColorState = new DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE();
+                            setColorState.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+                            setColorState.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE>();
+                            setColorState.Header.AdapterId = myHDRstate.AdapterId;
+                            setColorState.Header.Id = myHDRstate.Id;
+                            setColorState.EnableAdvancedColor = myHDRstate.AdvancedColorInfo.AdvancedColorEnabled;
+                            err = CCDImport.DisplayConfigSetDeviceInfo(ref setColorState);
+                            if (err == WIN32STATUS.ERROR_SUCCESS)
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: SUCCESS! Set HDR successfully to {myHDRstate.AdvancedColorInfo.AdvancedColorEnabled} on Display {myHDRstate.Id}");
+                            }
+                            else
+                            {
+                                SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: ERROR - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to set the HDR settings for display #{myHDRstate.Id}");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Skipping setting HDR on Display {myHDRstate.Id} as it does not support HDR");
+                        }
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out if HDR is supported for display #{myHDRstate.Id}");
+                    }
+
+                }*/
+                
+
             }
             else
             {
@@ -861,90 +987,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
 
-            // Get the all possible windows display configs
-            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Generating a list of all the current display configs");
-            WINDOWS_DISPLAY_CONFIG allWindowsDisplayConfig = WinLibrary.GetWindowsDisplayConfig(QDC.QDC_ALL_PATHS);
-
-            // Now we go through the Paths to update the LUIDs as per Soroush's suggestion
-            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Patching the adapter IDs to make the saved config valid");
-            PatchAdapterIDs(ref displayConfig, allWindowsDisplayConfig.displayAdapters);
-
-            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Testing whether the display configuration is valid");
-            // Test whether a specified display configuration is supported on the computer                    
-            uint myPathsCount = (uint)displayConfig.displayConfigPaths.Length;
-            uint myModesCount = (uint)displayConfig.displayConfigModes.Length;
-            WIN32STATUS err = CCDImport.SetDisplayConfig(myPathsCount, displayConfig.displayConfigPaths, myModesCount, displayConfig.displayConfigModes, SDC.DISPLAYMAGICIAN_VALIDATE);
-            if (err == WIN32STATUS.ERROR_SUCCESS)
-            {
-                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Successfully validated that the display configuration supplied would work!");
-            }
-            else
-            {
-                SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: ERROR - SetDisplayConfig couldn't validate the display configuration supplied. This display configuration wouldn't work.");
-                return false;
-            }
-
-            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Yay! The display configuration is valid! Attempting to set the Display Config now");
-            // Now set the specified display configuration for this computer                    
-            err = CCDImport.SetDisplayConfig(myPathsCount, displayConfig.displayConfigPaths, myModesCount, displayConfig.displayConfigModes, SDC.DISPLAYMAGICIAN_SET);
-            if (err == WIN32STATUS.ERROR_SUCCESS)
-            {
-                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Successfully set the display configuration to the settings supplied!");
-            }
-            else
-            {
-                SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: ERROR - SetDisplayConfig couldn't set the display configuration using the settings supplied. Something is wrong.");
-                throw new NVIDIALibraryException($"SetDisplayConfig couldn't set the display configuration using the settings supplied. Something is wrong.");
-            }
-
-            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: SUCCESS! The display configuration has been successfully applied");
-
-            foreach (ADVANCED_HDR_INFO_PER_PATH myHDRstate in displayConfig.displayHDRStates)
-            {
-                SharedLogger.logger.Trace($"Trying to get information whether HDR color is in use now on Display {myHDRstate.Id}.");
-                // Get advanced HDR info
-                var colorInfo = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
-                colorInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
-                colorInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
-                colorInfo.Header.AdapterId = myHDRstate.AdapterId;
-                colorInfo.Header.Id = myHDRstate.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref colorInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Advanced Color Info gathered from Display {myHDRstate.Id}");
-
-                    if (myHDRstate.AdvancedColorInfo.AdvancedColorSupported && colorInfo.AdvancedColorEnabled != myHDRstate.AdvancedColorInfo.AdvancedColorEnabled)
-                    {
-                        SharedLogger.logger.Trace($"HDR is available for use on Display {myHDRstate.Id}, and we want it set to {myHDRstate.AdvancedColorInfo.AdvancedColorEnabled} but is currently {colorInfo.AdvancedColorEnabled}.");
-
-                        var setColorState = new DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE();
-                        setColorState.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-                        setColorState.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE>();
-                        setColorState.Header.AdapterId = myHDRstate.AdapterId;
-                        setColorState.Header.Id = myHDRstate.Id;
-                        setColorState.EnableAdvancedColor = myHDRstate.AdvancedColorInfo.AdvancedColorEnabled;
-                        err = CCDImport.DisplayConfigSetDeviceInfo(ref setColorState);
-                        if (err == WIN32STATUS.ERROR_SUCCESS)
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: SUCCESS! Set HDR successfully to {myHDRstate.AdvancedColorInfo.AdvancedColorEnabled} on Display {myHDRstate.Id}");
-                        }
-                        else
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: ERROR - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to set the HDR settings for display #{myHDRstate.Id}");
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Skipping setting HDR on Display {myHDRstate.Id} as it does not support HDR");
-                    }
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out if HDR is supported for display #{myHDRstate.Id}");
-                }
-
-            }*/
+            
             return true;
         }
 
