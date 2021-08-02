@@ -45,6 +45,8 @@ namespace DisplayMagicianShared.NVIDIA
         public bool IsMosaicEnabled;
         public NV_MOSAIC_TOPO_BRIEF MosaicTopologyBrief;
         public NV_MOSAIC_DISPLAY_SETTING_V2 MosaicDisplaySettings;
+        public Int32 OverlapX;
+        public Int32 OverlapY;
         public NV_MOSAIC_GRID_TOPO_V2 MosaicGridTopo;
         public NV_RECT[] MosaicViewports;
 
@@ -339,6 +341,8 @@ namespace DisplayMagicianShared.NVIDIA
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Mosaic is enabled.");
                     myDisplayConfig.MosaicConfig.MosaicTopologyBrief = mosaicTopoBrief;
                     myDisplayConfig.MosaicConfig.MosaicDisplaySettings = mosaicDisplaySettings;
+                    myDisplayConfig.MosaicConfig.OverlapX = mosaicOverlapX;
+                    myDisplayConfig.MosaicConfig.OverlapY = mosaicOverlapY;
                     myDisplayConfig.MosaicConfig.IsMosaicEnabled = true;
 
                     // Get more Mosaic Topology detailed settings
@@ -769,105 +773,82 @@ namespace DisplayMagicianShared.NVIDIA
             if (_initialised)
             {
 
-                NVAPI_STATUS NVStatus = 0;
+                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
                 // We want to get the current config
-                //NVIDIA_DISPLAY_CONFIG currentDisplayConfig = GetNVIDIADisplayConfig(QDC.QDC_ALL_PATHS);
+                NVIDIA_DISPLAY_CONFIG currentDisplayConfig = GetNVIDIADisplayConfig();
 
-                // We want to check the NVIDIA Eyefinity (SLS) config is valid
+                // We want to check the NVIDIA Surround (Mosaic) config is valid
                 SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Testing whether the display configuration is valid");
-                //ADL2_Display_SLSMapConfig_Valid(ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLSLSMap slsMap, int iNumDisplayTarget, ADLSLSTarget * lpSLSTarget, int * lpSupportedSLSLayoutImageMode, int * lpReasonForNotSupportSLS, int iOption)
-                foreach(var adapter in displayConfig.AdapterConfigs)
+                // 
+                if (displayConfig.MosaicConfig.IsMosaicEnabled && currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
                 {
-                    // set the display locations
-                    if (adapter.IsSLSEnabled)
+                    // We are on a Mosaic profile now, and we need to change to another Mosaic profile
+                    // We need to change the Mosaic Topology
+
+                    // Set the current display
+                    uint enable = 1;
+                    NVStatus = NVImport.NvAPI_Mosaic_SetCurrentTopo(ref currentDisplayConfig.MosaicConfig.MosaicTopologyBrief, ref currentDisplayConfig.MosaicConfig.MosaicDisplaySettings, currentDisplayConfig.MosaicConfig.OverlapX, currentDisplayConfig.MosaicConfig.OverlapY, enable);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
-                        // Turn the SLS based display map on
-                        //NVStatus = NVImport.ADL2_Display_SLSMapConfig_SetState(_adlContextHandle, adapter.AdapterIndex, adapter.SLSMapIndex, NVImport.ADL_TRUE);
-                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: ADL2_Display_SLSMapConfig_SetState successfully set the SLSMAP with index {adapter.SLSMapIndex} to TRUE for adapter {adapter.AdapterIndex}.");
-                        }
-                        else
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: ERROR - ADL2_Display_SLSMapConfig_SetState returned NVAPI_STATUS {NVStatus} when trying to set the SLSMAP with index {adapter.SLSMapIndex} to TRUE for adapter {adapter.AdapterIndex}.");
-                            throw new NVIDIALibraryException($"ADL2_Display_SLSMapConfig_SetState returned NVAPI_STATUS {NVStatus} when trying to set the SLSMAP with index {adapter.SLSMapIndex} to TRUE for adapter {adapter.AdapterIndex}");
-                        }
-/*
-
-                        foreach (var slsMap in adapter.SLSMap)
-                        {
-                            // Check the SLS config is valid
-                            int numDisplayTargets = 0;
-                            int supportedSLSLayoutImageMode = 0;
-                            int reasonForNotSupportingSLS = 0;
-                            ADL_DISPLAY_TARGET[] displayTargetArray = { new ADL_DISPLAY_TARGET() };
-                            IntPtr displayTargetBuffer = IntPtr.Zero;
-                            int option = NVImport.ADL_DISPLAY_SLSGRID_CAP_OPTION_RELATIVETO_LANDSCAPE;
-                            NVStatus = NVImport.ADL2_Display_SLSMapConfig_Valid(_adlContextHandle, adapter.AdapterIndex, slsMap, slsMap.NumSLSTarget, displayTargetArray, out supportedSLSLayoutImageMode, out reasonForNotSupportingSLS, option);
-                            if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: ADL2_Display_SLSMapConfig_Valid confirmed the SLS configuration is valid for NVIDIA adapter {adapter.AdapterIndex}.");
-                            }
-                            else
-                            {
-                                SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: ERROR - ADL2_Display_SLSMapConfig_Valid returned NVAPI_STATUS {NVStatus} when trying to validate the SLS configuration for NVIDIA adapter {adapter.AdapterIndex} in the computer.");
-                                throw new NVIDIALibraryException($"ADL2_Display_SLSMapConfig_Valid returned NVAPI_STATUS {NVStatus}when trying to validate the SLS configuration for NVIDIA adapter {adapter.AdapterIndex} in the computer");
-                            }
-
-                            if (numDisplayTargets > 0)
-                            {
-                                IntPtr currentDisplayTargetBuffer = displayTargetBuffer;
-                                displayTargetArray = new ADL_DISPLAY_TARGET[numDisplayTargets];
-                                for (int i = 0; i < numDisplayTargets; i++)
-                                {
-                                    // build a structure in the array slot
-                                    displayTargetArray[i] = new ADL_DISPLAY_TARGET();
-                                    // fill the array slot structure with the data from the buffer
-                                    displayTargetArray[i] = (ADL_DISPLAY_TARGET)Marshal.PtrToStructure(currentDisplayTargetBuffer, typeof(ADL_DISPLAY_TARGET));
-                                    // destroy the bit of memory we no longer need
-                                    Marshal.DestroyStructure(currentDisplayTargetBuffer, typeof(ADL_DISPLAY_TARGET));
-                                    // advance the buffer forwards to the next object
-                                    currentDisplayTargetBuffer = (IntPtr)((long)currentDisplayTargetBuffer + Marshal.SizeOf(displayTargetArray[i]));
-                                }
-                                // Free the memory used by the buffer                        
-                                Marshal.FreeCoTaskMem(displayTargetBuffer);
-                            }
-                        }*/
-                        
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
                     }
-                    /*else
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
                     {
-                        *//*// Do the non-SLS based display setup
-                        NVIDIA_ADAPTER_CONFIG NVIDIAAdapterConfig = adapter;
-                        //int numPossibleMapResult = 0;
-                        //IntPtr possibleMapResultBuffer = IntPtr.Zero;
-                        NVStatus = NVImport.ADL2_Display_DisplayMapConfig_Set(_adlContextHandle, NVIDIAAdapterConfig.AdapterIndex, NVIDIAAdapterConfig.DisplayMaps.Length, NVIDIAAdapterConfig.DisplayMaps, NVIDIAAdapterConfig.DisplayTargets.Length, NVIDIAAdapterConfig.DisplayTargets);
-                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: ADL2_Display_DisplayMapConfig_Set returned information about all displaytargets connected to NVIDIA adapter {NVIDIAAdapterConfig.AdapterIndex}.");
-                        }
-                        else
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: ERROR - ADL2_Display_DisplayMapConfig_Get returned NVAPI_STATUS {NVStatus} when trying to get the display target info from NVIDIA adapter {NVIDIAAdapterConfig.AdapterIndex} in the computer.");
-                            throw new NVIDIALibraryException($"ADL2_Display_DisplayMapConfig_Get returned NVAPI_STATUS {NVStatus} when trying to get the display target info from NVIDIA adapter {NVIDIAAdapterConfig.AdapterIndex} in the computer");
-                        }*//*
-                    }*/
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_TOPO_NOT_POSSIBLE)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology passed in is not currently possible. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: There was an error changing the display mode. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
                     else
                     {
-                        // Turn the SLS based display map off
-                        //NVStatus = NVImport.ADL2_Display_SLSMapConfig_SetState(_adlContextHandle, adapter.AdapterIndex, adapter.SLSMapIndex, NVImport.ADL_FALSE);
-                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: ADL2_Display_SLSMapConfig_SetState successfully set the SLSMAP with index {adapter.SLSMapIndex} to FALSE for adapter {adapter.AdapterIndex}.");
-                        }
-                        else
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: ERROR - ADL2_Display_SLSMapConfig_SetState returned NVAPI_STATUS {NVStatus} when trying to set the SLSMAP with index {adapter.SLSMapIndex} to FALSE for adapter {adapter.AdapterIndex}.");
-                            throw new NVIDIALibraryException($"ADL2_Display_SLSMapConfig_SetState returned NVAPI_STATUS {NVStatus} when trying to set the SLSMAP with index {adapter.SLSMapIndex} to FALSE for adapter {adapter.AdapterIndex}");
-                        }
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                     }
 
-                }                
+                    
+
+                }
+                else if (displayConfig.MosaicConfig.IsMosaicEnabled && !currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
+                {
+                    // We are on a non-Mosaic profile now, and we need to change to a Mosaic profile
+                    // We need to enable the Mosaic Topology
+                }
+                else if (!displayConfig.MosaicConfig.IsMosaicEnabled && currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
+                {
+                    // We are on a Mosaic profile now, and we need to change to a non-Mosaic profile
+                    // We need to disable the Mosaic Topology
+                }
+                else if (!displayConfig.MosaicConfig.IsMosaicEnabled && !currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
+                {
+                    // We are on a non-Mosaic profile now, and we are chaning to a non-Mosaic profile
+                    // so there is nothing to do as far as NVIDIA is concerned!
+                }
 
                 // We want to set the NVIDIA HDR settings
 
@@ -880,10 +861,9 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
 
-/*
             // Get the all possible windows display configs
             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Generating a list of all the current display configs");
-            WINDOWS_DISPLAY_CONFIG allWindowsDisplayConfig = GetWindowsDisplayConfig(QDC.QDC_ALL_PATHS);
+            WINDOWS_DISPLAY_CONFIG allWindowsDisplayConfig = WinLibrary.GetWindowsDisplayConfig(QDC.QDC_ALL_PATHS);
 
             // Now we go through the Paths to update the LUIDs as per Soroush's suggestion
             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Patching the adapter IDs to make the saved config valid");

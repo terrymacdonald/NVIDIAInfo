@@ -1139,6 +1139,7 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_GPU_GetQuadroStatus, out GetQuadroStatusInternal);
 
                 // Mosaic
+                GetDelegate(NvId_Mosaic_SetCurrentTopo, out Mosaic_SetCurrentTopoInternal);
                 GetDelegate(NvId_Mosaic_GetCurrentTopo, out Mosaic_GetCurrentTopoInternal);
                 //GetDelegate(NvId_Mosaic_GetTopoGroup, out Mosaic_GetTopoGroupInternal);
                 GetDelegate(NvId_Mosaic_GetSupportedTopoInfo, out Mosaic_GetSupportedTopoInfoInternal);
@@ -2336,6 +2337,38 @@ namespace DisplayMagicianShared.NVIDIA
             pDisplaySetting.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V2_VER;
 
             if (Mosaic_GetSupportedTopoInfoInternal != null) { status = Mosaic_GetSupportedTopoInfoInternal(ref pTopoBrief, ref pDisplaySetting, out pOverlapX, out pOverlapY); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_Mosaic_SetCurrentTopo ( NV_MOSAIC_TOPO_BRIEF * pTopoBrief, NV_MOSAIC_DISPLAY_SETTING* pDisplaySetting, NvS32 overlapX, NvS32 overlapY, NvU32 enable)	
+        // NvAPI_Mosaic_SetCurrentTopo
+        private delegate NVAPI_STATUS Mosaic_SetCurrentTopoDelegate(
+            [In] ref NV_MOSAIC_TOPO_BRIEF topoBrief,
+            [In] ref NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting,
+            [In] Int32 overlapX,
+            [In] Int32 overlapY,
+            [In] UInt32 enable);
+        private static readonly Mosaic_SetCurrentTopoDelegate Mosaic_SetCurrentTopoInternal;
+
+        /// <summary>
+        ///  This API sets the Mosaic topology and performs a mode switch using the given display settings.
+        ///  If NVAPI_OK is returned, the current Mosaic topology was set correctly. Any other status returned means the topology was not set, and remains what it was before this function was called.
+        /// </summary>
+        /// <param name="topoBrief"></param>
+        /// <param name="displaySetting"></param>
+        /// <param name="overlapX"></param>
+        /// <param name="overlapY"></param>
+        /// <param name="enable"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Mosaic_SetCurrentTopo(ref NV_MOSAIC_TOPO_BRIEF topoBrief, ref NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting, Int32 overlapX, Int32 overlapY, UInt32 enable)
+        {
+            NVAPI_STATUS status;
+            topoBrief.Version = NVImport.NV_MOSAIC_TOPO_BRIEF_VER;
+            displaySetting.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V2_VER;
+
+            if (Mosaic_SetCurrentTopoInternal != null) { status = Mosaic_SetCurrentTopoInternal(ref topoBrief, ref displaySetting, overlapX, overlapY, enable); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;
