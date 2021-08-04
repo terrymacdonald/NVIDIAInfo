@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 namespace DisplayMagicianShared.NVIDIA
 {
 
+
+
     internal class NativeArrayHelper
     {
         public static T GetArrayItemData<T>(IntPtr sourcePointer)
