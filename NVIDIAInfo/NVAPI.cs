@@ -488,6 +488,62 @@ namespace DisplayMagicianShared.NVIDIA
         NV_PIXEL_SHIFT_TYPE_2x2_BOTTOM_LEFT_PIXELS = 8,          //!< This display will be used to scanout bottom left pixels in 2x2 PixelShift configuration
     }
 
+    public enum NV_HDR_CMD : UInt32
+    {
+        NV_HDR_CMD_GET = 0,                             //!< Get current HDR output configuration
+        NV_HDR_CMD_SET = 1                              //!< Set HDR output configuration
+    }
+    
+
+    public enum NV_HDR_MODE : UInt32
+    {
+        // Official production-ready HDR modes
+        NV_HDR_MODE_OFF = 0,            //!< Turn off HDR
+        NV_HDR_MODE_UHDA = 2,            //!< Source: CCCS [a.k.a FP16 scRGB, linear, sRGB primaries, [-65504,0, 65504] range, RGB(1,1,1) = 80nits]  Output : UHDA HDR [a.k.a HDR10, RGB/YCC 10/12bpc ST2084(PQ) EOTF RGB(1,1,1) = 10000 nits, Rec2020 color primaries, ST2086 static HDR metadata]. This is the only supported production HDR mode.
+
+        // Experimental
+        NV_HDR_MODE_UHDA_PASSTHROUGH = 5,            //!< Experimental mode only, not for production! Source: HDR10 RGB 10bpc Output: HDR10 RGB 10 bpc - signal UHDA HDR mode (PQ + Rec2020) to the sink but send source pixel values unmodified (no PQ or Rec2020 conversions) - assumes source is already in HDR10 format.
+        NV_HDR_MODE_DOLBY_VISION = 7,            //!< Experimental mode only, not for production! Source: RGB8 Dolby Vision encoded (12 bpc YCbCr422 packed into RGB8) Output: Dolby Vision encoded : Application is to encoded frames in DV format and embed DV dynamic metadata as described in Dolby Vision specification.
+
+        // Unsupported/obsolete HDR modes
+        NV_HDR_MODE_EDR = 3,            //!< Do not use! Internal test mode only, to be removed. Source: CCCS (a.k.a FP16 scRGB) Output : EDR (Extended Dynamic Range) - HDR content is tonemapped and gamut mapped to output on regular SDR display set to max luminance ( ~300 nits ).
+        NV_HDR_MODE_SDR = 4,            //!< Do not use! Internal test mode only, to be removed. Source: any Output: SDR (Standard Dynamic Range), we continuously send SDR EOTF InfoFrame signaling, HDMI compliance testing.
+        NV_HDR_MODE_UHDA_NB = 6,            //!< Do not use! Internal test mode only, to be removed. Source: CCCS (a.k.a FP16 scRGB) Output : notebook HDR
+        NV_HDR_MODE_UHDBD = 2             //!< Do not use! Obsolete, to be removed. NV_HDR_MODE_UHDBD == NV_HDR_MODE_UHDA, reflects obsolete pre-UHDA naming convention.
+
+    }
+
+    public enum NV_COLOR_FORMAT : UInt32
+    {
+        NV_COLOR_FORMAT_RGB = 0,
+        NV_COLOR_FORMAT_YUV422,
+        NV_COLOR_FORMAT_YUV444,
+        NV_COLOR_FORMAT_YUV420,
+
+        NV_COLOR_FORMAT_DEFAULT = 0xFE,
+        NV_COLOR_FORMAT_AUTO = 0xFF
+    }
+    
+
+    public enum NV_DYNAMIC_RANGE : UInt32
+    {
+        NV_DYNAMIC_RANGE_VESA = 0x0,
+        NV_DYNAMIC_RANGE_CEA = 0x1,
+
+        NV_DYNAMIC_RANGE_AUTO = 0xFF
+    }
+
+
+    public enum NV_BPC : UInt32
+    {
+        NV_BPC_DEFAULT = 0,
+        NV_BPC_6 = 1,
+        NV_BPC_8 = 2,
+        NV_BPC_10 = 3,
+        NV_BPC_12 = 4,
+        NV_BPC_16 = 5,
+    }    
+
     [Flags]
     public enum NV_HDR_CAPABILITIES_V2_FLAGS : UInt32
     {
@@ -1135,6 +1191,73 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_HDR_COLOR_DATA_V2 : IEquatable<NV_HDR_COLOR_DATA_V2>
+    {
+        public UInt32 Version;                                 //!< Version of this structure
+        public NV_HDR_CMD Cmd;                                     //!< Command get/set
+        public NV_HDR_MODE HdrMode;                                 //!< HDR mode
+        public NV_STATIC_METADATA_DESCRIPTOR_ID StaticMetadataDescriptorId;           //!< Static Metadata Descriptor Id (0 for static metadata type 1)
+        public NV_HDR_COLOR_DISPLAY_DATA MasteringDisplayData; //!< Static Metadata Descriptor Type 1, CEA-861.3, SMPTE ST2086
+        public NV_COLOR_FORMAT HdrColorFormat;                                     //!< Optional, One of NV_COLOR_FORMAT enum values, if set it will apply requested color format for HDR session
+        public NV_DYNAMIC_RANGE HdrDynamicRange;                                    //!< Optional, One of NV_DYNAMIC_RANGE enum values, if set it will apply requested dynamic range for HDR session
+        public NV_BPC HdrBpc;                                             //!< Optional, One of NV_BPC enum values, if set it will apply requested color depth
+                                                               //!< Dolby Vision mode: DV supports specific combinations of colorformat, dynamic range and bpc. Please refer Dolby Vision specification.
+                                                               //!<                    If invalid or no combination is passed driver will force default combination of RGB format + full range + 8bpc.
+                                                               //!< HDR mode: These fields are ignored in hdr mode
+
+        public bool Equals(NV_HDR_COLOR_DATA_V2 other)
+            => Version == other.Version &&
+               Cmd == other.Cmd &&
+               HdrMode == other.HdrMode &&
+               StaticMetadataDescriptorId == other.StaticMetadataDescriptorId &&
+               MasteringDisplayData.Equals(other.MasteringDisplayData) &&
+               HdrColorFormat == other.HdrColorFormat &&
+                HdrDynamicRange == other.HdrDynamicRange &&
+                HdrBpc == other.HdrBpc;
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, Cmd, HdrMode, StaticMetadataDescriptorId, MasteringDisplayData, HdrColorFormat, HdrDynamicRange, HdrBpc).GetHashCode();
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NV_HDR_COLOR_DISPLAY_DATA : IEquatable<NV_HDR_COLOR_DISPLAY_DATA>
+    {
+        public UInt16 DisplayPrimaryX0;
+        public UInt16 DisplayPrimaryY0;
+        public UInt16 DisplayPrimaryX1;
+        public UInt16 DisplayPrimaryY1;
+        public UInt16 DisplayPrimaryX2;
+        public UInt16 DisplayPrimaryY2;
+        public UInt16 DisplayWhitePointX;
+        public UInt16 DisplayWhitePointY;
+        public UInt16 MaxDisplayMasteringLuminance;
+        public UInt16 MinDisplayMasteringLuminance;
+        public UInt16 MaxContentLightLevel;
+        public UInt16 MaxFrameAverageLightLevel;
+
+        public bool Equals(NV_HDR_COLOR_DISPLAY_DATA other)
+        => DisplayPrimaryX0 == other.DisplayPrimaryX0 &&
+           DisplayPrimaryY0 == other.DisplayPrimaryY0 &&
+           DisplayPrimaryX1 == other.DisplayPrimaryX1 &&
+           DisplayPrimaryY1 == other.DisplayPrimaryY1 &&
+           DisplayPrimaryX2 == other.DisplayPrimaryX2 &&
+           DisplayPrimaryY2 == other.DisplayPrimaryY2 &&
+            DisplayWhitePointX == other.DisplayWhitePointX &&
+            DisplayWhitePointY == other.DisplayWhitePointY &&
+            MaxDisplayMasteringLuminance == other.MaxDisplayMasteringLuminance &&
+            MinDisplayMasteringLuminance == other.MinDisplayMasteringLuminance &&
+            MaxContentLightLevel == other.MaxContentLightLevel &&
+            MaxFrameAverageLightLevel == other.MaxFrameAverageLightLevel;
+
+        public override Int32 GetHashCode()
+        {
+            return (DisplayPrimaryX0, DisplayPrimaryY0, DisplayPrimaryX1, DisplayPrimaryY1, DisplayPrimaryX2, DisplayPrimaryY2, DisplayWhitePointX, DisplayWhitePointY,
+                    DisplayWhitePointX, DisplayWhitePointY, MaxDisplayMasteringLuminance, MinDisplayMasteringLuminance, MaxContentLightLevel, MaxFrameAverageLightLevel).GetHashCode();
+        }
+    }
 
     static class NVImport
     {
@@ -1200,7 +1323,8 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO_DISPLAY_V2>(2);
         public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V1>(1);
         public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V2>(2);
-
+        public static UInt32 NV_HDR_COLOR_DATA_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_COLOR_DATA_V2>(2);
+        public static UInt32 NV_HDR_CAPABILITIES_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_CAPABILITIES_V2>(2);       
 
 
         #region Internal Constant
@@ -1330,8 +1454,8 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_GetAssociatedNvidiaDisplayHandle, out GetAssociatedNvidiaDisplayHandleInternal);
                 GetDelegate(NvId_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle, out GetAssociatedUnAttachedNvidiaDisplayHandleInternal);
                 GetDelegate(NvId_DISP_GetGDIPrimaryDisplayId, out DISP_GetGDIPrimaryDisplayIdInternal);
-                GetDelegate(NvId_DISP_GetGDIPrimaryDisplayId, out DISP_GetGDIPrimaryDisplayIdInternal);
-
+                GetDelegate(NvId_Disp_GetHdrCapabilities, out Disp_GetHdrCapabilitiesInternal);
+                GetDelegate(NvId_Disp_HdrColorControl, out Disp_HdrColorControlInternal);                
 
                 // GPUs
                 GetDelegate(NvId_EnumPhysicalGPUs, out EnumPhysicalGPUsInternal);
@@ -2767,7 +2891,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static NVAPI_STATUS NvAPI_Disp_GetHdrCapabilities(UInt32 displayId, ref NV_HDR_CAPABILITIES_V2 pHdrCapabilities)
         {
             NVAPI_STATUS status;
-
+            pHdrCapabilities.Version = NVImport.NV_HDR_CAPABILITIES_V2_VER;
             if (Disp_GetHdrCapabilitiesInternal != null) { status = Disp_GetHdrCapabilitiesInternal(displayId, ref pHdrCapabilities); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
@@ -2775,6 +2899,24 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
 
-        //NvAPI_Disp_HdrColorControl
+        //NVAPI_INTERFACE NvAPI_Disp_HdrColorControl(__in NvU32 displayId, __inout NV_HDR_COLOR_DATA *pHdrColorData);
+        private delegate NVAPI_STATUS Disp_HdrColorControlDelegate(
+            [In] UInt32 displayId,
+            [In][Out] ref NV_HDR_COLOR_DATA_V2 pHdrColorData);
+        private static readonly Disp_HdrColorControlDelegate Disp_HdrColorControlInternal;
+        /// <summary>
+        //!  This API gets High Dynamic Range (HDR) capabilities of the display.
+        /// <param name="displayId"></param>
+        /// <param name="pHdrCapabilities"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Disp_HdrColorControl(UInt32 displayId, ref NV_HDR_COLOR_DATA_V2 pHdrColorData)
+        {
+            NVAPI_STATUS status;
+            pHdrColorData.Version = NVImport.NV_HDR_COLOR_DATA_V2_VER;
+            if (Disp_HdrColorControlInternal != null) { status = Disp_HdrColorControlInternal(displayId, ref pHdrColorData); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
     }
 }
