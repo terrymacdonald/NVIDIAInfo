@@ -62,9 +62,13 @@ namespace NVIDIAInfo
 
             // First check that we have an NVIDIA Video Card in this PC
             List<string> videoCardVendors = WinLibrary.GetLibrary().GetCurrentPCIVideoCardVendors();
-            if (!NVIDIALibrary.GetLibrary().PCIVendorIDs.All(value => videoCardVendors.Contains(value))){
+            if (!NVIDIALibrary.GetLibrary().PCIVendorIDs.All(value => videoCardVendors.Contains(value)))
+            {
                 SharedLogger.logger.Error($"NVIDIAInfo/Main: There are no NVIDIA Video Cards enabled within this computer. NVIDIAInfo requires at least one NVIDIA Video Card to work. Please use DisplayMagician instead.");
-                throw new ApplicationException ($"There are no NVIDIA Video Cards enabled within this computer. NVIDIAInfo requires at least one NVIDIA Video Card to work. Please use DisplayMagician instead.");
+                Console.WriteLine($"ERROR - There are no NVIDIA Video Cards enabled within this computer. NVIDIAInfo requires at least one NVIDIA Video Card to work.");
+                Console.WriteLine($"        Please use DisplayMagician instead. See https://displaymagician.littlebitbig.com for more information.");
+                Console.WriteLine();
+                Environment.Exit(1);
             }
 
             if (args.Length > 0)
@@ -265,16 +269,32 @@ namespace NVIDIAInfo
                 {
                     if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                     {
-                        SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
-                        Console.WriteLine($"Attempting to apply display config from {filename}");
+                        SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
+                        Console.WriteLine($"Attempting to apply NVIDIA display config from {filename}");
                         NVIDIALibrary.GetLibrary().SetActiveConfig(myDisplayConfig.NVIDIAConfig);
-                        SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The display settings within {filename} were successfully applied.");
-                        Console.WriteLine($"Display config successfully applied");
+                        SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} were successfully applied.");
+                        Console.WriteLine($"NVIDIA Display config successfully applied");
+
+                        // If the NVIDIA profile is applied properly, then we try to do the sme for the Windows CCD display config
+                        if (WinLibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.WindowsConfig))
+                        {
+                            SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
+                            Console.WriteLine($"Attempting to apply Windows CCD display config from {filename}");
+                            WinLibrary.GetLibrary().SetActiveConfig(myDisplayConfig.WindowsConfig);
+                            SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} were successfully applied.");
+                            Console.WriteLine($"Windows CCD Display config successfully applied");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"ERROR - NVIDIA display configuration is possible, but cannot apply the Windows CCD display config in {filename} as it is not currently possible to use it.");
+                            SharedLogger.logger.Error($"NVIDIAInfo/loadFromFile: ERROR - NVIDIA display configuration is possible, but cannot apply the Windows CCD display config in {filename} as it is not currently possible to use it.");
+                        }
+
                     }
                     else
                     {
-                        Console.WriteLine($"NVIDIAInfo/loadFromFile: ERROR - Cannot apply the display config in {filename} as it is not currently possible to use it.");
-                        SharedLogger.logger.Error($"NVIDIAInfo/loadFromFile: ERROR - Cannot apply the display config in {filename} as it is not currently possible to use it.");
+                        Console.WriteLine($"ERROR - Cannot apply the NVIDIA display config in {filename} as it is not currently possible to use it.");
+                        SharedLogger.logger.Error($"NVIDIAInfo/loadFromFile: ERROR - Cannot apply the NVIDIA display config in {filename} as it is not currently possible to use it.");
                     }
                 }
                 else
@@ -286,7 +306,7 @@ namespace NVIDIAInfo
             }
             else
             {
-                Console.WriteLine($"NVIDIAInfo/loadFromFile: ERROR - The {filename} profile JSON file exists but is empty! So we're going to treat it as if it didn't exist.");
+                Console.WriteLine($"ERROR - The {filename} profile JSON file exists but is empty! So we're going to treat it as if it didn't exist.");
                 SharedLogger.logger.Error($"NVIDIAInfo/loadFromFile: The {filename} profile JSON file exists but is empty! So we're going to treat it as if it didn't exist.");
             }
         }
@@ -330,7 +350,19 @@ namespace NVIDIAInfo
                 {
                     SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: The display settings in {filename} are able to be applied on this computer if you'd like to apply them.");
                     Console.WriteLine($"The display settings in {filename} are able to be applied on this computer if you'd like to apply them.");
-                    Console.WriteLine($"You can apply them with the command 'NVIDIAInfo load {filename}'");
+
+                    // If the NVIDIA profile is possible, then we try to check if the Windows CCD display config is possible
+                    if (WinLibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.WindowsConfig))
+                    {
+                        SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
+                        Console.WriteLine($"You can apply them with the command 'AMDInfo load {filename}'");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"ERROR - NVIDIA display configuration is possible, but cannot apply the Windows CCD display config in {filename} as it is not currently possible to use it.");
+                        SharedLogger.logger.Error($"NVIDIAInfo/loadFromFile: ERROR - AMD display configuration is possible, but cannot apply the Windows CCD display config in {filename} as it is not currently possible to use it.");
+                    }
+
                 }
                 else
                 {
