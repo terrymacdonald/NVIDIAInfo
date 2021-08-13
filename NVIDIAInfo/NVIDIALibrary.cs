@@ -806,12 +806,11 @@ namespace DisplayMagicianShared.NVIDIA
                 // 
                 if (displayConfig.MosaicConfig.IsMosaicEnabled)
                 {
-                    // We are either on a Mosaic profile now or not, but either way we need to change to another Mosaic profile
-                    // We need to apply the new Mosaic Topology
+                    // We need to change to a Mosaic profile, so we need to apply the new Mosaic Topology
 
-                    // Check if the 
-                    NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 pSupportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();
-                    NVStatus = NVImport.NvAPI_Mosaic_GetSupportedTopoInfo(ref pSupportedTopoInfo, NV_MOSAIC_TOPO_TYPE.NV_MOSAIC_TOPO_TYPE_ALL);
+                    // Check if the wanted Mosaic Topology is still able to be used
+                    NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 supportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();
+                    NVStatus = NVImport.NvAPI_Mosaic_GetSupportedTopoInfo(ref supportedTopoInfo, NV_MOSAIC_TOPO_TYPE.NV_MOSAIC_TOPO_TYPE_ALL);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
@@ -855,51 +854,78 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                     }
 
-                    // Set the current display config mosaic topology
-                    uint enable = 1;
-                    NVStatus = NVImport.NvAPI_Mosaic_SetCurrentTopo(ref currentDisplayConfig.MosaicConfig.MosaicTopologyBrief, ref currentDisplayConfig.MosaicConfig.MosaicDisplaySettings, currentDisplayConfig.MosaicConfig.OverlapX, currentDisplayConfig.MosaicConfig.OverlapY, enable);
-                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    // Check if there are any supported topologies 
+                    bool topologyIsPossible = false;
+                    if (supportedTopoInfo.TopoBriefsCount > 0)
                     {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: We have at least one valid topology in the NVIDIA driver database so we need to see if our topology is in there.");
+                        // We have at least one topology so we need to see if our topology is in there
+                        foreach (NV_MOSAIC_TOPO_BRIEF toposBrief in supportedTopoInfo.TopoBriefs)
+                        {
+                            // If the topobrief is the same as ours and its valid, then we're good to go!
+                            if (toposBrief.Equals(displayConfig.MosaicConfig.MosaicTopologyBrief) && toposBrief.IsPossible == 1)
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology we want is valid and can be applied!");
+                                topologyIsPossible = true;
+                                break;
+                            }
+                        }
                     }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
+
+                    // If there is a valid topology that ispossible now, then use it!
+                    if (topologyIsPossible)
                     {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_TOPO_NOT_POSSIBLE)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology passed in is not currently possible. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                        return false;
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: There was an error changing the display mode. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                        return false;
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Attemping to apply our saved topology!");
+                        uint enable = 1;
+                        NVStatus = NVImport.NvAPI_Mosaic_SetCurrentTopo(ref displayConfig.MosaicConfig.MosaicTopologyBrief, ref displayConfig.MosaicConfig.MosaicDisplaySettings, displayConfig.MosaicConfig.OverlapX, displayConfig.MosaicConfig.OverlapY, enable);
+                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_TOPO_NOT_POSSIBLE)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology passed in is not currently possible. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                            return false;
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: There was an error changing the display mode. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                            return false;
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        }
                     }
                     else
                     {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                    }                   
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology we want is not currently valid and cannot be applied!");
+                    }
+                    
 
                 }                
                 else if (!displayConfig.MosaicConfig.IsMosaicEnabled && currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
