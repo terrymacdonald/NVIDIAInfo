@@ -10,7 +10,7 @@ using DisplayMagicianShared.Windows;
 
 namespace DisplayMagicianShared.NVIDIA
 {
-    [StructLayout(LayoutKind.Sequential)]
+    /*[StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_ADAPTER_CONFIG : IEquatable<NVIDIA_ADAPTER_CONFIG>
     {
         public int AdapterDeviceNumber;
@@ -37,7 +37,7 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (AdapterIndex, AdapterBusNumber, AdapterDeviceNumber, IsPrimaryAdapter, SLSMapIndex, IsSLSEnabled).GetHashCode();
         }
-    }
+    }*/
 
     [StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_MOSAIC_CONFIG : IEquatable<NVIDIA_MOSAIC_CONFIG>
@@ -61,24 +61,39 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct NVIDIA_DISPLAY_CONFIG : IEquatable<NVIDIA_DISPLAY_CONFIG>
+    public struct NVIDIA_HDR_CONFIG : IEquatable<NVIDIA_HDR_CONFIG>
     {
-        //public Dictionary<ulong, string> DisplayAdapters;
-        public List<NVIDIA_ADAPTER_CONFIG> AdapterConfigs;
-        public NVIDIA_MOSAIC_CONFIG MosaicConfig;
-        //public ADVANCED_HDR_INFO_PER_PATH[] DisplayHDRStates;
-        public WINDOWS_DISPLAY_CONFIG WindowsDisplayConfig;
+        public bool IsMosaicEnabled;
+        public NV_MOSAIC_TOPO_BRIEF MosaicTopologyBrief;
+        public NV_MOSAIC_DISPLAY_SETTING_V2 MosaicDisplaySettings;
+        public Int32 OverlapX;
+        public Int32 OverlapY;
+        public NV_MOSAIC_GRID_TOPO_V2 MosaicGridTopo;
+        public NV_RECT[] MosaicViewports;
 
-        public bool Equals(NVIDIA_DISPLAY_CONFIG other)
-        => AdapterConfigs.SequenceEqual(other.AdapterConfigs)  &&
-           MosaicConfig.Equals(other.MosaicConfig) &&
-           //DisplayConfigModes.SequenceEqual(other.DisplayConfigModes) &&
-           //DisplayHDRStates.SequenceEqual(other.DisplayHDRStates) && 
-           WindowsDisplayConfig.Equals(other.WindowsDisplayConfig);
+        public bool Equals(NVIDIA_HDR_CONFIG other)
+        => IsMosaicEnabled == other.IsMosaicEnabled &&
+           MosaicTopologyBrief.Equals(other.MosaicTopologyBrief);
 
         public override int GetHashCode()
         {
-            return (AdapterConfigs, MosaicConfig, WindowsDisplayConfig).GetHashCode();
+            return (IsMosaicEnabled, MosaicTopologyBrief).GetHashCode();
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NVIDIA_DISPLAY_CONFIG : IEquatable<NVIDIA_DISPLAY_CONFIG>
+    {
+        public NVIDIA_MOSAIC_CONFIG MosaicConfig;
+        public NVIDIA_HDR_CONFIG HdrConfig;
+
+        public bool Equals(NVIDIA_DISPLAY_CONFIG other)
+        => MosaicConfig.Equals(other.MosaicConfig) &&
+           HdrConfig.Equals(other.HdrConfig);
+
+        public override int GetHashCode()
+        {
+            return (MosaicConfig, HdrConfig).GetHashCode();
         }
     }
 
@@ -238,6 +253,15 @@ namespace DisplayMagicianShared.NVIDIA
             }
         }
 
+        public List<string> PCIVendorIDs
+        {
+            get
+            {
+                return new List<string>() { "10DE" };
+            }
+        }
+
+
         public static NVIDIALibrary GetLibrary()
         {
             return _instance;
@@ -255,7 +279,7 @@ namespace DisplayMagicianShared.NVIDIA
         private NVIDIA_DISPLAY_CONFIG GetNVIDIADisplayConfig(bool allDisplays = false)
         {
             NVIDIA_DISPLAY_CONFIG myDisplayConfig = new NVIDIA_DISPLAY_CONFIG();
-            myDisplayConfig.AdapterConfigs = new List<NVIDIA_ADAPTER_CONFIG>();
+            //myDisplayConfig.AdapterConfigs = new List<NVIDIA_ADAPTER_CONFIG>();
 
             if (_initialised)
             {
@@ -480,22 +504,22 @@ namespace DisplayMagicianShared.NVIDIA
                     myDisplayConfig.MosaicConfig.IsMosaicEnabled = false;
                 }
 
-                // Check if Mosaic is possible
+                // Check if Mosaic is possible and log that so we know if troubleshooting bugs
                 if (mosaicTopoBrief.IsPossible == 1)
                 {
-                    // Mosaic is enabled!
+                    // Mosaic is possible!
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Mosaic is possible. Mosaic topology would be {mosaicTopoBrief.Topo.ToString("G")}.");
                 }
                 else
                 {
-                    // Mosaic isn't enabled
+                    // Mosaic isn't possible
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Mosaic is NOT possible.");
                 }
 
 
-                // We want to get the Windows CCD information and store it for later so that we record
-                // display sizes, and screen positions and the like.
-                //myDisplayConfig.WindowsDisplayConfig = _winLibrary.GetActiveConfig();
+                // We want to get the NVIDIA HDR Information now
+
+
             }
             else
             {

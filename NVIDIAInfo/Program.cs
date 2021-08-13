@@ -5,13 +5,22 @@ using System.Text;
 using DisplayMagicianShared;
 using NLog.Config;
 using DisplayMagicianShared.NVIDIA;
+using DisplayMagicianShared.Windows;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace NVIDIAInfo
 {
     class Program
     {
 
-        static NVIDIA_DISPLAY_CONFIG myDisplayConfig = new NVIDIA_DISPLAY_CONFIG();
+        public struct NVIDIAINFO_DISPLAY_CONFIG
+        {
+            public NVIDIA_DISPLAY_CONFIG NVIDIAConfig;
+            public WINDOWS_DISPLAY_CONFIG WindowsConfig;
+        }
+
+        static NVIDIAINFO_DISPLAY_CONFIG myDisplayConfig = new NVIDIAINFO_DISPLAY_CONFIG();
 
         static void Main(string[] args)
         {
@@ -50,6 +59,13 @@ namespace NVIDIAInfo
             Console.WriteLine($"\nNVIDIAInfo v1.0.5");
             Console.WriteLine($"==============");
             Console.WriteLine($"By Terry MacDonald 2021\n");
+
+            // First check that we have an NVIDIA Video Card in this PC
+            List<string> videoCardVendors = WinLibrary.GetLibrary().GetCurrentPCIVideoCardVendors();
+            if (!NVIDIALibrary.GetLibrary().PCIVendorIDs.All(value => videoCardVendors.Contains(value))){
+                SharedLogger.logger.Error($"NVIDIAInfo/Main: There are no NVIDIA Video Cards enabled within this computer. NVIDIAInfo requires at least one NVIDIA Video Card to work. Please use DisplayMagician instead.");
+                throw new ApplicationException ($"There are no NVIDIA Video Cards enabled within this computer. NVIDIAInfo requires at least one NVIDIA Video Card to work. Please use DisplayMagician instead.");
+            }
 
             if (args.Length > 0)
             {
@@ -171,7 +187,8 @@ namespace NVIDIAInfo
 
             SharedLogger.logger.Trace($"NVIDIAInfo/saveToFile: Getting the current Active Config");
             // Get the current configuration
-            myDisplayConfig = NVIDIALibrary.GetLibrary().GetActiveConfig();
+            myDisplayConfig.NVIDIAConfig = NVIDIALibrary.GetLibrary().GetActiveConfig();
+            myDisplayConfig.WindowsConfig = WinLibrary.GetLibrary().GetActiveConfig();
 
             SharedLogger.logger.Trace($"NVIDIAInfo/saveToFile: Attempting to convert the current Active Config objects to JSON format");
             // Save the object to file!
@@ -228,7 +245,7 @@ namespace NVIDIAInfo
                 SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: Contents exist within {filename} so trying to read them as JSON.");
                 try
                 {
-                    myDisplayConfig = JsonConvert.DeserializeObject<NVIDIA_DISPLAY_CONFIG>(json, new JsonSerializerSettings
+                    myDisplayConfig = JsonConvert.DeserializeObject<NVIDIAINFO_DISPLAY_CONFIG>(json, new JsonSerializerSettings
                     {
                         MissingMemberHandling = MissingMemberHandling.Ignore,
                         NullValueHandling = NullValueHandling.Ignore,
@@ -244,13 +261,13 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/loadFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (!NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig))
+                if (!NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig.NVIDIAConfig))
                 {
-                    if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig))
+                    if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                     {
                         SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
                         Console.WriteLine($"Attempting to apply display config from {filename}");
-                        NVIDIALibrary.GetLibrary().SetActiveConfig(myDisplayConfig);
+                        NVIDIALibrary.GetLibrary().SetActiveConfig(myDisplayConfig.NVIDIAConfig);
                         SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The display settings within {filename} were successfully applied.");
                         Console.WriteLine($"Display config successfully applied");
                     }
@@ -293,7 +310,7 @@ namespace NVIDIAInfo
                 try
                 {
                     SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: Contents exist within {filename} so trying to read them as JSON.");
-                    myDisplayConfig = JsonConvert.DeserializeObject<NVIDIA_DISPLAY_CONFIG>(json, new JsonSerializerSettings
+                    myDisplayConfig = JsonConvert.DeserializeObject<NVIDIAINFO_DISPLAY_CONFIG>(json, new JsonSerializerSettings
                     {
                         MissingMemberHandling = MissingMemberHandling.Ignore,
                         NullValueHandling = NullValueHandling.Ignore,
@@ -309,7 +326,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/possibleFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig))
+                if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                 {
                     SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: The display settings in {filename} are able to be applied on this computer if you'd like to apply them.");
                     Console.WriteLine($"The display settings in {filename} are able to be applied on this computer if you'd like to apply them.");
