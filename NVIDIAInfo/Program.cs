@@ -173,8 +173,8 @@ namespace NVIDIAInfo
         static void showHelp()
         {
             Console.WriteLine($"NVIDIAInfo is a little program to help test setting display layout and HDR settings in Windows 10 64-bit and later.\n");
-            Console.WriteLine($"You need to have NVIDIA Radeon™ Software Adrenalin 2020 Edition 21.2.1 or later installed and an NVIDIA video card.\n");
-            Console.WriteLine($"You can run it without any command line parameters, and it will print all the information it can find from the \nWindows Display CCD interface.\n");
+            Console.WriteLine($"You need to have the latest NVIDIA Driver installed and an NVIDIA video card in order to run this software.\n");
+            Console.WriteLine($"You can run it without any command line parameters, and it will print all the information it can find from the \nNVIDIA driver and the Windows Display CCD interface.\n");
             Console.WriteLine($"You can also run it with 'NVIDIAInfo save myfilename.cfg' and it will save the current display configuration into\nthe myfilename.cfg file.\n");
             Console.WriteLine($"This is most useful when you subsequently use the 'NVIDIAInfo load myfilename.cfg' command, as it will load the\ndisplay configuration from the myfilename.cfg file and make it live. In this way, you can make yourself a library\nof different cfg files with different display layouts, then use the NVIDIAInfo load command to swap between them.\n\n");
             Console.WriteLine($"Valid commands:\n");
@@ -275,20 +275,8 @@ namespace NVIDIAInfo
                         SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} were successfully applied.");
                         Console.WriteLine($"NVIDIA Display config successfully applied");
 
-                        // If the NVIDIA profile is applied properly, then we try to do the sme for the Windows CCD display config
-                        if (WinLibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.WindowsConfig))
-                        {
-                            SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
-                            Console.WriteLine($"Attempting to apply Windows CCD display config from {filename}");
-                            WinLibrary.GetLibrary().SetActiveConfig(myDisplayConfig.WindowsConfig);
-                            SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} were successfully applied.");
-                            Console.WriteLine($"Windows CCD Display config successfully applied");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"ERROR - NVIDIA display configuration is possible, but cannot apply the Windows CCD display config in {filename} as it is not currently possible to use it.");
-                            SharedLogger.logger.Error($"NVIDIAInfo/loadFromFile: ERROR - NVIDIA display configuration is possible, but cannot apply the Windows CCD display config in {filename} as it is not currently possible to use it.");
-                        }
+                        // Note: we are unable to check if the Windows CCD display config is possible, as it won't match if either the current display config is a Mosaic config,
+                        // or if the display config we want to change to is a Mosaic config. So we just have to assume that it will work!
 
                     }
                     else
@@ -348,21 +336,13 @@ namespace NVIDIAInfo
 
                 if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                 {
-                    SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: The display settings in {filename} are able to be applied on this computer if you'd like to apply them.");
-                    Console.WriteLine($"The display settings in {filename} are able to be applied on this computer if you'd like to apply them.");
+                    SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: The AMD display settings in {filename} are compatible with this computer.");
+                    Console.WriteLine($"The NVIDIA display settings in {filename} are compatible with this computer.");
+                    Console.WriteLine($"You can apply them with the command 'AMDInfo load {filename}'");
 
-                    // If the NVIDIA profile is possible, then we try to check if the Windows CCD display config is possible
-                    if (WinLibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.WindowsConfig))
-                    {
-                        SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
-                        Console.WriteLine($"You can apply them with the command 'AMDInfo load {filename}'");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"ERROR - NVIDIA display configuration is possible, but cannot apply the Windows CCD display config in {filename} as it is not currently possible to use it.");
-                        SharedLogger.logger.Error($"NVIDIAInfo/loadFromFile: ERROR - AMD display configuration is possible, but cannot apply the Windows CCD display config in {filename} as it is not currently possible to use it.");
-                    }
-
+                    // Note: we are unable to check if the Windows CCD display config is possible, as it won't match if either the current display config is a Mosaic config,
+                    // or if the display config we want to change to is a Mosaic config. So we just have to assume that it will work!
+                    
                 }
                 else
                 {
