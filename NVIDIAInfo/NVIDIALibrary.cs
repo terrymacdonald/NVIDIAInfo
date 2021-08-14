@@ -19,7 +19,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_DISPLAY_SETTING_V2 MosaicDisplaySettings;
         public Int32 OverlapX;
         public Int32 OverlapY;
-        public NV_MOSAIC_GRID_TOPO_V2[,] MosaicGridTopo;
+        public NV_MOSAIC_GRID_TOPO_V2[] MosaicGridTopos;
         public UInt32 MosaicGridCount;
         public NV_RECT[] MosaicViewports;
 
@@ -387,8 +387,8 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
-                    NV_MOSAIC_GRID_TOPO_V2[,] mosaicGridTopo = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount, mosaicGridCount];                    
-                    NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopo, ref mosaicGridCount);
+                    NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];                    
+                    NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopos, ref mosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
@@ -418,7 +418,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                     }
 
-                    myDisplayConfig.MosaicConfig.MosaicGridTopo = mosaicGridTopo;
+                    myDisplayConfig.MosaicConfig.MosaicGridTopos = mosaicGridTopos;
                     myDisplayConfig.MosaicConfig.MosaicGridCount = mosaicGridCount;
 
 
