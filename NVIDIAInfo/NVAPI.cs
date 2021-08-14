@@ -390,11 +390,11 @@ namespace DisplayMagicianShared.NVIDIA
     //! the returned list to only those that match the given type.
     public enum NV_MOSAIC_TOPO_TYPE: UInt32
     {
-        NV_MOSAIC_TOPO_TYPE_ALL,                          //!< All mosaic topologies
-        NV_MOSAIC_TOPO_TYPE_BASIC,                        //!< Basic Mosaic topologies
-        NV_MOSAIC_TOPO_TYPE_PASSIVE_STEREO,               //!< Passive Stereo topologies
-        NV_MOSAIC_TOPO_TYPE_SCALED_CLONE,                 //!< Not supported at this time
-        NV_MOSAIC_TOPO_TYPE_PASSIVE_STEREO_SCALED_CLONE,  //!< Not supported at this time
+        NV_MOSAIC_TOPO_TYPE_ALL = 0,                          //!< All mosaic topologies
+        NV_MOSAIC_TOPO_TYPE_BASIC = 1,                        //!< Basic Mosaic topologies
+        NV_MOSAIC_TOPO_TYPE_PASSIVE_STEREO = 2,               //!< Passive Stereo topologies
+        NV_MOSAIC_TOPO_TYPE_SCALED_CLONE = 3,                 //!< Not supported at this time
+        NV_MOSAIC_TOPO_TYPE_PASSIVE_STEREO_SCALED_CLONE = 4,  //!< Not supported at this time
         NV_MOSAIC_TOPO_TYPE_MAX,                          //!< Always leave this at end of the enum
     }    
 
@@ -2661,7 +2661,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static NVAPI_STATUS NvAPI_Mosaic_GetSupportedTopoInfo(ref NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 pSupportedTopoInfo, NV_MOSAIC_TOPO_TYPE TopoType)
         {
             NVAPI_STATUS status;
-            pSupportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();
+            //pSupportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();
             pSupportedTopoInfo.Version = NVImport.NV_MOSAIC_SUPPORTED_TOPO_INFO_V2_VER;            
 
             if (Mosaic_GetSupportedTopoInfoInternal != null) { status = Mosaic_GetSupportedTopoInfoInternal(ref pSupportedTopoInfo, TopoType); }
@@ -2719,7 +2719,9 @@ namespace DisplayMagicianShared.NVIDIA
             NVAPI_STATUS status;
             topoBrief.Version = NVImport.NV_MOSAIC_TOPO_BRIEF_VER;
             displaySetting.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V2_VER;
-
+            // Set enable to false within the version as we want to enable it now
+            // This is needed as the saved display topology object was made when the topology was enabled :)
+            //topoBrief.Enabled = 0;
             if (Mosaic_SetCurrentTopoInternal != null) { status = Mosaic_SetCurrentTopoInternal(ref topoBrief, ref displaySetting, overlapX, overlapY, enable); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 

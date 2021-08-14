@@ -405,15 +405,6 @@ namespace DisplayMagicianShared.NVIDIA
                          SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                      }
 
-                     for (int row =0; row < mosaicTopoGroup.Topos[0].RowCount; row++)
-                     {
-                         for (int col = 0; col < mosaicTopoGroup.Topos[0].ColCount; col++)
-                         {
-                             NV_MOSAIC_TOPO_GPU_LAYOUT_CELL oneCell = mosaicTopoGroup.Topos[0].GPULayout[0,0];
-                             Console.WriteLine($"Row {row}, Column {col}: {oneCell}");
-                         }
-                     }
-
                     // Figure out how many Mosaic Grid topoligies there are                    
                     uint mosaicGridCount = 0;
                     NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridCount);
@@ -810,10 +801,15 @@ namespace DisplayMagicianShared.NVIDIA
 
                     // Check if the wanted Mosaic Topology is still able to be used
                     NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 supportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();
-                    NVStatus = NVImport.NvAPI_Mosaic_GetSupportedTopoInfo(ref supportedTopoInfo, NV_MOSAIC_TOPO_TYPE.NV_MOSAIC_TOPO_TYPE_ALL);
+                    NVStatus = NVImport.NvAPI_Mosaic_GetSupportedTopoInfo(ref supportedTopoInfo, NV_MOSAIC_TOPO_TYPE.NV_MOSAIC_TOPO_TYPE_BASIC);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
+                        if (supportedTopoInfo.TopoBriefsCount == 0)
+                        {
+                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Your NVIDIA hardware supports NVIDIA Surround/Mosaic, no valid configurations were found. This most likely means that SLI was not enabled for your video cards. Once enabled, NVIDIAInfo should work properly.");
+                            return false;
+                        }
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
                     {
@@ -854,7 +850,8 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                     }
 
-                    // Check if there are any supported topologies 
+                    // Find the topology we want in the list of currently supported topologies 
+                    NV_MOSAIC_TOPO_BRIEF selectedTopoBrief = new NV_MOSAIC_TOPO_BRIEF();
                     bool topologyIsPossible = false;
                     if (supportedTopoInfo.TopoBriefsCount > 0)
                     {
@@ -867,17 +864,37 @@ namespace DisplayMagicianShared.NVIDIA
                             {
                                 SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology we want is valid and can be applied!");
                                 topologyIsPossible = true;
+                                selectedTopoBrief = toposBrief;
+                                break;
+                            }
+                        }
+                    }
+
+                    NV_MOSAIC_DISPLAY_SETTING_V2 selectedDisplaySetting = new NV_MOSAIC_DISPLAY_SETTING_V2();
+                    bool displaySettingIsPossible = false;
+                    if (supportedTopoInfo.DisplaySettingsCount > 0)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: We have at least one valid display setting in the NVIDIA driver database so we need to see if our display setting is in there.");
+                        // We have at least one display setting so we need to see if our display setting is in there
+                        foreach (NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting in supportedTopoInfo.DisplaySettings)
+                        {
+                            // If the topobrief is the same as ours and its valid, then we're good to go!
+                            if (displaySetting.Equals(displayConfig.MosaicConfig.MosaicDisplaySettings))
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: The display setting we want can be applied!");
+                                displaySettingIsPossible = true;
+                                selectedDisplaySetting = displaySetting;
                                 break;
                             }
                         }
                     }
 
                     // If there is a valid topology that ispossible now, then use it!
-                    if (topologyIsPossible)
+                    if (topologyIsPossible && displaySettingIsPossible)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Attemping to apply our saved topology!");
                         uint enable = 1;
-                        NVStatus = NVImport.NvAPI_Mosaic_SetCurrentTopo(ref displayConfig.MosaicConfig.MosaicTopologyBrief, ref displayConfig.MosaicConfig.MosaicDisplaySettings, displayConfig.MosaicConfig.OverlapX, displayConfig.MosaicConfig.OverlapY, enable);
+                        NVStatus = NVImport.NvAPI_Mosaic_SetCurrentTopo(ref selectedTopoBrief, ref selectedDisplaySetting, displayConfig.MosaicConfig.OverlapX, displayConfig.MosaicConfig.OverlapY, enable);
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");

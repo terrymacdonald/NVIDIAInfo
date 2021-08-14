@@ -271,13 +271,33 @@ namespace NVIDIAInfo
                     {
                         SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
                         Console.WriteLine($"Attempting to apply NVIDIA display config from {filename}");
-                        NVIDIALibrary.GetLibrary().SetActiveConfig(myDisplayConfig.NVIDIAConfig);
-                        SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} were successfully applied.");
-                        Console.WriteLine($"NVIDIA Display config successfully applied");
-
-                        // Note: we are unable to check if the Windows CCD display config is possible, as it won't match if either the current display config is a Mosaic config,
-                        // or if the display config we want to change to is a Mosaic config. So we just have to assume that it will work!
-
+                        bool itWorkedforNVIDIA = NVIDIALibrary.GetLibrary().SetActiveConfig(myDisplayConfig.NVIDIAConfig);                        
+                        
+                        if (itWorkedforNVIDIA) 
+                        {
+                            SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} were successfully applied.");
+                            // Then let's try to also apply the windows changes
+                            // Note: we are unable to check if the Windows CCD display config is possible, as it won't match if either the current display config is a Mosaic config,
+                            // or if the display config we want to change to is a Mosaic config. So we just have to assume that it will work!
+                            bool itWorkedforWindows = WinLibrary.GetLibrary().SetActiveConfig(myDisplayConfig.WindowsConfig);
+                            if (itWorkedforWindows)
+                            {
+                                SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} were successfully applied.");
+                                Console.WriteLine($"NVIDIAInfo Display config successfully applied");
+                            }
+                            else
+                            {
+                                SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} were NOT applied correctly.");
+                                Console.WriteLine($"ERROR - NVIDIAInfo Windows CCD settings were not applied correctly.");
+                            }
+                            
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} were NOT applied correctly.");
+                            Console.WriteLine($"ERROR - NVIDIAInfo NVIDIA display settings were not applied correctly.");
+                        }
+                        
                     }
                     else
                     {
