@@ -10,35 +10,7 @@ using DisplayMagicianShared.Windows;
 
 namespace DisplayMagicianShared.NVIDIA
 {
-    /*[StructLayout(LayoutKind.Sequential)]
-    public struct NVIDIA_ADAPTER_CONFIG : IEquatable<NVIDIA_ADAPTER_CONFIG>
-    {
-        public int AdapterDeviceNumber;
-        public int AdapterBusNumber;
-        public int AdapterIndex;
-        public bool IsPrimaryAdapter;
-        //public ADL_DISPLAY_MAP[] DisplayMaps;
-        //public ADL_DISPLAY_TARGET[] DisplayTargets;
-        public int SLSMapIndex;
-        public bool IsSLSEnabled;
-        //public ADL_SLS_MAP[] SLSMap;
-
-        public bool Equals(NVIDIA_ADAPTER_CONFIG other)
-        => AdapterIndex == other.AdapterIndex &&
-           AdapterBusNumber == other.AdapterBusNumber &&
-           AdapterDeviceNumber == other.AdapterDeviceNumber &&
-           IsPrimaryAdapter == other.IsPrimaryAdapter &&
-           //DisplayMaps.SequenceEqual(other.DisplayMaps) &&
-           //DisplayTargets.SequenceEqual(other.DisplayTargets);
-           SLSMapIndex == other.SLSMapIndex &&
-           IsSLSEnabled == other.IsSLSEnabled;
-        
-        public override int GetHashCode()
-        {
-            return (AdapterIndex, AdapterBusNumber, AdapterDeviceNumber, IsPrimaryAdapter, SLSMapIndex, IsSLSEnabled).GetHashCode();
-        }
-    }*/
-
+    
     [StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_MOSAIC_CONFIG : IEquatable<NVIDIA_MOSAIC_CONFIG>
     {
@@ -47,7 +19,8 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_DISPLAY_SETTING_V2 MosaicDisplaySettings;
         public Int32 OverlapX;
         public Int32 OverlapY;
-        public NV_MOSAIC_GRID_TOPO_V2 MosaicGridTopo;
+        public NV_MOSAIC_GRID_TOPO_V2[,] MosaicGridTopo;
+        public UInt32 MosaicGridCount;
         public NV_RECT[] MosaicViewports;
 
         public bool Equals(NVIDIA_MOSAIC_CONFIG other)
@@ -414,7 +387,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
-                    NV_MOSAIC_GRID_TOPO_V2 mosaicGridTopo = new NV_MOSAIC_GRID_TOPO_V2();                    
+                    NV_MOSAIC_GRID_TOPO_V2[,] mosaicGridTopo = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount, mosaicGridCount];                    
                     NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopo, ref mosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
@@ -446,6 +419,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     myDisplayConfig.MosaicConfig.MosaicGridTopo = mosaicGridTopo;
+                    myDisplayConfig.MosaicConfig.MosaicGridCount = mosaicGridCount;
 
 
                     // Get Current Mosaic Grid settings using the Grid topologies numbers we got before
@@ -798,9 +772,57 @@ namespace DisplayMagicianShared.NVIDIA
                 if (displayConfig.MosaicConfig.IsMosaicEnabled)
                 {
                     // We need to change to a Mosaic profile, so we need to apply the new Mosaic Topology
+                    NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
+                    NV_MOSAIC_GRID_TOPO_V2[,] pGridTopologies = new NV_MOSAIC_GRID_TOPO_V2[displayConfig.MosaicConfig.MosaicGridCount, displayConfig.MosaicConfig.MosaicGridCount];
+                    NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses = { new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1()};
+                    UInt32 pGridCount = 0;
+                    //NVStatus = NVImport.NvAPI_Mosaic_ValidateDisplayGrids(setTopoFlags, in displayConfig.MosaicConfig.MosaicGridTopo, ref TopoStatuses, pGridCount);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");                        
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_TOPO_NOT_POSSIBLE)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology passed in is not currently possible. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: There was an error changing the display mode. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
 
+                    // *** NOTE: THIS USES THE GetTopo AND SetTopo, AND THIS METHOD CURRENTLY DOESN'T WORK ***
                     // Check if the wanted Mosaic Topology is still able to be used
-                    NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 supportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();
+                    /*NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 supportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();
                     NVStatus = NVImport.NvAPI_Mosaic_GetSupportedTopoInfo(ref supportedTopoInfo, NV_MOSAIC_TOPO_TYPE.NV_MOSAIC_TOPO_TYPE_BASIC);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
@@ -941,8 +963,8 @@ namespace DisplayMagicianShared.NVIDIA
                     else
                     {
                         SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The topology we want is not currently valid and cannot be applied!");
-                    }
-                    
+                    }*/
+
 
                 }                
                 else if (!displayConfig.MosaicConfig.IsMosaicEnabled && currentDisplayConfig.MosaicConfig.IsMosaicEnabled)

@@ -556,42 +556,95 @@ namespace DisplayMagicianShared.NVIDIA
         IsDolbyVisionSupported = 0x20,                 //!< Dolby Vision Support. Boolean: 0 = not supported, 1 = supported;
     }
 
+    [Flags]
+    public enum NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS : UInt32
+    {
+        OK = 0x0,
+        DISPLAY_ON_INVALID_GPU = 0x1,
+        DISPLAY_ON_WRONG_CONNECTOR = 0x2,
+        NO_COMMON_TIMINGS = 0x4,
+        NO_EDID_AVAILABLE = 0x8,
+        MISMATCHED_OUTPUT_TYPE = 0x10,
+        NO_DISPLAY_CONNECTED = 0x20,
+        NO_GPU_TOPOLOGY = 0x40,
+        NOT_SUPPORTED = 0x80,
+        NO_SLI_BRIDGE = 0x100,
+        ECC_ENABLED = 0x200,
+        GPU_TOPOLOGY_NOT_SUPPORTED = 0x400,
+    }
+
+    [Flags]
+    public enum NV_MOSAIC_DISPLAYTOPO_WARNING_FLAGS : UInt32
+    {
+        NONE = 0x0,
+        
+        //! Indicates that a display's position in the grid is sub-optimal.
+        NV_MOSAIC_DISPLAYTOPO_WARNING_DISPLAY_POSITION = 0x1,
+
+        //! \ingroup mosaicapi
+        //! Indicates that SetDisplaySettings would need to perform a driver reload.
+        NV_MOSAIC_DISPLAYTOPO_WARNING_DRIVER_RELOAD_REQUIRED = 0x2,
+    }
+
+    [Flags]
+    public enum NV_MOSAIC_SETDISPLAYTOPO_FLAGS : UInt32
+    {
+        // Empty flag which does nothing
+        NONE = 0x0,
+
+        //! Do not change the current GPU topology. If the NO_DRIVER_RELOAD bit is not
+        //! specified, then it may still require a driver reload.
+        CURRENT_GPU_TOPOLOGY = 0x1,
+
+        //! Do not allow a driver reload. That is, stick with the same master GPU as well as the
+        //! same SLI configuration.
+        NO_DRIVER_RELOAD = 0x2,
+
+        //! When choosing a GPU topology, choose the topology with the best performance.
+        //! Without this flag, it will choose the topology that uses the smallest number
+        //! of GPU's.
+        MAXIMIZE_PERFORMANCE = 0x4,
+
+        //! Do not return an error if no configuration will work with all of the grids.
+        ALLOW_INVALID = 0x8,
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct DisplayHandle
     {
-        public IntPtr ptr;
+        public IntPtr Ptr;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct UnAttachedDisplayHandle
     {
-        public  IntPtr ptr;
+        public  IntPtr Ptr;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct PhysicalGpuHandle
     {
-        public IntPtr ptr;
+        public IntPtr Ptr;
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct LogicalGpuHandle
     {
-        public IntPtr ptr;
+        public IntPtr Ptr;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct NV_TIMINGEXT
     {
-        public UInt32 flag;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
-        public ushort rr;            //!< Logical refresh rate to present
-        public UInt32 rrx1k;         //!< Physical vertical refresh rate in 0.001Hz
-        public UInt32 aspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
-        public ushort rep;           //!< Bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
-        public UInt32 status;        //!< Timing standard
+        public UInt32 Flag;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
+        public ushort Rr;            //!< Logical refresh rate to present
+        public UInt32 Rrx1k;         //!< Physical vertical refresh rate in 0.001Hz
+        public UInt32 Aspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
+        public ushort Rep;           //!< Bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
+        public UInt32 Status;        //!< Timing standard
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (Int32)NVImport.NVAPI_UNICODE_STRING_MAX)]
-        public string name;      //!< Timing name
+        public string Name;      //!< Timing name
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -613,58 +666,58 @@ namespace DisplayMagicianShared.NVIDIA
         public byte VSyncPol;         //!< vertical sync polarity: 1-negative, 0-positive
 
         public ushort Int32erlaced;       //!< 1-Int32erlaced, 0-progressive
-        public UInt32 pclk;             //!< pixel clock in 10 kHz
+        public UInt32 Pclk;             //!< pixel clock in 10 kHz
 
         //other timing related extras
-        NV_TIMINGEXT etc;
+        NV_TIMINGEXT Etc;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_RECT
     {
-        public UInt32 left;
-        public UInt32 top;
-        public UInt32 right;
-        public UInt32 bottom;
+        public UInt32 Left;
+        public UInt32 Top;
+        public UInt32 Right;
+        public UInt32 Bottom;
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_POSITION
     {
-        public Int32 x;
-        public Int32 y;
+        public Int32 X;
+        public Int32 Y;
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_RESOLUTION
     {
-        public UInt32 width;
-        public UInt32 height;
-        public UInt32 colorDepth;
+        public UInt32 Width;
+        public UInt32 Height;
+        public UInt32 ColorDepth;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_VIEWPORTF
     {
-        public float x;    //!<  x-coordinate of the viewport top-left poInt32
-        public float y;    //!<  y-coordinate of the viewport top-left poInt32
-        public float w;    //!<  Width of the viewport
-        public float h;    //!<  Height of the viewport
+        public float X;    //!<  x-coordinate of the viewport top-left poInt32
+        public float Y;    //!<  y-coordinate of the viewport top-left poInt32
+        public float W;    //!<  Width of the viewport
+        public float H;    //!<  Height of the viewport
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO
     {
-        public UInt32 version;
+        public UInt32 Version;
 
         // Rotation and Scaling
-        public NV_ROTATE rotation;       //!< (IN) rotation setting.
-        public NV_SCALING scaling;        //!< (IN) scaling setting.
+        public NV_ROTATE Rotation;       //!< (IN) rotation setting.
+        public NV_SCALING Scaling;        //!< (IN) scaling setting.
 
         // Refresh Rate
-        public UInt32 refreshRate1K;  //!< (IN) Non-Int32erlaced Refresh Rate of the mode, multiplied by 1000, 0 = ignored
+        public UInt32 RefreshRate1K;  //!< (IN) Non-Int32erlaced Refresh Rate of the mode, multiplied by 1000, 0 = ignored
                                     //!< This is the value which driver reports to the OS.
                                     // Flags
         //public UInt32 Int32erlaced:1;   //!< (IN) Interlaced mode flag, ignored if refreshRate == 0
@@ -677,16 +730,16 @@ namespace DisplayMagicianShared.NVIDIA
         //public UInt32 isPreferredUnscaledTarget:1;
         //public UInt32 reserved:27;
         // TV format information
-        public NV_GPU_CONNECTOR_TYPE connector;      //!< Specify connector type. For TV only, ignored if tvFormat == NV_DISPLAY_TV_FORMAT_NONE
-        public NV_DISPLAY_TV_FORMAT tvFormat;       //!< (IN) to choose the last TV format set this value to NV_DISPLAY_TV_FORMAT_NONE
+        public NV_GPU_CONNECTOR_TYPE Connector;      //!< Specify connector type. For TV only, ignored if tvFormat == NV_DISPLAY_TV_FORMAT_NONE
+        public NV_DISPLAY_TV_FORMAT TvFormat;       //!< (IN) to choose the last TV format set this value to NV_DISPLAY_TV_FORMAT_NONE
                                                     //!< In case of NvAPI_DISP_GetDisplayConfig(), this field will indicate the currently applied TV format;
                                                     //!< if no TV format is applied, this field will have NV_DISPLAY_TV_FORMAT_NONE value.
                                                     //!< In case of NvAPI_DISP_SetDisplayConfig(), this field should only be set in case of TVs;
                                                     //!< for other displays this field will be ignored and resolution & refresh rate specified in input will be used to apply the TV format.
 
         // Backend (raster) timing standard
-        public NV_TIMING_OVERRIDE timingOverride;     //!< Ignored if timingOverride == NV_TIMING_OVERRIDE_CURRENT
-        public NV_TIMING timing;             //!< Scan out timing, valid only if timingOverride == NV_TIMING_OVERRIDE_CUST
+        public NV_TIMING_OVERRIDE TimingOverride;     //!< Ignored if timingOverride == NV_TIMING_OVERRIDE_CURRENT
+        public NV_TIMING Timing;             //!< Scan out timing, valid only if timingOverride == NV_TIMING_OVERRIDE_CUST
                                       //!< The value NV_TIMING::NV_TIMINGEXT::rrx1k is obtained from the EDID. The driver may
                                       //!< tweak this value for HDTV, stereo, etc., before reporting it to the OS.
     }
@@ -694,9 +747,9 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2
     {
-        public UInt32  displayId;  //!< Display ID
-        NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] details;    //!< May be NULL if no advanced settings are required
-        public UInt32 targetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
+        public UInt32  DisplayId;  //!< Display ID
+        NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] Details;    //!< May be NULL if no advanced settings are required
+        public UInt32 TargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -717,9 +770,9 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1
     {
-        public NV_RESOLUTION resolution;
-        public NV_FORMAT colorFormat;                //!< Ignored at present, must be NV_FORMAT_UNKNOWN (0)
-        public NV_POSITION position;                   //!< Is all positions are 0 or invalid, displays will be automatically
+        public NV_RESOLUTION Resolution;
+        public NV_FORMAT ColorFormat;                //!< Ignored at present, must be NV_FORMAT_UNKNOWN (0)
+        public NV_POSITION Position;                   //!< Is all positions are 0 or invalid, displays will be automatically
                                                        //!< positioned from left to right with GDI Primary at 0,0, and all
                                                        //!< other displays in the order of the path array.
         //public NV_DISPLAYCONFIG_SPANNING_ORIENTATION spanningOrientation;        //!< Spanning is only supported on XP
@@ -732,9 +785,9 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO
     {
-        public UInt32 displayId;  //!< Display ID
-        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] details;    //!< May be NULL if no advanced settings are required
-        public UInt32 targetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
+        public UInt32 DisplayId;  //!< Display ID
+        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] Details;    //!< May be NULL if no advanced settings are required
+        public UInt32 TargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
     }
 
 
@@ -1098,7 +1151,54 @@ namespace DisplayMagicianShared.NVIDIA
             return (Version, ConnectorType, DisplayId, Flags).GetHashCode();
         }
     }
-   
+
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 : IEquatable<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1> // Note: Version 1 of NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 structure
+    {
+        public UInt32 Version;
+        public NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS ErrorFlags;            //!< (OUT) Any of the NV_MOSAIC_DISPLAYTOPO_ERROR_* flags.
+        public NV_MOSAIC_DISPLAYTOPO_WARNING_FLAGS WarningFlags;          //!< (OUT) Any of the NV_MOSAIC_DISPLAYTOPO_WARNING_* flags.
+        public UInt32 DisplayCount;          //!< (OUT) The number of valid entries in the displays array.
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_MAX_DISPLAYS)]
+        public NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[] Displays;    // displays[NV_MAX_DISPLAYS] array
+
+        public bool Equals(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 other)
+        => Version == other.Version &&
+           ErrorFlags == other.ErrorFlags &&
+           WarningFlags == other.WarningFlags &&
+           DisplayCount == other.DisplayCount &&
+           Displays.SequenceEqual(other.Displays);
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, ErrorFlags, WarningFlags, DisplayCount, Displays).GetHashCode();
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY : IEquatable<NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY>
+    {
+        public UInt32 DisplayId;             //!< (OUT) The DisplayID of this display.
+        public NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS ErrorFlags;            //!< (OUT) Any of the NV_MOSAIC_DISPLAYCAPS_PROBLEM_* flags.
+        public NV_MOSAIC_DISPLAYTOPO_WARNING_FLAGS WarningFlags;          //!< (OUT) Any of the NV_MOSAIC_DISPLAYTOPO_WARNING_* flags.
+        public UInt32 GeneralFlags;
+
+        public bool SupportsRotation => (GeneralFlags & 0x1) == 0x1; //!< (OUT) This display can be rotated
+
+        public bool Equals(NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY other)
+        => DisplayId == other.DisplayId &&
+           ErrorFlags == other.ErrorFlags &&
+           WarningFlags == other.WarningFlags &&
+           GeneralFlags == other.GeneralFlags;
+
+        public override Int32 GetHashCode()
+        {
+            return (DisplayId, ErrorFlags, WarningFlags, GeneralFlags).GetHashCode();
+        }
+    }
+
+
     [StructLayout(LayoutKind.Sequential)]
     public struct NV_HDR_CAPABILITIES_V2 : IEquatable<NV_HDR_CAPABILITIES_V2> // Note: Version 2 of NV_HDR_CAPABILITIES structure
     {
@@ -1324,7 +1424,9 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V1>(1);
         public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V2>(2);
         public static UInt32 NV_HDR_COLOR_DATA_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_COLOR_DATA_V2>(2);
-        public static UInt32 NV_HDR_CAPABILITIES_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_CAPABILITIES_V2>(2);       
+        public static UInt32 NV_HDR_CAPABILITIES_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_CAPABILITIES_V2>(2);
+        public static UInt32 NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1>(1);
+        
 
 
         #region Internal Constant
@@ -1472,6 +1574,7 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_Mosaic_EnumDisplayGrids, out Mosaic_EnumDisplayGridsInternal);
                 GetDelegate(NvId_Mosaic_EnumDisplayGrids, out Mosaic_EnumDisplayGridsInternalNull); // The null version of the submission
                 GetDelegate(NvId_Mosaic_SetDisplayGrids, out Mosaic_SetDisplayGridsInternal);
+                GetDelegate(NvId_Mosaic_ValidateDisplayGrids, out Mosaic_ValidateDisplayGridsInternal);                
                 GetDelegate(NvId_Mosaic_GetDisplayViewportsByResolution, out Mosaic_GetDisplayViewportsByResolutionInternal);
                 
 
@@ -2493,7 +2596,7 @@ namespace DisplayMagicianShared.NVIDIA
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
             szDisplayName = builder.ToString();
 
-            Console.WriteLine(pNvUnAttachedDispHandle.ptr);
+            Console.WriteLine(pNvUnAttachedDispHandle.Ptr);
 
             return status;
         }
@@ -2547,7 +2650,7 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayGrids(__inout_ecount_part_opt*,* pGridCount NV_MOSAIC_GRID_TOPO* pGridTopologies,__inout NvU32 * 	pGridCount)
         // NvAPIMosaic_EnumDisplayGrids
         private delegate NVAPI_STATUS Mosaic_EnumDisplayGridsDelegate(
-            [In][Out] ref NV_MOSAIC_GRID_TOPO_V2 pGridTopologies,
+            [In][Out] ref NV_MOSAIC_GRID_TOPO_V2[,] pGridTopologies,
             [In][Out] ref UInt32 pGridCount);            
         private static readonly Mosaic_EnumDisplayGridsDelegate Mosaic_EnumDisplayGridsInternal;
 
@@ -2560,18 +2663,25 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="pOverlapX"></param>
         /// <param name="pOverlapY"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayGrids(ref NV_MOSAIC_GRID_TOPO_V2 GridTopologies, ref UInt32 GridCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayGrids(ref NV_MOSAIC_GRID_TOPO_V2[,] GridTopologies, ref UInt32 GridCount)
         {
             NVAPI_STATUS status;
 
-            GridTopologies.displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V2[(Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS];
-            for (Int32 j = 0; j < (Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS; j++)
+            for (Int32 x = 0; x < (Int32)GridCount; x++)
             {
-                GridTopologies.displays[j].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER;
-            }
-            GridTopologies.Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
-            GridTopologies.displaySettings = new NV_MOSAIC_DISPLAY_SETTING_V1();
-            GridTopologies.displaySettings.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V1_VER;
+                for (Int32 y = 0; y < (Int32)GridCount; y++)
+                {
+                    GridTopologies[x,y].displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V2[(Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS];
+                    for (Int32 j = 0; j < (Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS; j++)
+                    {
+                        GridTopologies[x,y].displays[j].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER;
+                    }
+                    GridTopologies[x,y].Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
+                    GridTopologies[x,y].displaySettings = new NV_MOSAIC_DISPLAY_SETTING_V1();
+                    GridTopologies[x,y].displaySettings.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V1_VER;
+
+                }
+            }            
             
             if (Mosaic_EnumDisplayGridsInternal != null) { status = Mosaic_EnumDisplayGridsInternal(ref GridTopologies, ref GridCount); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
@@ -2604,11 +2714,46 @@ namespace DisplayMagicianShared.NVIDIA
             return status;
         }
 
+        // NVAPI_INTERFACE NvAPI_Mosaic_ValidateDisplayGrids(__in NvU32  setTopoFlags, __in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __inout_ecount_full(gridCount) NV_MOSAIC_DISPLAY_TOPO_STATUS * 	pTopoStatus, __in NvU32  gridCount )
+        private delegate NVAPI_STATUS Mosaic_ValidateDisplayGridsDelegate(
+            [In] NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, 
+            [In] in NV_MOSAIC_GRID_TOPO_V2[] pGridTopologies,
+            [In][Out] ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses,
+            [In] UInt32 pGridCount
+            );
+        private static readonly Mosaic_ValidateDisplayGridsDelegate Mosaic_ValidateDisplayGridsInternal;
+
+        /// <summary>
+        /// Determines if a list of grid topologies is valid. It will choose an SLI configuration in the same way that NvAPI_Mosaic_SetDisplayGrids() does.
+        /// On return, each element in the pTopoStatus array will contain any errors or warnings about each grid topology.If any error flags are set, then the topology is not valid.If any warning flags are set, then the topology is valid, but sub-optimal.
+        /// If the ALLOW_INVALID flag is set, then it will continue to validate the grids even if no SLI configuration will allow all of the grids.In this case, a grid grid with no matching GPU topology will have the error flags NO_GPU_TOPOLOGY or NOT_SUPPORTED set.
+        /// If the ALLOW_INVALID flag is not set and no matching SLI configuration is found, then it will skip the rest of the validation and return NVAPI_NO_ACTIVE_SLI_TOPOLOGY.
+        /// </summary>
+        /// <param name="setTopoFlags"></param>
+        /// <param name="pGridTopologies"></param>
+        /// <param name="TopoStatuses"></param>
+        /// <param name="pGridCount"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, in NV_MOSAIC_GRID_TOPO_V2[] pGridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses, UInt32 pGridCount)
+        {
+            NVAPI_STATUS status;
+            for (int i = 0; i < pGridCount; i++)
+            {
+                TopoStatuses[i] = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1();
+                TopoStatuses[i].Version = NVImport.NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER;
+                TopoStatuses[i].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[NV_MOSAIC_MAX_DISPLAYS];
+            }
+            if (Mosaic_ValidateDisplayGridsInternal != null) { status = Mosaic_ValidateDisplayGridsInternal(setTopoFlags, in pGridTopologies, ref TopoStatuses, pGridCount); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
         // NVAPI_INTERFACE NvAPI_Mosaic_SetDisplayGrids	(	__in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __in NvU32  gridCount, __in NvU32  setTopoFlags )	
         private delegate NVAPI_STATUS Mosaic_SetDisplayGridsDelegate(
-            [In] in NV_MOSAIC_GRID_TOPO_V2[] pGridTopologies,
+            [In] in NV_MOSAIC_GRID_TOPO_V2 pGridTopologies,
             [In] UInt32 pGridCount,
-            [In] UInt32 setTopoFlags);
+            [In] NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags);
         private static readonly Mosaic_SetDisplayGridsDelegate Mosaic_SetDisplayGridsInternal;
 
         /// <summary>
@@ -2620,7 +2765,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="pGridCount"></param>
         /// <param name="setTopoFlags"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_SetDisplayGrids(in NV_MOSAIC_GRID_TOPO_V2[] pGridTopologies, UInt32 pGridCount, UInt32 setTopoFlags)
+        public static NVAPI_STATUS NvAPI_Mosaic_SetDisplayGrids(in NV_MOSAIC_GRID_TOPO_V2 pGridTopologies, UInt32 pGridCount, NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags)
         {
             NVAPI_STATUS status;
 
