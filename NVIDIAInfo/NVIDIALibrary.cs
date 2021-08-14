@@ -414,7 +414,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
-                    NV_MOSAIC_GRID_TOPO_V2 mosaicGridTopo = new NV_MOSAIC_GRID_TOPO_V2();
+                    NV_MOSAIC_GRID_TOPO_V2 mosaicGridTopo = new NV_MOSAIC_GRID_TOPO_V2();                    
                     NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopo, ref mosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
@@ -449,7 +449,7 @@ namespace DisplayMagicianShared.NVIDIA
 
 
                     // Get Current Mosaic Grid settings using the Grid topologies numbers we got before
-                    NV_RECT[] viewports = new NV_RECT[NVImport.NV_MOSAIC_MAX_DISPLAYS];
+                    /*NV_RECT[] viewports = new NV_RECT[NVImport.NV_MOSAIC_MAX_DISPLAYS];
                     byte bezelCorrected = 0;
                     NVStatus = NVImport.NvAPI_Mosaic_GetDisplayViewportsByResolution(mosaicGridTopo.displays[0].DisplayId, 0, 0, ref viewports, ref bezelCorrected);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
@@ -485,7 +485,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                     }
 
-                    myDisplayConfig.MosaicConfig.MosaicViewports = viewports; 
+                    myDisplayConfig.MosaicConfig.MosaicViewports = viewports; */
                 }
                 else
                 {

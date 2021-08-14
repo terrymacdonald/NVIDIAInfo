@@ -1471,6 +1471,7 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_Mosaic_GetSupportedTopoInfo, out Mosaic_GetSupportedTopoInfoInternal);
                 GetDelegate(NvId_Mosaic_EnumDisplayGrids, out Mosaic_EnumDisplayGridsInternal);
                 GetDelegate(NvId_Mosaic_EnumDisplayGrids, out Mosaic_EnumDisplayGridsInternalNull); // The null version of the submission
+                GetDelegate(NvId_Mosaic_SetDisplayGrids, out Mosaic_SetDisplayGridsInternal);
                 GetDelegate(NvId_Mosaic_GetDisplayViewportsByResolution, out Mosaic_GetDisplayViewportsByResolutionInternal);
                 
 
@@ -2564,14 +2565,14 @@ namespace DisplayMagicianShared.NVIDIA
             NVAPI_STATUS status;
 
             GridTopologies.displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V2[(Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS];
-            for (Int32 i = 0; i < (Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS; i++)
-                {
-                GridTopologies.displays[i].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER;
+            for (Int32 j = 0; j < (Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS; j++)
+            {
+                GridTopologies.displays[j].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER;
             }
             GridTopologies.Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
             GridTopologies.displaySettings = new NV_MOSAIC_DISPLAY_SETTING_V1();
             GridTopologies.displaySettings.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V1_VER;
-
+            
             if (Mosaic_EnumDisplayGridsInternal != null) { status = Mosaic_EnumDisplayGridsInternal(ref GridTopologies, ref GridCount); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
@@ -2586,13 +2587,11 @@ namespace DisplayMagicianShared.NVIDIA
         private static readonly Mosaic_EnumDisplayGridsDelegateNull Mosaic_EnumDisplayGridsInternalNull;
 
         /// <summary>
-        ///  This API returns information for the current Mosaic topology. This includes topology, display settings, and overlap values.
-        ///  You can call NvAPI_Mosaic_GetTopoGroup() with the topology if you require more information. If there isn't a current topology, then pTopoBrief->topo will be NV_MOSAIC_TOPO_NONE.
+        ///  Enumerates the current active grid topologies. This includes Mosaic, IG, and Panoramic topologies, as well as single displays.
+        ///  If pGridTopologies is NULL, then pGridCount will be set to the number of active grid topologies.
+        ///  If pGridTopologies is not NULL, then pGridCount contains the maximum number of grid topologies to return. On return, pGridCount will be set to the number of grid topologies that were returned.
         /// </summary>
-        /// <param name="pTopoBrief"></param>
-        /// <param name="pDisplaySetting"></param>
-        /// <param name="pOverlapX"></param>
-        /// <param name="pOverlapY"></param>
+        /// <param name="pGridCount"></param>
         /// <returns></returns>
         public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayGrids(ref UInt32 pGridCount)
         {
@@ -2600,6 +2599,32 @@ namespace DisplayMagicianShared.NVIDIA
             IntPtr pGridTopologies = IntPtr.Zero;
 
             if (Mosaic_EnumDisplayGridsInternalNull != null) { status = Mosaic_EnumDisplayGridsInternalNull(pGridTopologies, ref pGridCount); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_Mosaic_SetDisplayGrids	(	__in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __in NvU32  gridCount, __in NvU32  setTopoFlags )	
+        private delegate NVAPI_STATUS Mosaic_SetDisplayGridsDelegate(
+            [In] in NV_MOSAIC_GRID_TOPO_V2[] pGridTopologies,
+            [In] UInt32 pGridCount,
+            [In] UInt32 setTopoFlags);
+        private static readonly Mosaic_SetDisplayGridsDelegate Mosaic_SetDisplayGridsInternal;
+
+        /// <summary>
+        ///  Sets a new display topology, replacing any existing topologies that use the same displays.
+        ///  This function will look for an SLI configuration that will allow the display topology to work.
+        ///  To revert to a single display, specify that display as a 1x1 grid.
+        /// </summary>
+        /// <param name="pGridTopologies"></param>
+        /// <param name="pGridCount"></param>
+        /// <param name="setTopoFlags"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Mosaic_SetDisplayGrids(in NV_MOSAIC_GRID_TOPO_V2[] pGridTopologies, UInt32 pGridCount, UInt32 setTopoFlags)
+        {
+            NVAPI_STATUS status;
+
+            if (Mosaic_SetDisplayGridsInternal != null) { status = Mosaic_SetDisplayGridsInternal(in pGridTopologies, pGridCount, setTopoFlags); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;
