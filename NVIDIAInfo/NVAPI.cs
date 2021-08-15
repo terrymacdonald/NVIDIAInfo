@@ -1611,7 +1611,9 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_Mosaic_SetDisplayGrids, out Mosaic_SetDisplayGridsInternal);
                 GetDelegate(NvId_Mosaic_ValidateDisplayGrids, out Mosaic_ValidateDisplayGridsInternal);                
                 GetDelegate(NvId_Mosaic_GetDisplayViewportsByResolution, out Mosaic_GetDisplayViewportsByResolutionInternal);
+                GetDelegate(NvId_Mosaic_GetOverlapLimits, out Mosaic_GetOverlapLimitsInternal);
                 
+
 
                 // Set the availability
                 available = true;
@@ -2992,6 +2994,39 @@ namespace DisplayMagicianShared.NVIDIA
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
 
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_Mosaic_GetOverlapLimits(NV_MOSAIC_TOPO_BRIEF *pTopoBrief, NV_MOSAIC_DISPLAY_SETTING *pDisplaySetting, NvS32 *pMinOverlapX, NvS32 *pMaxOverlapX, NvS32 *pMinOverlapY, NvS32 *pMaxOverlapY);
+        private delegate NVAPI_STATUS Mosaic_GetOverlapLimitsDelegate(
+            [In] ref NV_MOSAIC_TOPO_BRIEF topoBrief,
+            [In] ref NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting,
+            [Out] out Int32 minOverlapX,            
+            [Out] out Int32 maxOverlapX,
+            [Out] out Int32 minOverlapY,
+            [Out] out Int32 maxOverlapY);
+        private static readonly Mosaic_GetOverlapLimitsDelegate Mosaic_GetOverlapLimitsInternal;
+        /// <summary>
+        ///   This API returns the X and Y overlap limits required if the given Mosaic topology and display settings are to be used.
+        /// </summary>
+        /// <param name="topoBrief"></param>
+        /// <param name="displaySetting"></param>
+        /// <param name="minOverlapX"></param>
+        /// <param name="maxOverlapX"></param>
+        /// <param name="minOverlapY"></param>
+        /// <param name="maxOverlapY"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Mosaic_GetOverlapLimits(NV_MOSAIC_TOPO_BRIEF topoBrief, NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting, out Int32 minOverlapX, out Int32 maxOverlapX, out Int32 minOverlapY, out Int32 maxOverlapY)
+        {
+            NVAPI_STATUS status;
+            minOverlapX = 0;
+            maxOverlapX = 0;
+            minOverlapY = 0;
+            maxOverlapY = 0;
+            
+            if (Mosaic_GetOverlapLimitsInternal != null) { status = Mosaic_GetOverlapLimitsInternal(ref topoBrief, ref displaySetting, out minOverlapX, out maxOverlapX, out minOverlapY, out maxOverlapY); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;
         }
