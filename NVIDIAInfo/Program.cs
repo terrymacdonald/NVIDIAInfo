@@ -9,6 +9,11 @@ using DisplayMagicianShared.Windows;
 using System.Collections.Generic;
 using System.Linq;
 
+using NvAPIWrapper;
+using NvAPIWrapper.Display;
+using NvAPIWrapper.GPU;
+using NvAPIWrapper.Mosaic;
+
 namespace NVIDIAInfo
 {
     class Program
@@ -70,6 +75,9 @@ namespace NVIDIAInfo
                 Console.WriteLine();
                 Environment.Exit(1);
             }
+
+            /*NVIDIA.Initialize();
+            GridTopology[] myGT =  GridTopology.GetGridTopologies();*/
 
             if (args.Length > 0)
             {

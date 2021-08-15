@@ -378,6 +378,10 @@ namespace DisplayMagicianShared.NVIDIA
                          SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                      }
 
+                    // Try NvAPIWrapper.net
+
+
+
                     // Figure out how many Mosaic Grid topoligies there are                    
                     uint mosaicGridCount = 0;
                     NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridCount);
