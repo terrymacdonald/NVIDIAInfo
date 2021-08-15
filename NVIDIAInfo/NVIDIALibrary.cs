@@ -912,7 +912,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // If we get here then the display is valid, so we need to apply the new Mosaic Topology
-                    NVStatus = NVImport.NvAPI_Mosaic_SetDisplayGrids(ref displayConfig.MosaicConfig.MosaicGridTopos, displayConfig.MosaicConfig.MosaicGridCount, setTopoFlags);
+                    NVStatus = NVImport.NvAPI_Mosaic_SetDisplayGrids(displayConfig.MosaicConfig.MosaicGridTopos, displayConfig.MosaicConfig.MosaicGridCount, setTopoFlags);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
@@ -956,86 +956,6 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                     }
 
-                    // Now we need to log the 
-                    bool topoValid = true;
-                    for (int i = 0; i < topoStatuses.Length; i++)
-                    {
-                        // If there is an error then we need to log it!
-                        // And make it not be used
-                        if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.OK)
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Congratulations! No error flags for GridTopology #{i}");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.DISPLAY_ON_INVALID_GPU)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: Display is on an invalid GPU");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.DISPLAY_ON_WRONG_CONNECTOR)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: Display is on the wrong connection. It was on a different connection when the display profile was saved.");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.ECC_ENABLED)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: ECC has been enabled, and Mosaic/Surround doesn't work with ECC");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.GPU_TOPOLOGY_NOT_SUPPORTED)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: This GPU topology is not supported.");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.MISMATCHED_OUTPUT_TYPE)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: The output type has changed for the display. The display was connected through another output type when the display profile was saved.");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.NOT_SUPPORTED)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: This Grid Topology is not supported on this video card.");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.NO_COMMON_TIMINGS)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: Couldn't find common timings that suit all the displays in this Grid Topology.");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.NO_DISPLAY_CONNECTED)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: No display connected.");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.NO_EDID_AVAILABLE)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: Your display didn't provide any information when we attempted to query it. Your display either doesn't support support EDID querying or has it a fault. ");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.NO_GPU_TOPOLOGY)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: There is no GPU topology provided.");
-                        }
-                        else if (topoStatuses[i].ErrorFlags == NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.NO_SLI_BRIDGE)
-                        {
-                            topoValid = false;
-                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: Error with the GridTopology #{i}: There is no SLI bridge, and there was one when the display profile was created.");
-                        }
-
-                        // And now we also check to see if there are any warnings we also need to log
-                        if (topoStatuses[i].WarningFlags == NV_MOSAIC_DISPLAYTOPO_WARNING_FLAGS.NONE)
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Congratulations! No warning flags for GridTopology #{i}");
-                        }
-                        else if (topoStatuses[i].WarningFlags == NV_MOSAIC_DISPLAYTOPO_WARNING_FLAGS.DISPLAY_POSITION)
-                        {
-                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Warning for the GridTopology #{i}: The display position has changed, and this may affect your display view.");
-                        }
-                        else if (topoStatuses[i].WarningFlags == NV_MOSAIC_DISPLAYTOPO_WARNING_FLAGS.DRIVER_RELOAD_REQUIRED)
-                        {
-                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Warning for the GridTopology #{i}: Your computer needs to be restarted before your NVIDIA device driver can use this Grid Topology.");
-                        }
-                    }
                     // *** NOTE: THIS USES THE GetTopo AND SetTopo, AND THIS METHOD CURRENTLY DOESN'T WORK ***
                     // Check if the wanted Mosaic Topology is still able to be used
                     /*NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 supportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();

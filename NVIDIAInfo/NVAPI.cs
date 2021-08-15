@@ -2883,8 +2883,8 @@ namespace DisplayMagicianShared.NVIDIA
 
         // NVAPI_INTERFACE NvAPI_Mosaic_SetDisplayGrids	(	__in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __in NvU32  gridCount, __in NvU32  setTopoFlags )	
         private delegate NVAPI_STATUS Mosaic_SetDisplayGridsDelegate(
-            [In] in NV_MOSAIC_GRID_TOPO_V2 pGridTopologies,
-            [In] UInt32 pGridCount,
+            [In] IntPtr GridTopologies,
+            [In] UInt32 GridCount,
             [In] NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags);
         private static readonly Mosaic_SetDisplayGridsDelegate Mosaic_SetDisplayGridsInternal;
 
@@ -2897,12 +2897,34 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="pGridCount"></param>
         /// <param name="setTopoFlags"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_SetDisplayGrids(in NV_MOSAIC_GRID_TOPO_V2 pGridTopologies, UInt32 pGridCount, NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags)
+        public static NVAPI_STATUS NvAPI_Mosaic_SetDisplayGrids(NV_MOSAIC_GRID_TOPO_V2[] GridTopologies, UInt32 GridCount, NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags)
         {
             NVAPI_STATUS status;
 
-            if (Mosaic_SetDisplayGridsInternal != null) { status = Mosaic_SetDisplayGridsInternal(in pGridTopologies, pGridCount, setTopoFlags); }
-            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            // Initialize unmanged memory to hold the unmanaged array of structs
+            IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)GridCount);
+            // Also set another memory pointer to the same place so that we can do the memory copying item by item
+            // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
+            IntPtr currentGridTopologiesBuffer = gridTopologiesBuffer;
+            // Go through the array and copy things from managed code to unmanaged code
+            for (Int32 x = 0; x < (Int32)GridCount; x++)
+            {
+                // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                Marshal.StructureToPtr(GridTopologies[x], currentGridTopologiesBuffer, false);
+                // advance the buffer forwards to the next object
+                currentGridTopologiesBuffer = (IntPtr)((long)currentGridTopologiesBuffer + Marshal.SizeOf(GridTopologies[x]));
+            }
+
+            if (Mosaic_SetDisplayGridsInternal != null)
+            {
+
+                // Use the unmanaged buffer in the unmanaged C call
+                status = Mosaic_SetDisplayGridsInternal(gridTopologiesBuffer, GridCount, setTopoFlags);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
 
             return status;
         }
