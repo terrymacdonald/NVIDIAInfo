@@ -1372,7 +1372,7 @@ namespace DisplayMagicianShared.NVIDIA
         public const UInt32 NV_MAX_AVAILABLE_CPU_TOPOLOGIES = 256;
         public const UInt32 NV_MAX_AVAILABLE_SLI_GROUPS = 256;
         public const UInt32 NV_MAX_AVAILABLE_DISPLAY_HEADS = 2;
-        public const UInt32 NV_MAX_DISPLAYS = NV_PHYSICAL_GPUS * NV_ADVANCED_DISPLAY_HEADS;
+        public const UInt32 NV_MAX_DISPLAYS = NV_MAX_PHYSICAL_GPUS * NV_ADVANCED_DISPLAY_HEADS;
         public const UInt32 NV_MAX_GPU_PER_TOPOLOGY = 8;
         public const UInt32 NV_MAX_GPU_TOPOLOGIES = NV_MAX_PHYSICAL_GPUS;
         public const UInt32 NV_MAX_HEADS_PER_GPU = 32;
@@ -2649,7 +2649,7 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayGrids(__inout_ecount_part_opt*,* pGridCount NV_MOSAIC_GRID_TOPO* pGridTopologies,__inout NvU32 * 	pGridCount)
         // NvAPIMosaic_EnumDisplayGrids
         private delegate NVAPI_STATUS Mosaic_EnumDisplayGridsDelegate(
-            [In][Out] IntPtr pGridTopologies,
+            [In][Out] IntPtr GridTopologiesBuffer,
             [In][Out] ref UInt32 pGridCount);            
         private static readonly Mosaic_EnumDisplayGridsDelegate Mosaic_EnumDisplayGridsInternal;
 
@@ -2726,8 +2726,8 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayGrids(__inout_ecount_part_opt*,* pGridCount NV_MOSAIC_GRID_TOPO* pGridTopologies,__inout NvU32 * 	pGridCount)
         // NvAPIMosaic_EnumDisplayGrids
         private delegate NVAPI_STATUS Mosaic_EnumDisplayGridsDelegateNull(
-            [In][Out] IntPtr pGridTopologies,
-            [In][Out] ref UInt32 pGridCount);
+            [In][Out] IntPtr GridTopologiesBuffer,
+            [In][Out] ref UInt32 GridCount);
         private static readonly Mosaic_EnumDisplayGridsDelegateNull Mosaic_EnumDisplayGridsInternalNull;
 
         /// <summary>
@@ -2751,9 +2751,9 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_Mosaic_ValidateDisplayGrids(__in NvU32  setTopoFlags, __in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __inout_ecount_full(gridCount) NV_MOSAIC_DISPLAY_TOPO_STATUS * 	pTopoStatus, __in NvU32  gridCount )
         private delegate NVAPI_STATUS Mosaic_ValidateDisplayGridsDelegate(
             [In] NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, 
-            [In] in NV_MOSAIC_GRID_TOPO_V2[] pGridTopologies,
-            [In][Out] ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses,
-            [In] UInt32 pGridCount
+            [In] in NV_MOSAIC_GRID_TOPO_V2[] GridTopologiesBuffer,
+            [In][Out] ref IntPtr TopoStatuses,
+            [In] UInt32 GridCount
             );
         private static readonly Mosaic_ValidateDisplayGridsDelegate Mosaic_ValidateDisplayGridsInternal;
 
@@ -2764,21 +2764,69 @@ namespace DisplayMagicianShared.NVIDIA
         /// If the ALLOW_INVALID flag is not set and no matching SLI configuration is found, then it will skip the rest of the validation and return NVAPI_NO_ACTIVE_SLI_TOPOLOGY.
         /// </summary>
         /// <param name="setTopoFlags"></param>
-        /// <param name="pGridTopologies"></param>
+        /// <param name="GridTopologies"></param>
         /// <param name="TopoStatuses"></param>
-        /// <param name="pGridCount"></param>
+        /// <param name="GridCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, in NV_MOSAIC_GRID_TOPO_V2[] pGridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses, UInt32 pGridCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, in NV_MOSAIC_GRID_TOPO_V2[] GridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses, UInt32 GridCount)
         {
             NVAPI_STATUS status;
-            for (int i = 0; i < pGridCount; i++)
+
+            // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
+            TopoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[GridCount];
+            // Initialize unmanged memory to hold the unmanaged array of structs
+            IntPtr topoStatusesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)) * (int)GridCount);
+            // Also set another memory pointer to the same place so that we can do the memory copying item by item
+            // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
+            IntPtr currentTopoStatusesBuffer = topoStatusesBuffer;
+            // Go through the array and copy things from managed code to unmanaged code
+            for (Int32 x = 0; x < (Int32)GridCount; x++)
             {
-                TopoStatuses[i] = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1();
-                TopoStatuses[i].Version = NVImport.NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER;
-                TopoStatuses[i].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[NV_MOSAIC_MAX_DISPLAYS];
+                // Set up the basic structure
+                TopoStatuses[x].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[(Int32)NVImport.NV_MAX_DISPLAYS];
+                TopoStatuses[x].DisplayCount = GridCount;
+                TopoStatuses[x].Version = NVImport.NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER;
+
+                // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                Marshal.StructureToPtr(TopoStatuses[x], currentTopoStatusesBuffer, false);
+                // advance the buffer forwards to the next object
+                currentTopoStatusesBuffer = (IntPtr)((long)currentTopoStatusesBuffer + Marshal.SizeOf(TopoStatuses[x]));
             }
-            if (Mosaic_ValidateDisplayGridsInternal != null) { status = Mosaic_ValidateDisplayGridsInternal(setTopoFlags, in pGridTopologies, ref TopoStatuses, pGridCount); }
-            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            if (Mosaic_ValidateDisplayGridsInternal != null)
+            {
+
+                // Use the unmanaged buffer in the unmanaged C call
+                status = Mosaic_ValidateDisplayGridsInternal(setTopoFlags, in GridTopologies, ref topoStatusesBuffer, GridCount);
+
+                if (status == NVAPI_STATUS.NVAPI_OK)
+                {
+                    // If everything worked, then copy the data back from the unmanaged array into the managed array
+                    // So that we can use it in C# land
+                    // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
+                    currentTopoStatusesBuffer = topoStatusesBuffer;
+                    // Create a managed array to store the received information within
+                    TopoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[GridCount];
+                    // Go through the memory buffer item by item and copy the items into the managed array
+                    for (int i = 0; i < GridCount; i++)
+                    {
+                        // build a structure in the array slot
+                        TopoStatuses[i] = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1();
+                        // fill the array slot structure with the data from the buffer
+                        TopoStatuses[i] = (NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)Marshal.PtrToStructure(currentTopoStatusesBuffer, typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1));
+                        // destroy the bit of memory we no longer need
+                        Marshal.DestroyStructure(currentTopoStatusesBuffer, typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1));
+                        // advance the buffer forwards to the next object
+                        currentTopoStatusesBuffer = (IntPtr)((long)currentTopoStatusesBuffer + Marshal.SizeOf(TopoStatuses[i]));
+                    }
+                    // Destroy he unmanaged array so we don't have a memory leak
+                    Marshal.FreeCoTaskMem(topoStatusesBuffer);
+                }
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
 
             return status;
         }

@@ -777,10 +777,8 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // We need to change to a Mosaic profile, so we need to apply the new Mosaic Topology
                     NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
-                    NV_MOSAIC_GRID_TOPO_V2[,] pGridTopologies = new NV_MOSAIC_GRID_TOPO_V2[displayConfig.MosaicConfig.MosaicGridCount, displayConfig.MosaicConfig.MosaicGridCount];
-                    NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses = { new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1()};
-                    UInt32 pGridCount = 0;
-                    //NVStatus = NVImport.NvAPI_Mosaic_ValidateDisplayGrids(setTopoFlags, in displayConfig.MosaicConfig.MosaicGridTopo, ref TopoStatuses, pGridCount);
+                    NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[displayConfig.MosaicConfig.MosaicGridCount];
+                    NVStatus = NVImport.NvAPI_Mosaic_ValidateDisplayGrids(setTopoFlags, in displayConfig.MosaicConfig.MosaicGridTopos, ref TopoStatuses, displayConfig.MosaicConfig.MosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");                        
