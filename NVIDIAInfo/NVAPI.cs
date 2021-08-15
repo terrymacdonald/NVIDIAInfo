@@ -590,7 +590,7 @@ namespace DisplayMagicianShared.NVIDIA
     public enum NV_MOSAIC_SETDISPLAYTOPO_FLAGS : UInt32
     {
         // Empty flag which does nothing
-        NONE = 0x0,
+        NONE = 0,
 
         //! Do not change the current GPU topology. If the NO_DRIVER_RELOAD bit is not
         //! specified, then it may still require a driver reload.
@@ -986,7 +986,41 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Width, Height, Bpp, Freq, Rrx1k).GetHashCode();
         }
-    }    
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_MOSAIC_GRID_TOPO_V1 : IEquatable<NV_MOSAIC_GRID_TOPO_V1> // Note: Version 1 of NV_MOSAIC_GRID_TOPO structure
+    {
+        public UInt32 Version;            // Version of this structure - MUST BE SET TO 1
+        public UInt32 Rows;              //!< Per-display width
+        public UInt32 Columns;             //!< Per-display height
+        public UInt32 DisplayCount;                //!< Bits per pixel
+        public UInt32 Flags;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS)]
+        public NV_MOSAIC_GRID_TOPO_DISPLAY_V1[] Displays;
+        public NV_MOSAIC_DISPLAY_SETTING_V1 DisplaySettings;
+
+
+        public bool ApplyWithBezelCorrect => (Flags & 0x1) == 0x1;
+        public bool ImmersiveGaming => (Flags & 0x2) == 0x2;
+        public bool BaseMosaic => (Flags & 0x4) == 0x4;
+        public bool DriverReloadAllowed => (Flags & 0x8) == 0x8;
+        public bool AcceleratePrimaryDisplay => (Flags & 0x10) == 0x10;
+
+        public bool Equals(NV_MOSAIC_GRID_TOPO_V1 other)
+        => Version == other.Version &&
+           Rows == other.Rows &&
+           Columns == other.Columns &&
+           DisplayCount == other.DisplayCount &&
+           Flags == other.Flags &&
+           Displays.SequenceEqual(other.Displays) &&
+           DisplaySettings.Equals(other.DisplaySettings);
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, Rows, Columns, DisplayCount, Flags, Displays, DisplaySettings).GetHashCode();
+        }
+    }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_MOSAIC_GRID_TOPO_V2 : IEquatable<NV_MOSAIC_GRID_TOPO_V2> // Note: Version 2 of NV_MOSAIC_GRID_TOPO structure
@@ -1005,7 +1039,8 @@ namespace DisplayMagicianShared.NVIDIA
         public bool ImmersiveGaming => (Flags & 0x2) == 0x2;
         public bool BaseMosaic => (Flags & 0x4) == 0x4;
         public bool DriverReloadAllowed => (Flags & 0x8) == 0x8;
-        public bool AcceleratePrimaryDisplay => (Flags & 0x16) == 0x16;
+        public bool AcceleratePrimaryDisplay => (Flags & 0x10) == 0x10;
+        public bool PixelShift => (Flags & 0x20) == 0x20;
 
         public bool Equals(NV_MOSAIC_GRID_TOPO_V2 other)
         => Version == other.Version &&
@@ -1417,6 +1452,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_MOSAIC_DISPLAY_SETTING_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_DISPLAY_SETTING_V2>(2);
         public static UInt32 NV_MOSAIC_TOPO_GROUP_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_TOPO_GROUP>(1);
         public static UInt32 NV_MOSAIC_TOPO_DETAILS_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_TOPO_DETAILS>(1);
+        public static UInt32 NV_MOSAIC_GRID_TOPO_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO_V1>(1); 
         public static UInt32 NV_MOSAIC_GRID_TOPO_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO_V2>(2);
         public static UInt32 NV_MOSAIC_GRID_TOPO_DISPLAY_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO_DISPLAY_V1>(1);
         public static UInt32 NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO_DISPLAY_V2>(2);
@@ -2661,12 +2697,12 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="GridTopologies"></param>
         /// <param name="GridCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayGrids(ref NV_MOSAIC_GRID_TOPO_V2[] GridTopologies, ref UInt32 GridCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayGrids(ref NV_MOSAIC_GRID_TOPO_V1[] GridTopologies, ref UInt32 GridCount)
         {
             NVAPI_STATUS status;
 
             // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
-            GridTopologies = new NV_MOSAIC_GRID_TOPO_V2[GridCount];
+            GridTopologies = new NV_MOSAIC_GRID_TOPO_V1[GridCount];
             // Initialize unmanged memory to hold the unmanaged array of structs
             IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)GridCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
@@ -2676,9 +2712,9 @@ namespace DisplayMagicianShared.NVIDIA
             for (Int32 x = 0; x < (Int32)GridCount; x++)
             {
                 // Set up the basic structure
-                GridTopologies[x].Displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V2[(Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS];
+                GridTopologies[x].Displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V1[(Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS];
                 GridTopologies[x].DisplayCount = GridCount;
-                GridTopologies[x].Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
+                GridTopologies[x].Version = NVImport.NV_MOSAIC_GRID_TOPO_V1_VER;
 
                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
                 Marshal.StructureToPtr(GridTopologies[x], currentGridTopologiesBuffer, false);
@@ -2698,16 +2734,16 @@ namespace DisplayMagicianShared.NVIDIA
                     // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
                     currentGridTopologiesBuffer = gridTopologiesBuffer;
                     // Create a managed array to store the received information within
-                    GridTopologies = new NV_MOSAIC_GRID_TOPO_V2[GridCount];
+                    GridTopologies = new NV_MOSAIC_GRID_TOPO_V1[GridCount];
                     // Go through the memory buffer item by item and copy the items into the managed array
                     for (int i = 0; i < GridCount; i++)
                     {
                         // build a structure in the array slot
-                        GridTopologies[i] = new NV_MOSAIC_GRID_TOPO_V2();
+                        GridTopologies[i] = new NV_MOSAIC_GRID_TOPO_V1();
                         // fill the array slot structure with the data from the buffer
-                        GridTopologies[i] = (NV_MOSAIC_GRID_TOPO_V2)Marshal.PtrToStructure(currentGridTopologiesBuffer, typeof(NV_MOSAIC_GRID_TOPO_V2));
+                        GridTopologies[i] = (NV_MOSAIC_GRID_TOPO_V1)Marshal.PtrToStructure(currentGridTopologiesBuffer, typeof(NV_MOSAIC_GRID_TOPO_V1));
                         // destroy the bit of memory we no longer need
-                        Marshal.DestroyStructure(currentGridTopologiesBuffer, typeof(NV_MOSAIC_GRID_TOPO_V2));
+                        Marshal.DestroyStructure(currentGridTopologiesBuffer, typeof(NV_MOSAIC_GRID_TOPO_V1));
                         // advance the buffer forwards to the next object
                         currentGridTopologiesBuffer = (IntPtr)((long)currentGridTopologiesBuffer + Marshal.SizeOf(GridTopologies[i]));
                     }
@@ -2751,8 +2787,8 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_Mosaic_ValidateDisplayGrids(__in NvU32  setTopoFlags, __in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __inout_ecount_full(gridCount) NV_MOSAIC_DISPLAY_TOPO_STATUS * 	pTopoStatus, __in NvU32  gridCount )
         private delegate NVAPI_STATUS Mosaic_ValidateDisplayGridsDelegate(
             [In] NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, 
-            [In] in NV_MOSAIC_GRID_TOPO_V2[] GridTopologiesBuffer,
-            [In][Out] ref IntPtr TopoStatuses,
+            [In] IntPtr GridTopologiesBuffer,
+            [In][Out] IntPtr TopoStatusesBuffer,
             [In] UInt32 GridCount
             );
         private static readonly Mosaic_ValidateDisplayGridsDelegate Mosaic_ValidateDisplayGridsInternal;
@@ -2768,9 +2804,30 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="TopoStatuses"></param>
         /// <param name="GridCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, in NV_MOSAIC_GRID_TOPO_V2[] GridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses, UInt32 GridCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, ref NV_MOSAIC_GRID_TOPO_V1[] GridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses, UInt32 GridCount)
         {
             NVAPI_STATUS status;
+
+            // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
+            //GridTopologies = new NV_MOSAIC_GRID_TOPO_V1[GridCount];
+            // Initialize unmanged memory to hold the unmanaged array of structs
+            IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V1)) * (int)GridCount);
+            // Also set another memory pointer to the same place so that we can do the memory copying item by item
+            // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
+            IntPtr currentGridTopologiesBuffer = gridTopologiesBuffer;
+            // Go through the array and copy things from managed code to unmanaged code
+            for (Int32 x = 0; x < (Int32)GridCount; x++)
+            {
+                // Set up the basic structure
+                /*GridTopologies[x].Displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V1[(Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS];
+                GridTopologies[x].DisplayCount = GridCount;
+                GridTopologies[x].Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;*/
+
+                // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                Marshal.StructureToPtr(GridTopologies[x], currentGridTopologiesBuffer, false);
+                // advance the buffer forwards to the next object
+                currentGridTopologiesBuffer = (IntPtr)((long)currentGridTopologiesBuffer + Marshal.SizeOf(GridTopologies[x]));
+            }
 
             // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
             TopoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[GridCount];
@@ -2797,7 +2854,7 @@ namespace DisplayMagicianShared.NVIDIA
             {
 
                 // Use the unmanaged buffer in the unmanaged C call
-                status = Mosaic_ValidateDisplayGridsInternal(setTopoFlags, in GridTopologies, ref topoStatusesBuffer, GridCount);
+                status = Mosaic_ValidateDisplayGridsInternal(setTopoFlags, gridTopologiesBuffer, topoStatusesBuffer, GridCount);
 
                 if (status == NVAPI_STATUS.NVAPI_OK)
                 {

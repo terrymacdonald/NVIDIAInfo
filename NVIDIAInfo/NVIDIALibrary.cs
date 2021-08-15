@@ -19,7 +19,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_DISPLAY_SETTING_V2 MosaicDisplaySettings;
         public Int32 OverlapX;
         public Int32 OverlapY;
-        public NV_MOSAIC_GRID_TOPO_V2[] MosaicGridTopos;
+        public NV_MOSAIC_GRID_TOPO_V1[] MosaicGridTopos;
         public UInt32 MosaicGridCount;
         public NV_RECT[] MosaicViewports;
 
@@ -391,7 +391,8 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
-                    NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];                    
+                    //NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];                    
+                    NV_MOSAIC_GRID_TOPO_V1[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V1[mosaicGridCount];
                     NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopos, ref mosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
@@ -778,7 +779,7 @@ namespace DisplayMagicianShared.NVIDIA
                     // We need to change to a Mosaic profile, so we need to apply the new Mosaic Topology
                     NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
                     NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[displayConfig.MosaicConfig.MosaicGridCount];
-                    NVStatus = NVImport.NvAPI_Mosaic_ValidateDisplayGrids(setTopoFlags, in displayConfig.MosaicConfig.MosaicGridTopos, ref TopoStatuses, displayConfig.MosaicConfig.MosaicGridCount);
+                    NVStatus = NVImport.NvAPI_Mosaic_ValidateDisplayGrids(setTopoFlags, ref displayConfig.MosaicConfig.MosaicGridTopos, ref TopoStatuses, displayConfig.MosaicConfig.MosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");                        
