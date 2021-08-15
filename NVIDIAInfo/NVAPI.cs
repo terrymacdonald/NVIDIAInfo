@@ -2654,13 +2654,12 @@ namespace DisplayMagicianShared.NVIDIA
         private static readonly Mosaic_EnumDisplayGridsDelegate Mosaic_EnumDisplayGridsInternal;
 
         /// <summary>
-        ///  This API returns information for the current Mosaic topology. This includes topology, display settings, and overlap values.
-        ///  You can call NvAPI_Mosaic_GetTopoGroup() with the topology if you require more information. If there isn't a current topology, then pTopoBrief->topo will be NV_MOSAIC_TOPO_NONE.
+        /// Enumerates the current active grid topologies. This includes Mosaic, IG, and Panoramic topologies, as well as single displays.
+        /// If pGridTopologies is NULL, then pGridCount will be set to the number of active grid topologies.
+        /// If pGridTopologies is not NULL, then pGridCount contains the maximum number of grid topologies to return. On return, pGridCount will be set to the number of grid topologies that were returned.
         /// </summary>
-        /// <param name="pTopoBrief"></param>
-        /// <param name="pDisplaySetting"></param>
-        /// <param name="pOverlapX"></param>
-        /// <param name="pOverlapY"></param>
+        /// <param name="GridTopologies"></param>
+        /// <param name="GridCount"></param>
         /// <returns></returns>
         public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayGrids(ref NV_MOSAIC_GRID_TOPO_V2[] GridTopologies, ref UInt32 GridCount)
         {
@@ -2699,18 +2698,18 @@ namespace DisplayMagicianShared.NVIDIA
                     // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
                     currentGridTopologiesBuffer = gridTopologiesBuffer;
                     // Create a managed array to store the received information within
-                    NV_MOSAIC_GRID_TOPO_V2[] gridTopologiesArray = new NV_MOSAIC_GRID_TOPO_V2[GridCount];
+                    GridTopologies = new NV_MOSAIC_GRID_TOPO_V2[GridCount];
                     // Go through the memory buffer item by item and copy the items into the managed array
                     for (int i = 0; i < GridCount; i++)
                     {
                         // build a structure in the array slot
-                        gridTopologiesArray[i] = new NV_MOSAIC_GRID_TOPO_V2();
+                        GridTopologies[i] = new NV_MOSAIC_GRID_TOPO_V2();
                         // fill the array slot structure with the data from the buffer
-                        gridTopologiesArray[i] = (NV_MOSAIC_GRID_TOPO_V2)Marshal.PtrToStructure(currentGridTopologiesBuffer, typeof(NV_MOSAIC_GRID_TOPO_V2));
+                        GridTopologies[i] = (NV_MOSAIC_GRID_TOPO_V2)Marshal.PtrToStructure(currentGridTopologiesBuffer, typeof(NV_MOSAIC_GRID_TOPO_V2));
                         // destroy the bit of memory we no longer need
                         Marshal.DestroyStructure(currentGridTopologiesBuffer, typeof(NV_MOSAIC_GRID_TOPO_V2));
                         // advance the buffer forwards to the next object
-                        currentGridTopologiesBuffer = (IntPtr)((long)currentGridTopologiesBuffer + Marshal.SizeOf(gridTopologiesArray[i]));
+                        currentGridTopologiesBuffer = (IntPtr)((long)currentGridTopologiesBuffer + Marshal.SizeOf(GridTopologies[i]));
                     }
                     // Destroy he unmanaged array so we don't have a memory leak
                     Marshal.FreeCoTaskMem(gridTopologiesBuffer);
