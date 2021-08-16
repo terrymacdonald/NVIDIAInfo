@@ -507,10 +507,10 @@ namespace DisplayMagicianShared.NVIDIA
         NV_HDR_MODE_DOLBY_VISION = 7,            //!< Experimental mode only, not for production! Source: RGB8 Dolby Vision encoded (12 bpc YCbCr422 packed into RGB8) Output: Dolby Vision encoded : Application is to encoded frames in DV format and embed DV dynamic metadata as described in Dolby Vision specification.
 
         // Unsupported/obsolete HDR modes
-        NV_HDR_MODE_EDR = 3,            //!< Do not use! Internal test mode only, to be removed. Source: CCCS (a.k.a FP16 scRGB) Output : EDR (Extended Dynamic Range) - HDR content is tonemapped and gamut mapped to output on regular SDR display set to max luminance ( ~300 nits ).
-        NV_HDR_MODE_SDR = 4,            //!< Do not use! Internal test mode only, to be removed. Source: any Output: SDR (Standard Dynamic Range), we continuously send SDR EOTF InfoFrame signaling, HDMI compliance testing.
-        NV_HDR_MODE_UHDA_NB = 6,            //!< Do not use! Internal test mode only, to be removed. Source: CCCS (a.k.a FP16 scRGB) Output : notebook HDR
-        NV_HDR_MODE_UHDBD = 2             //!< Do not use! Obsolete, to be removed. NV_HDR_MODE_UHDBD == NV_HDR_MODE_UHDA, reflects obsolete pre-UHDA naming convention.
+        //NV_HDR_MODE_EDR = 3,            //!< Do not use! Internal test mode only, to be removed. Source: CCCS (a.k.a FP16 scRGB) Output : EDR (Extended Dynamic Range) - HDR content is tonemapped and gamut mapped to output on regular SDR display set to max luminance ( ~300 nits ).
+        //NV_HDR_MODE_SDR = 4,            //!< Do not use! Internal test mode only, to be removed. Source: any Output: SDR (Standard Dynamic Range), we continuously send SDR EOTF InfoFrame signaling, HDMI compliance testing.
+        //NV_HDR_MODE_UHDA_NB = 6,            //!< Do not use! Internal test mode only, to be removed. Source: CCCS (a.k.a FP16 scRGB) Output : notebook HDR
+        //NV_HDR_MODE_UHDBD = 2             //!< Do not use! Obsolete, to be removed. NV_HDR_MODE_UHDBD == NV_HDR_MODE_UHDA, reflects obsolete pre-UHDA naming convention.
 
     }
 
@@ -2836,8 +2836,8 @@ namespace DisplayMagicianShared.NVIDIA
             for (Int32 x = 0; x < (Int32)GridCount; x++)
             {
                 // Set up the basic structure
-                TopoStatuses[x].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[(Int32)NVImport.NV_MAX_DISPLAYS];
-                TopoStatuses[x].DisplayCount = GridCount;
+                //TopoStatuses[x].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[(Int32)NVImport.NV_MAX_DISPLAYS];
+                //TopoStatuses[x].DisplayCount = GridCount;
                 TopoStatuses[x].Version = NVImport.NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER;
 
                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
