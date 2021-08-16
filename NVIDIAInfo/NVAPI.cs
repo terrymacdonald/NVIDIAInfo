@@ -1464,7 +1464,6 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1>(1);
         public static UInt32 NV_GPU_DISPLAYIDS_V2_VER = MAKE_NVAPI_VERSION<NV_GPU_DISPLAYIDS_V2>(3); // NOTE: There is a bug in R470 that sets the NV_GPU_DISPLAYIDS_V2 version to 3!
 
-
         #region Internal Constant
         /// <summary> Nvapi64_FileName </summary>
         public const string NVAPI_DLL = @"nvapi64.dll";
@@ -2807,17 +2806,17 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="TopoStatuses"></param>
         /// <param name="GridCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, ref NV_MOSAIC_GRID_TOPO_V2[] GridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] TopoStatuses, UInt32 GridCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, ref NV_MOSAIC_GRID_TOPO_V2[] GridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] topoStatuses, UInt32 gridCount)
         {
             NVAPI_STATUS status;
 
             // Initialize unmanged memory to hold the unmanaged array of structs
-            IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)GridCount);
+            IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)gridCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentGridTopologiesBuffer = gridTopologiesBuffer;
             // Go through the array and copy things from managed code to unmanaged code
-            for (Int32 x = 0; x < (Int32)GridCount; x++)
+            for (Int32 x = 0; x < (Int32)gridCount; x++)
             {
                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
                 Marshal.StructureToPtr(GridTopologies[x], currentGridTopologiesBuffer, false);
@@ -2826,31 +2825,32 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
             // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
-            TopoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[GridCount];
+            topoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[gridCount];
             // Initialize unmanged memory to hold the unmanaged array of structs
-            IntPtr topoStatusesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)) * (int)GridCount);
+            IntPtr topoStatusesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)) * (int)gridCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentTopoStatusesBuffer = topoStatusesBuffer;
             // Go through the array and copy things from managed code to unmanaged code
-            for (Int32 x = 0; x < (Int32)GridCount; x++)
+            for (Int32 x = 0; x < (Int32)gridCount; x++)
             {
                 // Set up the basic structure
-                //TopoStatuses[x].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[(Int32)NVImport.NV_MAX_DISPLAYS];
-                //TopoStatuses[x].DisplayCount = GridCount;
-                TopoStatuses[x].Version = NVImport.NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER;
+                topoStatuses[x].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[(Int32)NVImport.NV_MAX_DISPLAYS];
+                topoStatuses[x].DisplayCount = 0;
+                topoStatuses[x].Version = NVImport.NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER;
+                topoStatuses[x].ErrorFlags = NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS.OK;
+                topoStatuses[x].WarningFlags = NV_MOSAIC_DISPLAYTOPO_WARNING_FLAGS.NONE;
 
                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
-                Marshal.StructureToPtr(TopoStatuses[x], currentTopoStatusesBuffer, false);
+                Marshal.StructureToPtr(topoStatuses[x], currentTopoStatusesBuffer, false);
                 // advance the buffer forwards to the next object
-                currentTopoStatusesBuffer = (IntPtr)((long)currentTopoStatusesBuffer + Marshal.SizeOf(TopoStatuses[x]));
+                currentTopoStatusesBuffer = (IntPtr)((long)currentTopoStatusesBuffer + Marshal.SizeOf(topoStatuses[x]));
             }
 
             if (Mosaic_ValidateDisplayGridsInternal != null)
             {
-
                 // Use the unmanaged buffer in the unmanaged C call
-                status = Mosaic_ValidateDisplayGridsInternal(setTopoFlags, gridTopologiesBuffer, topoStatusesBuffer, GridCount);
+                status = Mosaic_ValidateDisplayGridsInternal(setTopoFlags, gridTopologiesBuffer, topoStatusesBuffer, gridCount);
 
                 if (status == NVAPI_STATUS.NVAPI_OK)
                 {
@@ -2859,18 +2859,18 @@ namespace DisplayMagicianShared.NVIDIA
                     // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
                     currentTopoStatusesBuffer = topoStatusesBuffer;
                     // Create a managed array to store the received information within
-                    TopoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[GridCount];
+                    topoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[gridCount];
                     // Go through the memory buffer item by item and copy the items into the managed array
-                    for (int i = 0; i < GridCount; i++)
+                    for (int i = 0; i < gridCount; i++)
                     {
                         // build a structure in the array slot
-                        TopoStatuses[i] = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1();
+                        topoStatuses[i] = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1();
                         // fill the array slot structure with the data from the buffer
-                        TopoStatuses[i] = (NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)Marshal.PtrToStructure(currentTopoStatusesBuffer, typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1));
+                        topoStatuses[i] = (NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)Marshal.PtrToStructure(currentTopoStatusesBuffer, typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1));
                         // destroy the bit of memory we no longer need
                         Marshal.DestroyStructure(currentTopoStatusesBuffer, typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1));
                         // advance the buffer forwards to the next object
-                        currentTopoStatusesBuffer = (IntPtr)((long)currentTopoStatusesBuffer + Marshal.SizeOf(TopoStatuses[i]));
+                        currentTopoStatusesBuffer = (IntPtr)((long)currentTopoStatusesBuffer + Marshal.SizeOf(topoStatuses[i]));
                     }
                     // Destroy he unmanaged array so we don't have a memory leak
                     Marshal.FreeCoTaskMem(topoStatusesBuffer);

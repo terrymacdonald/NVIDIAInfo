@@ -70,7 +70,6 @@ namespace DisplayMagicianShared.Windows
         {
             SharedLogger.logger.Trace("WinLibrary/WinLibrary: Intialising Windows CCD library interface");
             _initialised = true;
-            SharedLogger.logger.Trace("WinLibrary/WinLibrary: ADL2 library was initialised successfully");
 
         }
 
