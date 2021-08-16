@@ -479,7 +479,9 @@ namespace DisplayMagicianShared.NVIDIA
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Mosaic is NOT enabled.");
                     myDisplayConfig.MosaicConfig.MosaicTopologyBrief = mosaicTopoBrief; 
                     myDisplayConfig.MosaicConfig.IsMosaicEnabled = false;
-                }
+                    myDisplayConfig.MosaicConfig.MosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[] { };
+                    myDisplayConfig.MosaicConfig.MosaicViewports = new List<NV_RECT[]>();
+    }
 
                 // Check if Mosaic is possible and log that so we know if troubleshooting bugs
                 if (mosaicTopoBrief.IsPossible == 1)
@@ -1333,18 +1335,18 @@ namespace DisplayMagicianShared.NVIDIA
         {
             // Get the current windows display configs to compare to the one we loaded
             bool allDisplays = false;
-            NVIDIA_DISPLAY_CONFIG currentWindowsDisplayConfig = GetNVIDIADisplayConfig(allDisplays);
+            NVIDIA_DISPLAY_CONFIG currentDisplayConfig = GetNVIDIADisplayConfig(allDisplays);
 
             // Check whether the display config is in use now
             SharedLogger.logger.Trace($"NVIDIALibrary/IsActiveConfig: Checking whether the display configuration is already being used.");
-            if (displayConfig.Equals(currentWindowsDisplayConfig))
+            if (displayConfig.Equals(currentDisplayConfig))
             {
-                SharedLogger.logger.Trace($"NVIDIALibrary/IsActiveConfig: The display configuration is already being used (supplied displayConfig Equals currentWindowsDisplayConfig");
+                SharedLogger.logger.Trace($"NVIDIALibrary/IsActiveConfig: The display configuration is already being used (supplied displayConfig Equals currentDisplayConfig");
                 return true;
             }
             else
             {
-                SharedLogger.logger.Trace($"NVIDIALibrary/IsActiveConfig: The display configuration is NOT currently in use (supplied displayConfig Equals currentWindowsDisplayConfig");
+                SharedLogger.logger.Trace($"NVIDIALibrary/IsActiveConfig: The display configuration is NOT currently in use (supplied displayConfig does NOT equal currentDisplayConfig");
                 return false;
             }
 

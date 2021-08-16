@@ -58,10 +58,10 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v0.0.1");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v0.0.2");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v0.0.1");
+            Console.WriteLine($"\nNVIDIAInfo v0.0.2");
             Console.WriteLine($"==============");
             Console.WriteLine($"By Terry MacDonald 2021\n");
 
@@ -273,8 +273,8 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/loadFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                /*if (!NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig.NVIDIAConfig))
-                {*/
+                if (!(NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig.NVIDIAConfig) && WinLibrary.GetLibrary().IsActiveConfig(myDisplayConfig.WindowsConfig)))
+                {
                     if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                     {
                         SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
@@ -312,12 +312,12 @@ namespace NVIDIAInfo
                         Console.WriteLine($"ERROR - Cannot apply the NVIDIA display config in {filename} as it is not currently possible to use it.");
                         SharedLogger.logger.Error($"NVIDIAInfo/loadFromFile: ERROR - Cannot apply the NVIDIA display config in {filename} as it is not currently possible to use it.");
                     }
-               /* }
+                }
                 else
                 {
                     Console.WriteLine($"The display settings in {filename} are already installed. No need to install them again. Exiting.");
                     SharedLogger.logger.Info($"NVIDIAInfo/loadFromFile: The display settings in {filename} are already installed. No need to install them again. Exiting.");
-                }*/
+                }
 
             }
             else
