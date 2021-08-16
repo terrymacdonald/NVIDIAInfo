@@ -168,21 +168,22 @@ namespace DisplayMagicianShared.NVIDIA
     [Flags]
     public enum NV_DISPLAYCONFIG_FLAGS : UInt32
     {
-        NV_DISPLAYCONFIG_VALIDATE_ONLY = 0x00000001,
-        NV_DISPLAYCONFIG_SAVE_TO_PERSISTENCE = 0x00000002,
-        NV_DISPLAYCONFIG_DRIVER_RELOAD_ALLOWED = 0x00000004,               //!< Driver reload is permitted if necessary
-        NV_DISPLAYCONFIG_FORCE_MODE_ENUMERATION = 0x00000008,               //!< Refresh OS mode list.
-        NV_FORCE_COMMIT_VIDPN = 0x00000010,               //!< Tell OS to avoid optimizing CommitVidPn call during a modeset
+        VALIDATE_ONLY = 0x00000001,
+        SAVE_TO_PERSISTENCE = 0x00000002,
+        DRIVER_RELOAD_ALLOWED = 0x00000004,               //!< Driver reload is permitted if necessary
+        FORCE_MODE_ENUMERATION = 0x00000008,               //!< Refresh OS mode list.
+        FORCE_COMMIT_VIDPN = 0x00000010,               //!< Tell OS to avoid optimizing CommitVidPn call during a modeset
     }
 
     [Flags]
     public enum NV_GPU_CONNECTED_IDS_FLAG : UInt32
     {
-        NV_GPU_CONNECTED_IDS_FLAG_UNCACHED = 0, //!< Get uncached connected devices
-        NV_GPU_CONNECTED_IDS_FLAG_SLI = 0x00000001, //!< Get devices such that those can be selected in an SLI configuration
-        NV_GPU_CONNECTED_IDS_FLAG_LIDSTATE = 0x00000002, //!< Get devices such that to reflect the Lid State
-        NV_GPU_CONNECTED_IDS_FLAG_FAKE = 0x00000004, //!< Get devices that includes the fake connected monitors
-        NV_GPU_CONNECTED_IDS_FLAG_EXCLUDE_MST = 0x00000008, //!< Excludes devices that are part of the multi stream topology.
+        NONE = 0, //!< Get uncached connected devices
+        UNCACHED = 0x1, //!< Get uncached connected devices
+        SLI = 0x2, //!< Get devices such that those can be selected in an SLI configuration
+        LIDSTATE = 0x4, //!< Get devices such that to reflect the Lid State
+        FAKE = 0x8, //!< Get devices that includes the fake connected monitors
+        EXCLUDE_MST = 0x10, //!< Excludes devices that are part of the multi stream topology.
     }
 
     public enum NV_STATIC_METADATA_DESCRIPTOR_ID : UInt32
@@ -1155,7 +1156,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_GPU_DISPLAYIDS : IEquatable<NV_GPU_DISPLAYIDS> // Note: Version 1 of NV_MOSAIC_SUPPORTED_TOPO_INFO structure
+    public struct NV_GPU_DISPLAYIDS_V2 : IEquatable<NV_GPU_DISPLAYIDS_V2> // Note: Version 2 of NV_GPU_DISPLAYIDS_V2 structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 2 (NOTE R470 contains a bug, and sets this to 3!)
         public NV_MONITOR_CONN_TYPE ConnectorType;              //!< out: vga, tv, dvi, hdmi and dp.This is reserved for future use and clients should not rely on this information.Instead get the
@@ -1163,7 +1164,7 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 DisplayId;             //!< this is a unique identifier for each device
         public UInt32 Flags;  
 
-        public bool Equals(NV_GPU_DISPLAYIDS other)
+        public bool Equals(NV_GPU_DISPLAYIDS_V2 other)
         => Version == other.Version &&
            ConnectorType == other.ConnectorType &&
            DisplayId == other.DisplayId &&
@@ -1178,7 +1179,7 @@ namespace DisplayMagicianShared.NVIDIA
         public bool isOSVisible => (Flags & 0x10) == 0x10; //!< if bit is set, then this display is reported to the OS
         public bool isWFD => (Flags & 0x20) == 0x20; //!< if bit is set, then this display is wireless
         public bool isConnected => (Flags & 0x40) == 0x40; //!< if bit is set, then this display is connected
-        public bool isPhysicallyConnected => (Flags & 0x20000) == 0x20000; //!< if bit is set, then this display is a phycially connected display; Valid only when isConnected bit is set 
+        public bool isPhysicallyConnected => (Flags & 0x20000) == 0x20000; //!< if bit is set, then this display is a physically connected display; Valid only when isConnected bit is set 
         
         public override Int32 GetHashCode()
         {
@@ -1457,11 +1458,11 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_MOSAIC_GRID_TOPO_DISPLAY_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO_DISPLAY_V1>(1);
         public static UInt32 NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_GRID_TOPO_DISPLAY_V2>(2);
         public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V1>(1);
-        public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V2>(2);
+        public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V2>(2);        
         public static UInt32 NV_HDR_COLOR_DATA_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_COLOR_DATA_V2>(2);
         public static UInt32 NV_HDR_CAPABILITIES_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_CAPABILITIES_V2>(2);
         public static UInt32 NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1>(1);
-        
+        public static UInt32 NV_GPU_DISPLAYIDS_V2_VER = MAKE_NVAPI_VERSION<NV_GPU_DISPLAYIDS_V2>(3); // NOTE: There is a bug in R470 that sets the NV_GPU_DISPLAYIDS_V2 version to 3!
 
 
         #region Internal Constant
@@ -3148,8 +3149,14 @@ namespace DisplayMagicianShared.NVIDIA
             pTopoGroup.Version = NVImport.NV_MOSAIC_TOPO_GROUP_VER;
 
 
-            if (Mosaic_GetTopoGroupInternal != null) { status = Mosaic_GetTopoGroupInternal(ref pTopoBrief, ref pTopoGroup); }
-            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            if (Mosaic_GetTopoGroupInternal != null) 
+            { 
+                status = Mosaic_GetTopoGroupInternal(ref pTopoBrief, ref pTopoGroup); 
+            }
+            else 
+            { 
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; 
+            }
 
             return status;
         }
@@ -3176,7 +3183,7 @@ namespace DisplayMagicianShared.NVIDIA
         //NVAPI_INTERFACE NvAPI_GPU_GetConnectedDisplayIds(__in NvPhysicalGpuHandle hPhysicalGpu, __inout_ecount_part_opt(* pDisplayIdCount, * pDisplayIdCount) NV_GPU_DISPLAYIDS* pDisplayIds, __inout NvU32* pDisplayIdCount, __in NvU32 flags);
         private delegate NVAPI_STATUS GPU_GetConnectedDisplayIdsDelegate(
             [In] PhysicalGpuHandle hPhysicalGpu,
-            [In][Out] ref NV_GPU_DISPLAYIDS[] pDisplayIds,
+            [In][Out] IntPtr pDisplayIds,
             [In][Out] ref UInt32 pDisplayCount,
             [In] NV_GPU_CONNECTED_IDS_FLAG flags);
         private static readonly GPU_GetConnectedDisplayIdsDelegate GPU_GetConnectedDisplayIdsInternal;
@@ -3196,12 +3203,61 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="pOverlapX"></param>
         /// <param name="pOverlapY"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_GPU_GetConnectedDisplayIds(PhysicalGpuHandle hPhysicalGpu, ref NV_GPU_DISPLAYIDS[] pDisplayIds, ref UInt32 pDisplayCount, NV_GPU_CONNECTED_IDS_FLAG flags)
+        public static NVAPI_STATUS NvAPI_GPU_GetConnectedDisplayIds(PhysicalGpuHandle physicalGpu, ref NV_GPU_DISPLAYIDS_V2[] displayIds, ref UInt32 displayCount, NV_GPU_CONNECTED_IDS_FLAG flags)
         {
             NVAPI_STATUS status;
 
-            if (GPU_GetConnectedDisplayIdsInternal != null) { status = GPU_GetConnectedDisplayIdsInternal(hPhysicalGpu, ref pDisplayIds, ref pDisplayCount, flags); }
-            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
+            displayIds = new NV_GPU_DISPLAYIDS_V2[displayCount];
+            // Initialize unmanged memory to hold the unmanaged array of structs
+            IntPtr displayIdBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_GPU_DISPLAYIDS_V2)) * (int)displayCount);
+            // Also set another memory pointer to the same place so that we can do the memory copying item by item
+            // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
+            IntPtr currentDisplayIdBuffer = displayIdBuffer;
+            // Go through the array and copy things from managed code to unmanaged code
+            for (Int32 x = 0; x < (Int32)displayCount; x++)
+            {
+                // Set up the basic structure
+                displayIds[x].Version = NVImport.NV_GPU_DISPLAYIDS_V2_VER;
+
+                // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                Marshal.StructureToPtr(displayIds[x], currentDisplayIdBuffer, false);
+                // advance the buffer forwards to the next object
+                currentDisplayIdBuffer = (IntPtr)((long)currentDisplayIdBuffer + Marshal.SizeOf(displayIds[x]));
+            }
+
+            if (GPU_GetConnectedDisplayIdsInternal != null) 
+            { 
+                status = GPU_GetConnectedDisplayIdsInternal(physicalGpu, displayIdBuffer, ref displayCount, flags);
+                if (status == NVAPI_STATUS.NVAPI_OK)
+                {
+                    // If everything worked, then copy the data back from the unmanaged array into the managed array
+                    // So that we can use it in C# land
+                    // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
+                    currentDisplayIdBuffer = displayIdBuffer;
+                    // Create a managed array to store the received information within
+                    displayIds = new NV_GPU_DISPLAYIDS_V2[displayCount];
+                    // Go through the memory buffer item by item and copy the items into the managed array
+                    for (int i = 0; i < displayCount; i++)
+                    {
+                        // build a structure in the array slot
+                        displayIds[i] = new NV_GPU_DISPLAYIDS_V2();
+                        // fill the array slot structure with the data from the buffer
+                        displayIds[i] = (NV_GPU_DISPLAYIDS_V2)Marshal.PtrToStructure(currentDisplayIdBuffer, typeof(NV_GPU_DISPLAYIDS_V2));
+                        // destroy the bit of memory we no longer need
+                        Marshal.DestroyStructure(currentDisplayIdBuffer, typeof(NV_GPU_DISPLAYIDS_V2));
+                        // advance the buffer forwards to the next object
+                        currentDisplayIdBuffer = (IntPtr)((long)currentDisplayIdBuffer + Marshal.SizeOf(displayIds[i]));
+                    }                    
+                }
+                // Destroy the unmanaged array so we don't have a memory leak
+                Marshal.FreeCoTaskMem(displayIdBuffer);
+
+            }
+            else 
+            { 
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; 
+            }
 
             return status;
         }
@@ -3209,7 +3265,7 @@ namespace DisplayMagicianShared.NVIDIA
         //NVAPI_INTERFACE NvAPI_GPU_GetConnectedDisplayIds(__in NvPhysicalGpuHandle hPhysicalGpu, __inout_ecount_part_opt(* pDisplayIdCount, * pDisplayIdCount) NV_GPU_DISPLAYIDS* pDisplayIds, __inout NvU32* pDisplayIdCount, __in NvU32 flags);
         private delegate NVAPI_STATUS GPU_GetConnectedDisplayIdsDelegateNull(
             [In] PhysicalGpuHandle hPhysicalGpu,
-            [In] in IntPtr pDisplayIds,
+            [In] IntPtr pDisplayIds,
             [In][Out] ref UInt32 pDisplayCount,
             [In] NV_GPU_CONNECTED_IDS_FLAG flags);
         private static readonly GPU_GetConnectedDisplayIdsDelegateNull GPU_GetConnectedDisplayIdsInternalNull;
@@ -3233,7 +3289,7 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (GPU_GetConnectedDisplayIdsInternalNull != null) { status = GPU_GetConnectedDisplayIdsInternalNull(hPhysicalGpu, in IntPtr.Zero, ref pDisplayCount, flags); }
+            if (GPU_GetConnectedDisplayIdsInternalNull != null) { status = GPU_GetConnectedDisplayIdsInternalNull(hPhysicalGpu, IntPtr.Zero, ref pDisplayCount, flags); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;
