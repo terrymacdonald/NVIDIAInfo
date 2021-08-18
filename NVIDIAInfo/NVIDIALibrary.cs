@@ -1229,7 +1229,7 @@ namespace DisplayMagicianShared.NVIDIA
             // 
             if (displayConfig.MosaicConfig.IsMosaicEnabled)
             {
-
+                return true;
                 /*// Figure out how many Mosaic Grid topoligies there are                    
                 uint mosaicGridCount = 0;
                 NVAPI_STATUS NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridCount);
