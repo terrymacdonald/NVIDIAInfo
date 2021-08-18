@@ -2798,7 +2798,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// If the ALLOW_INVALID flag is not set and no matching SLI configuration is found, then it will skip the rest of the validation and return NVAPI_NO_ACTIVE_SLI_TOPOLOGY.
         /// </summary>
         /// <param name="setTopoFlags"></param>
-        /// <param name="GridTopologies"></param>
+        /// <param name="gridTopologies"></param>
         /// <param name="topoStatuses"></param>
         /// <param name="gridCount"></param>
         /// <returns></returns>
@@ -2813,11 +2813,12 @@ namespace DisplayMagicianShared.NVIDIA
             // Go through the array and copy things from managed code to unmanaged code
             for (Int32 x = 0; x < (Int32)gridCount; x++)
             {
-                for (Int32 y = 0; y < NV_MOSAIC_MAX_DISPLAYS; y++)
+                for (Int32 y = 0; y < gridTopologies[x].DisplayCount; y++)
                 {
                     gridTopologies[x].Displays[y].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER;
                 }
-                
+                gridTopologies[x].DisplaySettings.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V1_VER;
+                gridTopologies[x].Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
 
                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
                 Marshal.StructureToPtr(gridTopologies[x], currentGridTopologiesBuffer, false);
@@ -2835,9 +2836,8 @@ namespace DisplayMagicianShared.NVIDIA
             for (Int32 x = 0; x < (Int32)gridCount; x++)
             {
                 // Set up the basic structure
-                //topoStatuses[x].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[(Int32)NVImport.NV_MAX_DISPLAYS];
-                topoStatuses[x].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[256];
-                topoStatuses[x].DisplayCount = gridCount;
+                topoStatuses[x].Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[(Int32)NVImport.NV_MAX_DISPLAYS];
+                //topoStatuses[x].DisplayCount = gridCount;
                 topoStatuses[x].Version = NVImport.NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER;
 
                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
@@ -2880,6 +2880,7 @@ namespace DisplayMagicianShared.NVIDIA
 
             return status;
         }
+      
 
         // NVAPI_INTERFACE NvAPI_Mosaic_SetDisplayGrids	(	__in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __in NvU32  gridCount, __in NvU32  setTopoFlags )	
         private delegate NVAPI_STATUS Mosaic_SetDisplayGridsDelegate(
