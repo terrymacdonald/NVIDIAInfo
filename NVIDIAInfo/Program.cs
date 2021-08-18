@@ -362,15 +362,11 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/possibleFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
+                if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig) && WinLibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.WindowsConfig))
                 {
-                    SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: The AMD display settings in {filename} are compatible with this computer.");
+                    SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: The NVIDIA & Windows CCD display settings in {filename} are compatible with this computer.");
                     Console.WriteLine($"The NVIDIA display settings in {filename} are compatible with this computer.");
-                    Console.WriteLine($"You can apply them with the command 'AMDInfo load {filename}'");
-
-                    // Note: we are unable to check if the Windows CCD display config is possible, as it won't match if either the current display config is a Mosaic config,
-                    // or if the display config we want to change to is a Mosaic config. So we just have to assume that it will work!
-                    
+                    Console.WriteLine($"You can apply them with the command 'NVIDIAInfo load {filename}'");
                 }
                 else
                 {

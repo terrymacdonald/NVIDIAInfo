@@ -19,7 +19,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_DISPLAY_SETTING_V2 MosaicDisplaySettings;
         public Int32 OverlapX;
         public Int32 OverlapY;
-        public NV_MOSAIC_GRID_TOPO_V2[] MosaicGridTopos;
+        public NV_MOSAIC_GRID_TOPO_V1[] MosaicGridTopos;
         public UInt32 MosaicGridCount;
         public List<NV_RECT[]> MosaicViewports;
         public UInt32 PrimaryDisplayId;
@@ -392,8 +392,8 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
-                    NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];                    
-                    //NV_MOSAIC_GRID_TOPO_V1[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V1[mosaicGridCount];
+                    //NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];                    
+                    NV_MOSAIC_GRID_TOPO_V1[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V1[mosaicGridCount];
                     NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopos, ref mosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
@@ -428,7 +428,7 @@ namespace DisplayMagicianShared.NVIDIA
                     myDisplayConfig.MosaicConfig.MosaicGridCount = mosaicGridCount;
 
                     List<NV_RECT[]> allViewports = new List<NV_RECT[]> { };
-                    foreach (NV_MOSAIC_GRID_TOPO_V2 gridTopo in mosaicGridTopos)
+                    foreach (NV_MOSAIC_GRID_TOPO_V1 gridTopo in mosaicGridTopos)
                     {
                         // Get Current Mosaic Grid settings using the Grid topologies numbers we got before
                         NV_RECT[] viewports = new NV_RECT[NVImport.NV_MOSAIC_MAX_DISPLAYS];
@@ -479,7 +479,7 @@ namespace DisplayMagicianShared.NVIDIA
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Mosaic is NOT enabled.");
                     myDisplayConfig.MosaicConfig.MosaicTopologyBrief = mosaicTopoBrief; 
                     myDisplayConfig.MosaicConfig.IsMosaicEnabled = false;
-                    myDisplayConfig.MosaicConfig.MosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[] { };
+                    myDisplayConfig.MosaicConfig.MosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V1[] { };
                     myDisplayConfig.MosaicConfig.MosaicViewports = new List<NV_RECT[]>();
     }
 
@@ -1231,11 +1231,54 @@ namespace DisplayMagicianShared.NVIDIA
             if (displayConfig.MosaicConfig.IsMosaicEnabled)
             {
 
+                /*// Figure out how many Mosaic Grid topoligies there are                    
+                uint mosaicGridCount = 0;
+                NVAPI_STATUS NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridCount);
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
+                }
+
+                // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
+                //NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];
+                NV_MOSAIC_GRID_TOPO_V1[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V1[mosaicGridCount];
+                NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopos, ref mosaicGridCount);
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                }
+                */
+
                 NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
                 bool topoValid = false;
-
                 NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] topoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[displayConfig.MosaicConfig.MosaicGridCount];
                 NVAPI_STATUS NVStatus = NVImport.NvAPI_Mosaic_ValidateDisplayGrids(setTopoFlags, ref displayConfig.MosaicConfig.MosaicGridTopos, ref topoStatuses, displayConfig.MosaicConfig.MosaicGridCount);
+                //NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] topoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[mosaicGridCount];
+                //NVStatus = NVImport.NvAPI_Mosaic_ValidateDisplayGrids(setTopoFlags, ref mosaicGridTopos, ref topoStatuses, mosaicGridCount);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
