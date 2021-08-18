@@ -19,7 +19,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_DISPLAY_SETTING_V2 MosaicDisplaySettings;
         public Int32 OverlapX;
         public Int32 OverlapY;
-        public NV_MOSAIC_GRID_TOPO_V1[] MosaicGridTopos;
+        public NV_MOSAIC_GRID_TOPO_V2[] MosaicGridTopos;
         public UInt32 MosaicGridCount;
         public List<NV_RECT[]> MosaicViewports;
         public UInt32 PrimaryDisplayId;
@@ -101,7 +101,7 @@ namespace DisplayMagicianShared.NVIDIA
 
             try
             {
-                SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Attempting to load the NVIDIA NVAPI DLL {NVImport.NVAPI_DLL}");
+                SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Attempting to load the NVIDIA NVAPI DLL");
                 // Attempt to prelink all of the NVAPI functions
                 //Marshal.PrelinkAll(typeof(NVImport));
 
@@ -152,7 +152,7 @@ namespace DisplayMagicianShared.NVIDIA
             catch (DllNotFoundException ex)
             {
                 // If this fires, then the DLL isn't available, so we need don't try to do anything else
-                SharedLogger.logger.Info(ex, $"NVIDIALibrary/NVIDIALibrary: Exception trying to load the NVIDIA NVAPI DLL {NVImport.NVAPI_DLL}. This generally means you don't have the NVIDIA driver installed.");
+                SharedLogger.logger.Info(ex, $"NVIDIALibrary/NVIDIALibrary: Exception trying to load the NVIDIA NVAPI DLL. This generally means you don't have the NVIDIA driver installed.");
             }                        
 
         }
@@ -392,8 +392,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
-                    //NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];                    
-                    NV_MOSAIC_GRID_TOPO_V1[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V1[mosaicGridCount];
+                    NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];                    
                     NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopos, ref mosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
@@ -428,7 +427,7 @@ namespace DisplayMagicianShared.NVIDIA
                     myDisplayConfig.MosaicConfig.MosaicGridCount = mosaicGridCount;
 
                     List<NV_RECT[]> allViewports = new List<NV_RECT[]> { };
-                    foreach (NV_MOSAIC_GRID_TOPO_V1 gridTopo in mosaicGridTopos)
+                    foreach (NV_MOSAIC_GRID_TOPO_V2 gridTopo in mosaicGridTopos)
                     {
                         // Get Current Mosaic Grid settings using the Grid topologies numbers we got before
                         NV_RECT[] viewports = new NV_RECT[NVImport.NV_MOSAIC_MAX_DISPLAYS];
@@ -479,7 +478,7 @@ namespace DisplayMagicianShared.NVIDIA
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Mosaic is NOT enabled.");
                     myDisplayConfig.MosaicConfig.MosaicTopologyBrief = mosaicTopoBrief; 
                     myDisplayConfig.MosaicConfig.IsMosaicEnabled = false;
-                    myDisplayConfig.MosaicConfig.MosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V1[] { };
+                    myDisplayConfig.MosaicConfig.MosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[] { };
                     myDisplayConfig.MosaicConfig.MosaicViewports = new List<NV_RECT[]>();
     }
 
