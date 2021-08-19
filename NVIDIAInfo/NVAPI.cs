@@ -6,6 +6,9 @@ using System.Text;
 
 namespace DisplayMagicianShared.NVIDIA
 {
+    // ==================================
+    // ENUMS
+    // ==================================
 
     public enum NVAPI_STATUS : Int32
     {
@@ -607,32 +610,110 @@ namespace DisplayMagicianShared.NVIDIA
         ALLOW_INVALID = 0x8,
     }
 
+    // ==================================
+    // STRUCTS
+    // ==================================
+
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct DisplayHandle
+    public struct DisplayHandle : IEquatable<DisplayHandle>
     {
         public IntPtr Ptr;
+
+        public bool Equals(DisplayHandle other)
+        => Ptr == other.Ptr;
+
+        public override Int32 GetHashCode()
+        {
+            return (Ptr).GetHashCode();
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct UnAttachedDisplayHandle
+    public struct UnAttachedDisplayHandle : IEquatable<UnAttachedDisplayHandle>
     {
         public  IntPtr Ptr;
+
+        public bool Equals(UnAttachedDisplayHandle other)
+        => Ptr == other.Ptr;
+
+        public override Int32 GetHashCode()
+        {
+            return (Ptr).GetHashCode();
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct PhysicalGpuHandle
+    public struct PhysicalGpuHandle : IEquatable<PhysicalGpuHandle>
     {
         public IntPtr Ptr;
+        public bool Equals(PhysicalGpuHandle other)
+        => Ptr == other.Ptr;
+
+        public override Int32 GetHashCode()
+        {
+            return (Ptr).GetHashCode();
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct LogicalGpuHandle
+    public struct LogicalGpuHandle : IEquatable<LogicalGpuHandle> 
     {
         public IntPtr Ptr;
+        public bool Equals(LogicalGpuHandle other)
+        => Ptr == other.Ptr;
+
+        public override Int32 GetHashCode()
+        {
+            return (Ptr).GetHashCode();
+        }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_BOARD_INFO_V1 : IEquatable<NV_BOARD_INFO_V1> // Note: Version 1 of NV_BOARD_INFO_V1 structure
+    {
+        UInt32 Version;                   //!< structure version
+        Byte[] BoardNum;               //!< Board Serial Number [16]
+
+        public bool Equals(NV_BOARD_INFO_V1 other)
+        => Version == other.Version &&
+           BoardNum.Equals(other.BoardNum);
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, BoardNum).GetHashCode();
+        }
+
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_EDID_V3 : IEquatable<NV_EDID_V3> // Note: Version 3 of NV_EDID_V3 structure
+    {
+        UInt32 Version;        //!< Structure version
+        byte[] EDID_Data;    // EDID_Data[NV_EDID_DATA_SIZE];
+        UInt32 SizeofEDID;
+        UInt32 EdidId;     //!< ID which always returned in a monotonically increasing counter.
+                           //!< Across a split-EDID read we need to verify that all calls returned the same edidId.
+                           //!< This counter is incremented if we get the updated EDID.
+        UInt32 Offset;    //!< Which 256-byte page of the EDID we want to read. Start at 0.
+                          //!< If the read succeeds with edidSize > NV_EDID_DATA_SIZE,
+                          //!< call back again with offset+256 until we have read the entire buffer
+
+        public bool Equals(NV_EDID_V3 other)
+        => Version == other.Version &&
+           EDID_Data.Equals(other.EDID_Data) &&
+           SizeofEDID == other.SizeofEDID &&
+           EdidId == other.EdidId &&
+           Offset.Equals(other.Offset);
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, EDID_Data, SizeofEDID, EdidId, Offset).GetHashCode();
+        }
+    }
+
+
+[StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct NV_TIMINGEXT
     {
         public UInt32 Flag;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
@@ -1390,6 +1471,10 @@ namespace DisplayMagicianShared.NVIDIA
                     DisplayWhitePointX, DisplayWhitePointY, MaxDisplayMasteringLuminance, MinDisplayMasteringLuminance, MaxContentLightLevel, MaxFrameAverageLightLevel).GetHashCode();
         }
     }
+
+    // ==================================
+    // NVImport Class
+    // ==================================
 
     static class NVImport
     {
