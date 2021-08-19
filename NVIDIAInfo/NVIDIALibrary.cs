@@ -1229,7 +1229,15 @@ namespace DisplayMagicianShared.NVIDIA
             // 
             if (displayConfig.MosaicConfig.IsMosaicEnabled)
             {
+
+                // ===================================================================================================================================
+                // Important! ValidateDisplayGrids does not work at the moment. It errors when supplied with a Grid Topology that works in SetDisplaGrids
+                // We therefore cannot use ValidateDisplayGrids to actually validate the config before it's use. We instead need to rely on SetDisplaGrids reporting an
+                // error if it is unable to apply the requested configuration. While this works fine, it's not optimal.
+                // TODO: Test ValidateDisplayGrids in a future NVIDIA driver release to see if they fixed it.
+                // ===================================================================================================================================
                 return true;
+
                 /*// Figure out how many Mosaic Grid topoligies there are                    
                 uint mosaicGridCount = 0;
                 NVAPI_STATUS NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridCount);
@@ -1272,7 +1280,7 @@ namespace DisplayMagicianShared.NVIDIA
                 }
                 */
 
-                NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
+                /*NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
                 bool topoValid = false;
                 NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] topoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[displayConfig.MosaicConfig.MosaicGridCount];
                 NVAPI_STATUS NVStatus = NVImport.NvAPI_Mosaic_ValidateDisplayGrids(setTopoFlags, ref displayConfig.MosaicConfig.MosaicGridTopos, ref topoStatuses, displayConfig.MosaicConfig.MosaicGridCount);
@@ -1408,7 +1416,7 @@ namespace DisplayMagicianShared.NVIDIA
                     // to indicate that the display profile can't be applied
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: There was an error when validating the requested grid topology that prevents us from using the display settings provided. THe display setttings are NOT valid.");
                     return false;
-                }
+                }*/
             }
             else
             {

@@ -62,7 +62,7 @@ namespace NVIDIAInfo
 
 
             Console.WriteLine($"\nNVIDIAInfo v0.0.2");
-            Console.WriteLine($"==============");
+            Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald 2021\n");
 
             // First check that we have an NVIDIA Video Card in this PC
@@ -75,9 +75,6 @@ namespace NVIDIAInfo
                 Console.WriteLine();
                 Environment.Exit(1);
             }
-
-            /*NVIDIA.Initialize();
-            GridTopology[] myGT =  GridTopology.GetGridTopologies();*/
 
             if (args.Length > 0)
             {
@@ -273,7 +270,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/loadFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (!(NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig.NVIDIAConfig) && WinLibrary.GetLibrary().IsActiveConfig(myDisplayConfig.WindowsConfig)))
+                if (!NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig.NVIDIAConfig) && !WinLibrary.GetLibrary().IsActiveConfig(myDisplayConfig.WindowsConfig))
                 {
                     if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                     {

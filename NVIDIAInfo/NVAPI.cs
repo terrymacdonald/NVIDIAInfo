@@ -3134,7 +3134,6 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns></returns>
         public static NVAPI_STATUS NvAPI_Mosaic_GetTopoGroup(ref NV_MOSAIC_TOPO_BRIEF pTopoBrief, ref NV_MOSAIC_TOPO_GROUP pTopoGroup)
         {
-            UInt32 totalGpuLayoutCount = NVAPI_MAX_MOSAIC_DISPLAY_ROWS * NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS;
             NVAPI_STATUS status;
             pTopoGroup = new NV_MOSAIC_TOPO_GROUP();
             pTopoGroup.Brief = pTopoBrief;
