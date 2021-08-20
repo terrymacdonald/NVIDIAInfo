@@ -480,6 +480,17 @@ namespace DisplayMagicianShared.NVIDIA
                                                                     //! sure they are all CRTs, or all DFPs.
     }
 
+    public enum NV_GPU_BUS_TYPE : UInt32
+    {
+        UNDEFINED = 0,
+        PCI = 1,
+        AGP = 2,
+        PCI_EXPRESS = 3,
+        FPCI = 4,
+        AXI = 5,
+    }
+   
+
     public enum NV_PIXEL_SHIFT_TYPE
     {
         NV_PIXEL_SHIFT_TYPE_NO_PIXEL_SHIFT = 0,          //!< No pixel shift will be applied to this display.
@@ -672,8 +683,9 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_BOARD_INFO_V1 : IEquatable<NV_BOARD_INFO_V1> // Note: Version 1 of NV_BOARD_INFO_V1 structure
     {
-        UInt32 Version;                   //!< structure version
-        Byte[] BoardNum;               //!< Board Serial Number [16]
+        public UInt32 Version;                   //!< structure version
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+        public byte[] BoardNum;               //!< Board Serial Number [16]
 
         public bool Equals(NV_BOARD_INFO_V1 other)
         => Version == other.Version &&
@@ -689,13 +701,14 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_EDID_V3 : IEquatable<NV_EDID_V3> // Note: Version 3 of NV_EDID_V3 structure
     {
-        UInt32 Version;        //!< Structure version
-        byte[] EDID_Data;    // EDID_Data[NV_EDID_DATA_SIZE];
-        UInt32 SizeofEDID;
-        UInt32 EdidId;     //!< ID which always returned in a monotonically increasing counter.
-                           //!< Across a split-EDID read we need to verify that all calls returned the same edidId.
-                           //!< This counter is incremented if we get the updated EDID.
-        UInt32 Offset;    //!< Which 256-byte page of the EDID we want to read. Start at 0.
+        public UInt32 Version;        //!< Structure version
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (Int32)NVImport.NV_EDID_DATA_SIZE)]
+        public char[] EDID_Data;    // EDID_Data[NV_EDID_DATA_SIZE];
+        public UInt32 SizeofEDID;
+        public UInt32 EdidId;     //!< ID which always returned in a monotonically increasing counter.
+                                  //!< Across a split-EDID read we need to verify that all calls returned the same edidId.
+                                  //!< This counter is incremented if we get the updated EDID.
+        public UInt32 Offset;    //!< Which 256-byte page of the EDID we want to read. Start at 0.
                           //!< If the read succeeds with edidSize > NV_EDID_DATA_SIZE,
                           //!< call back again with offset+256 until we have read the entire buffer
 
@@ -1519,7 +1532,8 @@ namespace DisplayMagicianShared.NVIDIA
         public const UInt32 NVAPI_UNICODE_STRING_MAX = 2048;
         public const UInt32 NVAPI_BINARY_DATA_MAX = 4096;
         public const UInt32 NVAPI_SETTING_MAX_VALUES = 100;
-        
+        public const UInt32 NV_EDID_DATA_SIZE = 256;
+
         //
         //! This defines the maximum number of topos that can be in a topo group.
         //! At this time, it is set to 2 because our largest topo group (passive
@@ -1545,6 +1559,8 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_HDR_CAPABILITIES_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_CAPABILITIES_V2>(2);
         public static UInt32 NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1>(1);
         public static UInt32 NV_GPU_DISPLAYIDS_V2_VER = MAKE_NVAPI_VERSION<NV_GPU_DISPLAYIDS_V2>(3); // NOTE: There is a bug in R470 that sets the NV_GPU_DISPLAYIDS_V2 version to 3!
+        public static UInt32 NV_BOARD_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_BOARD_INFO_V1>(1); 
+        
 
         #region Internal Constant
         [DllImport("nvapi64.dll", EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
@@ -1671,13 +1687,19 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_DISP_GetAssociatedUnAttachedNvidiaDisplayHandle, out GetAssociatedUnAttachedNvidiaDisplayHandleInternal);
                 GetDelegate(NvId_DISP_GetGDIPrimaryDisplayId, out DISP_GetGDIPrimaryDisplayIdInternal);
                 GetDelegate(NvId_Disp_GetHdrCapabilities, out Disp_GetHdrCapabilitiesInternal);
-                GetDelegate(NvId_Disp_HdrColorControl, out Disp_HdrColorControlInternal);                
+                GetDelegate(NvId_Disp_HdrColorControl, out Disp_HdrColorControlInternal);
+                
 
                 // GPUs
                 GetDelegate(NvId_EnumPhysicalGPUs, out EnumPhysicalGPUsInternal);
                 GetDelegate(NvId_GPU_GetQuadroStatus, out GetQuadroStatusInternal);
                 GetDelegate(NvId_GPU_GetConnectedDisplayIds, out GPU_GetConnectedDisplayIdsInternal);
                 GetDelegate(NvId_GPU_GetConnectedDisplayIds, out GPU_GetConnectedDisplayIdsInternalNull); // The null version of the submission
+                GetDelegate(NvId_GPU_GetFullName, out GPU_GetFullNameInternal);
+                GetDelegate(NvId_GPU_GetBoardInfo, out GPU_GetBoardInfoInternal);
+                GetDelegate(NvId_GPU_GetBusType, out GPU_GetBusTypeInternal);
+                GetDelegate(NvId_GPU_GetBusId, out GPU_GetBusIdInternal);               
+
 
                 // Mosaic                
                 GetDelegate(NvId_Mosaic_EnableCurrentTopo, out Mosaic_EnableCurrentTopoInternal);
@@ -2713,8 +2735,6 @@ namespace DisplayMagicianShared.NVIDIA
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
             szDisplayName = builder.ToString();
 
-            Console.WriteLine(pNvUnAttachedDispHandle.Ptr);
-
             return status;
         }
         #endregion
@@ -2829,14 +2849,14 @@ namespace DisplayMagicianShared.NVIDIA
                         // advance the buffer forwards to the next object
                         currentGridTopologiesBuffer = (IntPtr)((long)currentGridTopologiesBuffer + Marshal.SizeOf(GridTopologies[i]));
                     }
-                    // Destroy he unmanaged array so we don't have a memory leak
-                    Marshal.FreeCoTaskMem(gridTopologiesBuffer);
                 }
             }
             else 
             { 
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; 
             }
+
+            Marshal.FreeCoTaskMem(gridTopologiesBuffer);
 
             return status;
         }
@@ -2954,14 +2974,15 @@ namespace DisplayMagicianShared.NVIDIA
                         // advance the buffer forwards to the next object
                         currentTopoStatusesBuffer = (IntPtr)((long)currentTopoStatusesBuffer + Marshal.SizeOf(topoStatuses[i]));
                     }
-                    // Destroy he unmanaged array so we don't have a memory leak
-                    Marshal.FreeCoTaskMem(topoStatusesBuffer);
                 }
             }
             else
             {
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
             }
+
+            Marshal.FreeCoTaskMem(gridTopologiesBuffer);
+            Marshal.FreeCoTaskMem(topoStatusesBuffer);
 
             return status;
         }
@@ -3011,6 +3032,8 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
             }
+
+            Marshal.FreeCoTaskMem(gridTopologiesBuffer);
 
             return status;
         }
@@ -3413,6 +3436,98 @@ namespace DisplayMagicianShared.NVIDIA
             NVAPI_STATUS status;
             pHdrColorData.Version = NVImport.NV_HDR_COLOR_DATA_V2_VER;
             if (Disp_HdrColorControlInternal != null) { status = Disp_HdrColorControlInternal(displayId, ref pHdrColorData); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        //NVAPI_INTERFACE NvAPI_GPU_GetFullName(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString szName);
+        private delegate NVAPI_STATUS GPU_GetFullNameDelegate(
+            [In] PhysicalGpuHandle gpuHandle,
+            [In][Out] IntPtr gpuNameBuffer);
+        private static readonly GPU_GetFullNameDelegate GPU_GetFullNameInternal;
+        /// <summary>
+        //!  This API gets High Dynamic Range (HDR) capabilities of the display.
+        /// <param name="displayId"></param>
+        /// <param name="pHdrCapabilities"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GPU_GetFullName(PhysicalGpuHandle gpuHandle, ref string gpuName)
+        {
+            NVAPI_STATUS status;
+
+            IntPtr gpuNameBuffer = Marshal.StringToCoTaskMemAnsi(gpuName);
+
+            if (GPU_GetFullNameInternal != null) { status = GPU_GetFullNameInternal(gpuHandle, gpuNameBuffer); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            // Convert the char array to a string
+            gpuName = Marshal.PtrToStringAnsi(gpuNameBuffer).Trim();
+
+            Marshal.FreeCoTaskMem(gpuNameBuffer);
+
+            return status;
+        }
+
+        //NVAPI_INTERFACE NvAPI_GPU_GetBoardInfo(NvPhysicalGpuHandle hPhysicalGpu, NV_BOARD_INFO *pBoardInfo);
+        private delegate NVAPI_STATUS GPU_GetBoardInfoDelegate(
+            [In] PhysicalGpuHandle gpuHandle,
+            [In][Out] ref NV_BOARD_INFO_V1 boardInfo);
+        private static readonly GPU_GetBoardInfoDelegate GPU_GetBoardInfoInternal;
+        /// <summary>
+        //!  This API Retrieves the Board information (a unique GPU Board Serial Number) stored in the InfoROM.
+        /// <param name="gpuHandle"></param>
+        /// <param name="boardInfo"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GPU_GetBoardInfo(PhysicalGpuHandle gpuHandle, ref NV_BOARD_INFO_V1 boardInfo)
+        {
+            NVAPI_STATUS status;
+
+            boardInfo = new NV_BOARD_INFO_V1();
+            boardInfo.BoardNum = new byte[16];
+            boardInfo.Version = NV_BOARD_INFO_V1_VER;
+
+            if (GPU_GetBoardInfoInternal != null) { status = GPU_GetBoardInfoInternal(gpuHandle, ref boardInfo); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        
+        //NVAPI_INTERFACE NvAPI_GPU_GetBusId(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pBusId);
+        private delegate NVAPI_STATUS GPU_GetBusIdDelegate(
+            [In] PhysicalGpuHandle gpuHandle,
+            [In][Out] ref UInt32 busId);
+        private static readonly GPU_GetBusIdDelegate GPU_GetBusIdInternal;
+        /// <summary>
+        //!  This API Retrieves the Board information (a unique GPU Board Serial Number) stored in the InfoROM.
+        /// <param name="gpuHandle"></param>
+        /// <param name="busId"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GPU_GetBusId(PhysicalGpuHandle gpuHandle, ref UInt32 busId)
+        {
+            NVAPI_STATUS status;
+
+            if (GPU_GetBusIdInternal != null) { status = GPU_GetBusIdInternal(gpuHandle, ref busId); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        //NVAPI_INTERFACE NvAPI_GPU_GetBusType(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_BUS_TYPE* pBusType);
+        private delegate NVAPI_STATUS GPU_GetBusTypeDelegate(
+            [In] PhysicalGpuHandle gpuHandle,
+            [In][Out] ref NV_GPU_BUS_TYPE busType);
+        private static readonly GPU_GetBusTypeDelegate GPU_GetBusTypeInternal;
+        /// <summary>
+        //!  This API Retrieves the Board information (a unique GPU Board Serial Number) stored in the InfoROM.
+        /// <param name="gpuHandle"></param>
+        /// <param name="busId"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GPU_GetBusType(PhysicalGpuHandle gpuHandle, ref NV_GPU_BUS_TYPE busType)
+        {
+            NVAPI_STATUS status;
+
+            if (GPU_GetBusTypeInternal != null) { status = GPU_GetBusTypeInternal(gpuHandle, ref busType); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;
