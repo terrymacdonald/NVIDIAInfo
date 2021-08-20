@@ -3463,8 +3463,6 @@ namespace DisplayMagicianShared.NVIDIA
             // Convert the char array to a string
             gpuName = Marshal.PtrToStringAnsi(gpuNameBuffer).Trim();
 
-            Marshal.FreeCoTaskMem(gpuNameBuffer);
-
             return status;
         }
 
