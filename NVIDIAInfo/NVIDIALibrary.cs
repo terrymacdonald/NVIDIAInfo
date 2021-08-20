@@ -1635,7 +1635,7 @@ namespace DisplayMagicianShared.NVIDIA
                         // Now we try to get the GPU and Output ID from the DisplayID
                         PhysicalGpuHandle physicalGpu = new PhysicalGpuHandle();
                         UInt32 gpuOutputId = 0;
-                        //NVStatus = NVImport.NvAPI_SYS_GetGpuAndOutputIdFromDisplayId(oneDisplay.DisplayId, ref physicalGpu, ref gpuOutputId);
+                        NVStatus = NVImport.NvAPI_SYS_GetGpuAndOutputIdFromDisplayId(oneDisplay.DisplayId, out physicalGpu, out gpuOutputId);
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_SYS_GetGpuAndOutputIdFromDisplayId returned OK. We received Physical GPU ID {physicalGpu} and GPU Output ID {gpuOutputId}");
@@ -1677,7 +1677,7 @@ namespace DisplayMagicianShared.NVIDIA
                         }
                         catch (Exception ex)
                         {
-                            SharedLogger.logger.Warn(ex, $"NVIDIALibrary/GetSomeDisplayIdentifiers: Exception getting Windows Display Adapter Device Path from video card. Substituting with a # instead");
+                            SharedLogger.logger.Warn(ex, $"NVIDIALibrary/GetSomeDisplayIdentifiers: Exception getting GPU Name from video card. Substituting with a # instead");
                             displayInfo.Add("#");
                         }
                         try
@@ -1686,7 +1686,7 @@ namespace DisplayMagicianShared.NVIDIA
                         }
                         catch (Exception ex)
                         {
-                            SharedLogger.logger.Warn(ex, $"NVIDIALibrary/GetSomeDisplayIdentifiers: Exception getting Windows Display Connector Instance from video card. Substituting with a # instead");
+                            SharedLogger.logger.Warn(ex, $"NVIDIALibrary/GetSomeDisplayIdentifiers: Exception getting GPU Bus Type from video card. Substituting with a # instead");
                             displayInfo.Add("#");
                         }
                         try
@@ -1695,7 +1695,16 @@ namespace DisplayMagicianShared.NVIDIA
                         }
                         catch (Exception ex)
                         {
-                            SharedLogger.logger.Warn(ex, $"NVIDIALibrary/GetSomeDisplayIdentifiers: Exception getting Windows Display Connector Instance from video card. Substituting with a # instead");
+                            SharedLogger.logger.Warn(ex, $"NVIDIALibrary/GetSomeDisplayIdentifiers: Exception getting GPU Bus ID from video card. Substituting with a # instead");
+                            displayInfo.Add("#");
+                        }
+                        try
+                        {
+                            displayInfo.Add(gpuOutputId.ToString());
+                        }
+                        catch (Exception ex)
+                        {
+                            SharedLogger.logger.Warn(ex, $"NVIDIALibrary/GetSomeDisplayIdentifiers: Exception getting GPU Output ID from video card. Substituting with a # instead");
                             displayInfo.Add("#");
                         }
                         try

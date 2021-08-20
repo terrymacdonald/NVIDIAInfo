@@ -1713,8 +1713,9 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_Mosaic_ValidateDisplayGrids, out Mosaic_ValidateDisplayGridsInternal);                
                 GetDelegate(NvId_Mosaic_GetDisplayViewportsByResolution, out Mosaic_GetDisplayViewportsByResolutionInternal);
                 GetDelegate(NvId_Mosaic_GetOverlapLimits, out Mosaic_GetOverlapLimitsInternal);
-                
 
+                // System
+                GetDelegate(NvId_SYS_GetGpuAndOutputIdFromDisplayId, out SYS_GetGpuAndOutputIdFromDisplayIdInternal);                
 
                 // Set the availability
                 available = true;
@@ -3451,17 +3452,22 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="displayId"></param>
         /// <param name="pHdrCapabilities"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_GPU_GetFullName(PhysicalGpuHandle gpuHandle, ref string gpuName)
+        public static NVAPI_STATUS NvAPI_GPU_GetFullName(PhysicalGpuHandle gpuHandle, ref String gpuName)
         {
             NVAPI_STATUS status;
 
-            IntPtr gpuNameBuffer = Marshal.StringToCoTaskMemAnsi(gpuName);
+            IntPtr gpuNameBuffer = (IntPtr)Marshal.StringToHGlobalAnsi(gpuName);
 
             if (GPU_GetFullNameInternal != null) { status = GPU_GetFullNameInternal(gpuHandle, gpuNameBuffer); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             // Convert the char array to a string
-            gpuName = Marshal.PtrToStringAnsi(gpuNameBuffer).Trim();
+            gpuName = Marshal.PtrToStringAnsi(gpuNameBuffer);
+
+            Marshal.ZeroFreeGlobalAllocAnsi(gpuNameBuffer);
+            //Marshal.FreeHGlobal(gpuNameBuffer);
+            
+            string gpuName2 = Marshal.PtrToStringAnsi(gpuNameBuffer);
 
             return status;
         }
@@ -3527,6 +3533,33 @@ namespace DisplayMagicianShared.NVIDIA
 
             if (GPU_GetBusTypeInternal != null) { status = GPU_GetBusTypeInternal(gpuHandle, ref busType); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+        
+        //NVAPI_INTERFACE NvAPI_SYS_GetGpuAndOutputIdFromDisplayId(NvU32 displayId, NvPhysicalGpuHandle *hPhysicalGpu, NvU32 *outputId);
+        private delegate NVAPI_STATUS SYS_GetGpuAndOutputIdFromDisplayIdDelegate(
+            [In] UInt32 displayId,
+            [Out] out PhysicalGpuHandle gpuHandle,
+            [Out] out UInt32 gpuOutputId);
+        private static readonly SYS_GetGpuAndOutputIdFromDisplayIdDelegate SYS_GetGpuAndOutputIdFromDisplayIdInternal;
+        /// <summary>
+        //!  This API Retrieves the Board information (a unique GPU Board Serial Number) stored in the InfoROM.
+        /// <param name="gpuHandle"></param>
+        /// <param name="busId"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_SYS_GetGpuAndOutputIdFromDisplayId(UInt32 displayId, out PhysicalGpuHandle gpuHandle, out UInt32 gpuOutputId)
+        {
+            NVAPI_STATUS status;
+
+            PhysicalGpuHandle myGpuHandle = new PhysicalGpuHandle();
+            UInt32 myGpuOutputId = 0;
+
+            if (SYS_GetGpuAndOutputIdFromDisplayIdInternal != null) { status = SYS_GetGpuAndOutputIdFromDisplayIdInternal(displayId, out myGpuHandle, out myGpuOutputId); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            gpuHandle = myGpuHandle;
+            gpuOutputId = myGpuOutputId;
 
             return status;
         }
