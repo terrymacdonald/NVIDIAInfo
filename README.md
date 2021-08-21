@@ -21,6 +21,8 @@ Command line examples:
 - Next, change your display configuration using NVIDIA settings and the Windows Display settings to another display configuration you'd like to have (e.g. 3 single screens without using NVIDIA Surround)
 - Next, save those settings to a different file to use later, using a command like `NVIDIAInfo save triple-screen.cfg`
 
+## To swap between different display setups:
+
 Now that you've set up the different display configurations, you can swap between them using a command like this:
 
 - To load the triple screen setup using NVIDIA surround: `NVIDIAInfo load triple-surround-on.cfg`
