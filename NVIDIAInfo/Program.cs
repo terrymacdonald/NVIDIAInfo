@@ -9,11 +9,6 @@ using DisplayMagicianShared.Windows;
 using System.Collections.Generic;
 using System.Linq;
 
-using NvAPIWrapper;
-using NvAPIWrapper.Display;
-using NvAPIWrapper.GPU;
-using NvAPIWrapper.Mosaic;
-
 namespace NVIDIAInfo
 {
     class Program
@@ -58,10 +53,10 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v0.0.3");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.0.0");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v0.0.3");
+            Console.WriteLine($"\nNVIDIAInfo v1.0.0");
             Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald 2021\n");
 
