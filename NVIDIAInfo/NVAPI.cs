@@ -702,8 +702,8 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NV_EDID_V3 : IEquatable<NV_EDID_V3> // Note: Version 3 of NV_EDID_V3 structure
     {
         public UInt32 Version;        //!< Structure version
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (Int32)NVImport.NV_EDID_DATA_SIZE)]
-        public char[] EDID_Data;    // EDID_Data[NV_EDID_DATA_SIZE];
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_EDID_DATA_SIZE)]
+        public Byte[] EDID_Data;    // EDID_Data[NV_EDID_DATA_SIZE];
         public UInt32 SizeofEDID;
         public UInt32 EdidId;     //!< ID which always returned in a monotonically increasing counter.
                                   //!< Across a split-EDID read we need to verify that all calls returned the same edidId.
@@ -1559,8 +1559,9 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_HDR_CAPABILITIES_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_CAPABILITIES_V2>(2);
         public static UInt32 NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1>(1);
         public static UInt32 NV_GPU_DISPLAYIDS_V2_VER = MAKE_NVAPI_VERSION<NV_GPU_DISPLAYIDS_V2>(3); // NOTE: There is a bug in R470 that sets the NV_GPU_DISPLAYIDS_V2 version to 3!
-        public static UInt32 NV_BOARD_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_BOARD_INFO_V1>(1); 
-        
+        public static UInt32 NV_BOARD_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_BOARD_INFO_V1>(1);
+        public static UInt32 NV_EDID_V3_VER = MAKE_NVAPI_VERSION<NV_EDID_V3>(3);
+
 
         #region Internal Constant
         [DllImport("nvapi64.dll", EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
@@ -1698,8 +1699,8 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_GPU_GetFullName, out GPU_GetFullNameInternal);
                 GetDelegate(NvId_GPU_GetBoardInfo, out GPU_GetBoardInfoInternal);
                 GetDelegate(NvId_GPU_GetBusType, out GPU_GetBusTypeInternal);
-                GetDelegate(NvId_GPU_GetBusId, out GPU_GetBusIdInternal);               
-
+                GetDelegate(NvId_GPU_GetBusId, out GPU_GetBusIdInternal);
+                GetDelegate(NvId_GPU_GetEDID, out GPU_GetEDIDInternal);                
 
                 // Mosaic                
                 GetDelegate(NvId_Mosaic_EnableCurrentTopo, out Mosaic_EnableCurrentTopoInternal);
@@ -3503,7 +3504,7 @@ namespace DisplayMagicianShared.NVIDIA
             [In][Out] ref UInt32 busId);
         private static readonly GPU_GetBusIdDelegate GPU_GetBusIdInternal;
         /// <summary>
-        //!  This API Retrieves the Board information (a unique GPU Board Serial Number) stored in the InfoROM.
+        //!  Returns the ID of the bus associated with this GPU.
         /// <param name="gpuHandle"></param>
         /// <param name="busId"></param>
         /// <returns></returns>
@@ -3523,7 +3524,7 @@ namespace DisplayMagicianShared.NVIDIA
             [In][Out] ref NV_GPU_BUS_TYPE busType);
         private static readonly GPU_GetBusTypeDelegate GPU_GetBusTypeInternal;
         /// <summary>
-        //!  This API Retrieves the Board information (a unique GPU Board Serial Number) stored in the InfoROM.
+        //!  This function returns the type of bus associated with this GPU.
         /// <param name="gpuHandle"></param>
         /// <param name="busId"></param>
         /// <returns></returns>
@@ -3544,7 +3545,7 @@ namespace DisplayMagicianShared.NVIDIA
             [Out] out UInt32 gpuOutputId);
         private static readonly SYS_GetGpuAndOutputIdFromDisplayIdDelegate SYS_GetGpuAndOutputIdFromDisplayIdInternal;
         /// <summary>
-        //!  This API Retrieves the Board information (a unique GPU Board Serial Number) stored in the InfoROM.
+        //!  This API converts a display ID to a Physical GPU handle and output ID.
         /// <param name="gpuHandle"></param>
         /// <param name="busId"></param>
         /// <returns></returns>
@@ -3561,6 +3562,33 @@ namespace DisplayMagicianShared.NVIDIA
             gpuHandle = myGpuHandle;
             gpuOutputId = myGpuOutputId;
 
+            return status;
+        }
+        
+        //NVAPI_INTERFACE NvAPI_SYS_GetGpuAndOutputIdFromDisplayId(NvU32 displayId, NvPhysicalGpuHandle *hPhysicalGpu, NvU32 *outputId);
+        private delegate NVAPI_STATUS GPU_GetEDIDDelegate(
+            [In] PhysicalGpuHandle gpuHandle,
+            [In] UInt32 gpuOutputId,
+            [In][Out] ref NV_EDID_V3 edidInfo);
+        private static readonly GPU_GetEDIDDelegate GPU_GetEDIDInternal;
+        /// <summary>
+        //!  This function returns the EDID data for the specified GPU handle and connection bit mask.
+        //!  displayOutputId should have exactly 1 bit set to indicate a single display. See \ref handles.
+        /// <param name="gpuHandle"></param>
+        /// <param name="gpuOutputId"></param>
+        /// <param name="edidInfo"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GPU_GetEDID(PhysicalGpuHandle gpuHandle, UInt32 gpuOutputId, ref NV_EDID_V3 edidInfo)
+        {
+            NVAPI_STATUS status;
+
+            edidInfo = new NV_EDID_V3();
+            edidInfo.Version = NVImport.NV_EDID_V3_VER;
+            edidInfo.EDID_Data = new Byte[(int)NVImport.NV_EDID_DATA_SIZE];
+
+            if (GPU_GetEDIDInternal != null) { status = GPU_GetEDIDInternal(gpuHandle, gpuOutputId, ref edidInfo); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            
             return status;
         }
     }

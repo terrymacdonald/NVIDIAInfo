@@ -1461,7 +1461,7 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 //We want to get the name of the physical device
                 string gpuName = "";
-                NVStatus = NVImport.NvAPI_GPU_GetFullName(physicalGpus[physicalGpuIndex], ref gpuName);
+                //NVStatus = NVImport.NvAPI_GPU_GetFullName(physicalGpus[physicalGpuIndex], ref gpuName);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetFullName returned OK. The GPU Full Name is {gpuName}");
@@ -1666,6 +1666,46 @@ namespace DisplayMagicianShared.NVIDIA
                         }
 
                         //edidInfo = GetEDIDInfo(physicalGpu, gpuOutputId);
+                        // We try to get an EDID block                
+                        NV_EDID_V3 edidInfo = new NV_EDID_V3();
+                        NVStatus = NVImport.NvAPI_GPU_GetEDID(physicalGpu, gpuOutputId, ref edidInfo);
+                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetEDID returned OK. We have got an EDID Block.");
+
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Either edidInfo was null when it was supplied, or gpuOutputId . NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_NVIDIA_DEVICE_NOT_FOUND)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: No active GPU was found. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The GPU Handle supplied was not a valid GPU Handle. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_DATA_NOT_FOUND)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The display does not support EDID. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                        {
+                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+                        }
 
 
                         // Create an array of all the important display info we need to record
@@ -1754,59 +1794,64 @@ namespace DisplayMagicianShared.NVIDIA
             return displayIdentifiers;
         }
 
-        /*private void GetEDIDInfo(PhysicalGpuHandle physicalGpu, UInt32 gpuOutputId)
+        private NV_EDID_V3 GetEDIDInfo(PhysicalGpuHandle physicalGpu, UInt32 gpuOutputId)
         {
-
-            
-            var data = new byte[0];
-            var totalSize = EDIDV3.MaxDataSize;
+            UInt32 totalSize = NVImport.NV_EDID_DATA_SIZE;
             NV_EDID_V3 edidInfo = new NV_EDID_V3();
-            //int offset = 0; offset < totalSize; offset += 
-            do 
+            edidInfo.Version = NVImport.NV_EDID_V3_VER;            
+            edidInfo.EDID_Data = new Byte[(int)NVImport.NV_EDID_DATA_SIZE];
+
+            // We try to get an EDID block                
+            NVAPI_STATUS NVStatus = NVImport.NvAPI_GPU_GetEDID(physicalGpu, gpuOutputId, ref edidInfo);
+            if (NVStatus == NVAPI_STATUS.NVAPI_OK)
             {
-                // We try to get an EDID block                
-                NVAPI_STATUS NVStatus = NVImport.NvAPI_GPU_GetEDID(physicalGpu, gpuOutputId, ref edidInfo);
-                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetEDID returned OK. We have got an EDID Block.");
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The input buffer is not large enough to hold it's contents. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The input monitor is either not connected or is not a DP or HDMI panel. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
-                }
-                else
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_GPU_GetEDID() returned error code {NVStatus}");
-                }
-                identification = edid.Identification;
+                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetEDID returned OK. We have got an EDID Block.");
+            }
+            else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+            {
+                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Either edidInfo was null when it was supplied, or gpuOutputId . NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+            }
+            else if (NVStatus == NVAPI_STATUS.NVAPI_NVIDIA_DEVICE_NOT_FOUND)
+            {
+                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: No active GPU was found. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+            }
+            else if (NVStatus == NVAPI_STATUS.NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE)
+            {
+                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The GPU Handle supplied was not a valid GPU Handle. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+            }
+            else if (NVStatus == NVAPI_STATUS.NVAPI_DATA_NOT_FOUND)
+            {
+                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The display does not support EDID. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+            }
+            else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+            {
+                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+            }
+            else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+            {
+                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+            }
+            else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+            {
+                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+            }
+            else
+            {
+                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_GPU_GetEDID() returned error code {NVStatus}");
+            }
+            /*identification = edid.Identification;
                 totalSize = edid.TotalSize;
 
                 var edidData = edid.Data;
                 Array.Resize(ref data, data.Length + edidData.Length);
                 Array.Copy(edidData, 0, data, data.Length - edidData.Length, edidData.Length);
 
-            } while (offset < totalSize);
+            } while (offset < totalSize);*/
 
-            // Now parse the EDID into a structure
-            return data;            
+            // Now return the EDID info
+            return edidInfo;            
 
-        }*/
+        }
 
     }
 
