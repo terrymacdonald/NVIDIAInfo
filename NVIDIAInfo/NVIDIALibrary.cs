@@ -65,6 +65,7 @@ namespace DisplayMagicianShared.NVIDIA
     {
         public NVIDIA_MOSAIC_CONFIG MosaicConfig;
         public NVIDIA_HDR_CONFIG HdrConfig;
+        public List<string>DisplayIdentifiers;
 
         public bool Equals(NVIDIA_DISPLAY_CONFIG other)
         => MosaicConfig.Equals(other.MosaicConfig) &&
@@ -481,7 +482,7 @@ namespace DisplayMagicianShared.NVIDIA
                     myDisplayConfig.MosaicConfig.IsMosaicEnabled = false;
                     myDisplayConfig.MosaicConfig.MosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[] { };
                     myDisplayConfig.MosaicConfig.MosaicViewports = new List<NV_RECT[]>();
-    }
+                }
 
                 // Check if Mosaic is possible and log that so we know if troubleshooting bugs
                 if (mosaicTopoBrief.IsPossible == 1)
@@ -752,8 +753,8 @@ namespace DisplayMagicianShared.NVIDIA
 
                     }
                     
-                }               
-
+                }
+                myDisplayConfig.DisplayIdentifiers = GetCurrentDisplayIdentifiers();
             }
             else
             {
@@ -1223,10 +1224,10 @@ namespace DisplayMagicianShared.NVIDIA
 
         }
 
-        public bool IsPossibleConfig(NVIDIA_DISPLAY_CONFIG displayConfig)
+        public bool IsValidConfig(NVIDIA_DISPLAY_CONFIG displayConfig)
         {
             // We want to check the NVIDIA Surround (Mosaic) config is valid
-            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Testing whether the display configuration is valid");
+            SharedLogger.logger.Trace($"NVIDIALibrary/IsValidConfig: Testing whether the display configuration is valid");
             // 
             if (displayConfig.MosaicConfig.IsMosaicEnabled)
             {
@@ -1424,6 +1425,29 @@ namespace DisplayMagicianShared.NVIDIA
                 // Its not a Mosaic topology, so we just let it pass, as it's windows settings that matter.
                 return true;
             }
+        }
+
+        public bool IsPossibleConfig(NVIDIA_DISPLAY_CONFIG displayConfig)
+        {
+            // We want to check the NVIDIA profile can be used now
+            SharedLogger.logger.Trace($"NVIDIALibrary/IsPossibleConfig: Testing whether the NVIDIA display configuration is possible to be used now");
+
+            // check what the currently available displays are (include the ones not active)
+            List<string> currentAllIds = GetAllConnectedDisplayIdentifiers();
+
+            // CHeck that we have all the displayConfig DisplayIdentifiers we need available now
+            if (displayConfig.DisplayIdentifiers.All(value => currentAllIds.Contains(value)))
+            //if (currentAllIds.Intersect(displayConfig.DisplayIdentifiers).Count() == displayConfig.DisplayIdentifiers.Count)
+            {
+                SharedLogger.logger.Trace($"NVIDIALibrary/IsPossibleConfig: Success! The NVIDIA display configuration is possible to be used now");
+                return true;
+            }
+            else
+            {
+                SharedLogger.logger.Trace($"NVIDIALibrary/IsPossibleConfig: Uh oh! The NVIDIA display configuration is possible cannot be used now");
+                return false;
+            }
+
         }
 
         public List<string> GetCurrentDisplayIdentifiers()

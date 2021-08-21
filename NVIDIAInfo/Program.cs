@@ -58,10 +58,10 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v0.0.2");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v0.0.3");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v0.0.2");
+            Console.WriteLine($"\nNVIDIAInfo v0.0.3");
             Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald 2021\n");
 
@@ -154,6 +154,12 @@ namespace NVIDIAInfo
                         SharedLogger.logger.Info($@"{displayId}");
                     }
                 }
+                else if (args[0] == "print")
+                {
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: printing display info as print command was provided");
+                    NVIDIALibrary.GetLibrary().PrintActiveConfig();                    
+                }
+
                 else if (args[0] == "help" || args[0] == "--help" || args[0] == "-h" || args[0] == "/?" || args[0] == "-?")
                 {
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: Showing help as help command was provided");
@@ -170,9 +176,9 @@ namespace NVIDIAInfo
             }
             else
             {
-                SharedLogger.logger.Debug($"NVIDIAInfo/Main: Attempting to show information about the current display settings as no command was provided");
-                // We're in display current config mode
-                Console.WriteLine(NVIDIALibrary.GetLibrary().PrintActiveConfig());
+                SharedLogger.logger.Debug($"NVIDIAInfo/Main: Showing help as help command was provided");
+                showHelp();
+                Environment.Exit(1);                
             }
             Console.WriteLine();
             Environment.Exit(0);
@@ -186,10 +192,10 @@ namespace NVIDIAInfo
             Console.WriteLine($"You can also run it with 'NVIDIAInfo save myfilename.cfg' and it will save the current display configuration into\nthe myfilename.cfg file.\n");
             Console.WriteLine($"This is most useful when you subsequently use the 'NVIDIAInfo load myfilename.cfg' command, as it will load the\ndisplay configuration from the myfilename.cfg file and make it live. In this way, you can make yourself a library\nof different cfg files with different display layouts, then use the NVIDIAInfo load command to swap between them.\n\n");
             Console.WriteLine($"Valid commands:\n");
-            Console.WriteLine($"\t'NVIDIAInfo' will print information about your current display setting.");
+            Console.WriteLine($"\t'NVIDIAInfo print' will print information about your current display setting.");
             Console.WriteLine($"\t'NVIDIAInfo save myfilename.cfg' will save your current display setting to the myfilename.cfg file.");
             Console.WriteLine($"\t'NVIDIAInfo load myfilename.cfg' will load and apply the display setting in the myfilename.cfg file.");
-            Console.WriteLine($"\t'NVIDIAInfo possible myfilename.cfg' will test the display setting in the myfilename.cfg file to see\n\t\tif it is possible.");
+            Console.WriteLine($"\t'NVIDIAInfo possible myfilename.cfg' will test the display setting in the myfilename.cfg file to see\n\t\tif it is possible to use that display profile now.");
             Console.WriteLine($"\nUse DisplayMagician to store display settings for each game you have. https://github.com/terrymacdonald/DisplayMagician\n");
         }
 
