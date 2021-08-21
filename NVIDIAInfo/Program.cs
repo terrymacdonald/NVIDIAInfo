@@ -80,13 +80,14 @@ namespace NVIDIAInfo
             {
                 if (args[0] == "save")
                 {
-                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: Attempting to save the display settings to {args[1]} as save command was provided");
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: The save command was provided");
                     if (args.Length != 2)
                     {
                         Console.WriteLine($"ERROR - You need to provide a filename in which to save display settings");
                         SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - You need to provide a filename in which to save display settings");
                         Environment.Exit(1);
                     }
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: Attempting to save the display settings to {args[1]} as save command was provided");
                     saveToFile(args[1]);
                     if (!File.Exists(args[1]))
                     {
@@ -97,13 +98,14 @@ namespace NVIDIAInfo
                 }
                 else if (args[0] == "load")
                 {
-                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: Attempting to use the display settings in {args[1]} as load command was provided");
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: The load command was provided");
                     if (args.Length != 2)
                     {
                         Console.WriteLine($"ERROR - You need to provide a filename from which to load display settings");
                         SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - You need to provide a filename from which to load display settings");
                         Environment.Exit(1);
                     }
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: Attempting to use the display settings in {args[1]} as load command was provided");
                     if (!File.Exists(args[1]))
                     {
                         Console.WriteLine($"ERROR - Couldn't find the file {args[1]} to load settings from it");
@@ -114,13 +116,14 @@ namespace NVIDIAInfo
                 }
                 else if (args[0] == "possible")
                 {
-                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing if the {args[1]} is a valid display cofig file as possible command was provided");
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: The possible command was provided");
                     if (args.Length != 2)
                     {
                         Console.WriteLine($"ERROR - You need to provide a filename from which we will check if the display settings are possible");
                         SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - You need to provide a filename from which we will check if the display settings are possible");
                         Environment.Exit(1);
                     }
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing if the {args[1]} is a valid display cofig file as possible command was provided");
                     if (!File.Exists(args[1]))
                     {
                         Console.WriteLine($"ERROR - Couldn't find the file {args[1]} to check the settings from it");
@@ -359,7 +362,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/possibleFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig) && WinLibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.WindowsConfig))
+                if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                 {
                     SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: The NVIDIA & Windows CCD display settings in {filename} are compatible with this computer.");
                     Console.WriteLine($"The NVIDIA display settings in {filename} are compatible with this computer.");

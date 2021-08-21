@@ -51,6 +51,9 @@
     <StartupObject>NVIDIAInfo.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EDIDParser, Version=1.2.5.3, Culture=neutral, PublicKeyToken=310fd07b25df79b3, processorArchitecture=MSIL">
+      <HintPath>..\packages\EDIDParser.1.2.5.4\lib\net45\EDIDParser.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
