@@ -157,7 +157,7 @@ namespace NVIDIAInfo
                 else if (args[0] == "print")
                 {
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: printing display info as print command was provided");
-                    NVIDIALibrary.GetLibrary().PrintActiveConfig();                    
+                    Console.WriteLine(NVIDIALibrary.GetLibrary().PrintActiveConfig());                    
                 }
 
                 else if (args[0] == "help" || args[0] == "--help" || args[0] == "-h" || args[0] == "/?" || args[0] == "-?")

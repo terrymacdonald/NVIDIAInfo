@@ -1334,6 +1334,14 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_HDR_CAPABILITIES_DISPLAY_DATA DisplayData;
         public NV_HDR_DV_STATIC_METADATA DvStaticMetadata;
 
+        public bool DriverExpandDefaultHdrParameters => SupportFlags.HasFlag(NV_HDR_CAPABILITIES_V2_FLAGS.DriverExpandDefaultHdrParameters);
+        public bool IsDolbyVisionSupported => SupportFlags.HasFlag(NV_HDR_CAPABILITIES_V2_FLAGS.IsDolbyVisionSupported);
+        public bool IsEdrSupported => SupportFlags.HasFlag(NV_HDR_CAPABILITIES_V2_FLAGS.IsEdrSupported);
+        public bool IsST2084EotfSupported => SupportFlags.HasFlag(NV_HDR_CAPABILITIES_V2_FLAGS.IsST2084EotfSupported);
+        public bool IsTraditionalHdrGammaSupported => SupportFlags.HasFlag(NV_HDR_CAPABILITIES_V2_FLAGS.IsTraditionalHdrGammaSupported);
+        public bool IsTraditionalSdrGammaSupported => SupportFlags.HasFlag(NV_HDR_CAPABILITIES_V2_FLAGS.IsTraditionalSdrGammaSupported);
+
+
         public bool Equals(NV_HDR_CAPABILITIES_V2 other)
         => Version == other.Version &&
            SupportFlags == other.SupportFlags &&

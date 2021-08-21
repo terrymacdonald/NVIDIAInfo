@@ -377,7 +377,7 @@ namespace DisplayMagicianShared.Windows
         public string PrintActiveConfig()
         {
             string stringToReturn = "";
-
+            stringToReturn += $"****** WINDOWS CCD CONFIGURATION *******\n";
             // Get the size of the largest Active Paths and Modes arrays
             int pathCount = 0;
             int modeCount = 0;

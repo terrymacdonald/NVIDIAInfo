@@ -252,14 +252,13 @@ namespace DisplayMagicianShared.NVIDIA
         public NVIDIA_DISPLAY_CONFIG GetActiveConfig()
         {
             SharedLogger.logger.Trace($"NVIDIALibrary/GetActiveConfig: Getting the currently active config");
-            bool allDisplays = true;
+            bool allDisplays = false;
             return GetNVIDIADisplayConfig(allDisplays);
         }
 
         private NVIDIA_DISPLAY_CONFIG GetNVIDIADisplayConfig(bool allDisplays = false)
         {
             NVIDIA_DISPLAY_CONFIG myDisplayConfig = new NVIDIA_DISPLAY_CONFIG();
-            //myDisplayConfig.AdapterConfigs = new List<NVIDIA_ADAPTER_CONFIG>();
 
             if (_initialised)
             {
@@ -771,258 +770,190 @@ namespace DisplayMagicianShared.NVIDIA
         {
             string stringToReturn = "";
 
-            // Get the size of the largest Active Paths and Modes arrays
-            int pathCount = 0;
-            int modeCount = 0;
-            WIN32STATUS err = CCDImport.GetDisplayConfigBufferSizes(QDC.QDC_ONLY_ACTIVE_PATHS, out pathCount, out modeCount);
-            if (err != WIN32STATUS.ERROR_SUCCESS)
+            // Get the current config
+            NVIDIA_DISPLAY_CONFIG displayConfig = GetActiveConfig();
+
+            stringToReturn += $"****** NVIDIA VIDEO CARDS *******\n";
+
+            // Enumerate all the Physical GPUs
+            PhysicalGpuHandle[] physicalGpus = new PhysicalGpuHandle[NVImport.NV_MAX_PHYSICAL_GPUS];
+            uint physicalGpuCount = 0;
+            NVAPI_STATUS NVStatus = NVImport.NvAPI_EnumPhysicalGPUs(ref physicalGpus, out physicalGpuCount);
+            if (NVStatus == NVAPI_STATUS.NVAPI_OK)
             {
-                SharedLogger.logger.Error($"NVIDIALibrary/PrintActiveConfig: ERROR - GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes");
-                throw new NVIDIALibraryException($"GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes");
+                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_EnumPhysicalGPUs returned {physicalGpuCount} Physical GPUs");
+                stringToReturn += $"Number of NVIDIA Video cards found: {physicalGpuCount}\n";
+            }
+            else
+            {
+                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting physical GPU count. NvAPI_EnumPhysicalGPUs() returned error code {NVStatus}");
             }
 
-            SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Getting the current Display Config path and mode arrays");
-            var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
-            var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
-            err = CCDImport.QueryDisplayConfig(QDC.QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
-            if (err == WIN32STATUS.ERROR_INSUFFICIENT_BUFFER)
+            // Go through the Physical GPUs one by one
+            for (uint physicalGpuIndex = 0; physicalGpuIndex < physicalGpuCount; physicalGpuIndex++)
             {
-                SharedLogger.logger.Warn($"NVIDIALibrary/PrintActiveConfig: The displays were modified between GetDisplayConfigBufferSizes and QueryDisplayConfig so we need to get the buffer sizes again.");
-                SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Getting the size of the largest Active Paths and Modes arrays");
-                // Screen changed in between GetDisplayConfigBufferSizes and QueryDisplayConfig, so we need to get buffer sizes again
-                // as per https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-querydisplayconfig 
-                err = CCDImport.GetDisplayConfigBufferSizes(QDC.QDC_ONLY_ACTIVE_PATHS, out pathCount, out modeCount);
-                if (err != WIN32STATUS.ERROR_SUCCESS)
+                //We want to get the name of the physical device
+                string gpuName = "";
+                NVStatus = NVImport.NvAPI_GPU_GetFullName(physicalGpus[physicalGpuIndex], ref gpuName);
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                 {
-                    SharedLogger.logger.Error($"NVIDIALibrary/PrintActiveConfig: ERROR - GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes again");
-                    throw new NVIDIALibraryException($"GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes again");
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetFullName returned OK. The GPU Full Name is {gpuName}");
+                    stringToReturn += $"NVIDIA Video card #{physicalGpuIndex} is a {gpuName}\n";
                 }
-                SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Getting the current Display Config path and mode arrays");
-                paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
-                modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
-                err = CCDImport.QueryDisplayConfig(QDC.QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
-                if (err == WIN32STATUS.ERROR_INSUFFICIENT_BUFFER)
+                else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
                 {
-                    SharedLogger.logger.Error($"NVIDIALibrary/PrintActiveConfig: ERROR - The displays were still modified between GetDisplayConfigBufferSizes and QueryDisplayConfig, even though we tried twice. Something is wrong.");
-                    throw new NVIDIALibraryException($"The displays were still modified between GetDisplayConfigBufferSizes and QueryDisplayConfig, even though we tried twice. Something is wrong.");
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_GPU_GetFullName() returned error code {NVStatus}");
                 }
-                else if (err != WIN32STATUS.ERROR_SUCCESS)
+                else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
                 {
-                    SharedLogger.logger.Error($"NVIDIALibrary/PrintActiveConfig: ERROR - QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays again");
-                    throw new NVIDIALibraryException($"QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays again.");
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_GPU_GetFullName() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_GPU_GetFullName() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_GPU_GetFullName() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_GPU_GetFullName() returned error code {NVStatus}");
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting the GPU full name! NvAPI_GPU_GetFullName() returned error code {NVStatus}");
+                }
+
+                //This function retrieves the Quadro status for the GPU (1 if Quadro, 0 if GeForce)
+                uint quadroStatus = 0;
+                NVStatus = NVImport.NvAPI_GPU_GetQuadroStatus(physicalGpus[physicalGpuIndex], out quadroStatus);
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                {
+                    if (quadroStatus == 0)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is one from the GeForce range");
+                        stringToReturn += $"NVIDIA Video card #{physicalGpuIndex} is in the GeForce range\n";
+                    }
+                    else if (quadroStatus == 1)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is one from the Quadro range");
+                        stringToReturn += $"NVIDIA Video card #{physicalGpuIndex} is in the Quadro range\n";
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is neither a GeForce or Quadro range vodeo card (QuadroStatus = {quadroStatus})");
+                    }
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error GETTING qUADRO STATUS. NvAPI_GPU_GetQuadroStatus() returned error code {NVStatus}");
                 }
             }
-            else if (err != WIN32STATUS.ERROR_SUCCESS)
+
+            stringToReturn += $"\n****** NVIDIA SURROUND/MOSAIC *******\n";
+            if (displayConfig.MosaicConfig.IsMosaicEnabled)
             {
-                SharedLogger.logger.Error($"NVIDIALibrary/PrintActiveConfig: ERROR - QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays");
-                throw new NVIDIALibraryException($"QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays.");
+                stringToReturn += $"NVIDIA Surround/Mosaic is Enabled\n";                
+                if (displayConfig.MosaicConfig.MosaicGridTopos.Length > 1)
+                {
+                    stringToReturn += $"There are {displayConfig.MosaicConfig.MosaicGridTopos.Length} NVIDIA Surround/Mosaic Grid Topologies in use.\n";
+                }
+                if (displayConfig.MosaicConfig.MosaicGridTopos.Length == 1)
+                {
+                    stringToReturn += $"There is 1 NVIDIA Surround/Mosaic Grid Topology in use.\n";
+                }
+                else 
+                {
+                    stringToReturn += $"There are no NVIDIA Surround/Mosaic Grid Topologies in use.\n";
+                }
+
+                int count = 0;
+                foreach (NV_MOSAIC_GRID_TOPO_V2 gridTopology in displayConfig.MosaicConfig.MosaicGridTopos)
+                {
+                    stringToReturn += $"NOTE: This Surround/Mosaic screen will be treated as a single display by Windows.\n";
+                    stringToReturn += $"The NVIDIA Surround/Mosaic Grid Topology #{count} is {gridTopology.Rows} Rows x {gridTopology.Columns} Columns\n";
+                    stringToReturn += $"The NVIDIA Surround/Mosaic Grid Topology #{count} involves {gridTopology.DisplayCount} Displays\n";
+                    count++;
+                }                
             }
-
-            foreach (var path in paths)
+            else
             {
-                stringToReturn += $"----++++==== Path ====++++----\n";
+                stringToReturn += $"NVIDIA Surround/Mosaic is Disabled\n";
+            }            
 
-                // get display source name
-                var sourceInfo = new DISPLAYCONFIG_SOURCE_DEVICE_NAME();
-                sourceInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-                sourceInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SOURCE_DEVICE_NAME>();
-                sourceInfo.Header.AdapterId = path.SourceInfo.AdapterId;
-                sourceInfo.Header.Id = path.SourceInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref sourceInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
+            // Start printing out things
+            stringToReturn += $"\n****** NVIDIA HDR CONFIG *******\n";
+            if (displayConfig.HdrConfig.IsNvHdrEnabled)
+            {
+                stringToReturn += $"NVIDIA HDR is Enabled\n";
+                if (displayConfig.HdrConfig.HdrCapabilities.Count > 0)
                 {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Found Display Source {sourceInfo.ViewGdiDeviceName} for source {path.SourceInfo.Id}.");
-                    stringToReturn += $"****** Interrogating Display Source {path.SourceInfo.Id} *******\n";
-                    stringToReturn += $"Found Display Source {sourceInfo.ViewGdiDeviceName}\n";
-                    stringToReturn += $"\n";
+                    stringToReturn += $"There are {displayConfig.HdrConfig.HdrCapabilities.Count} NVIDIA HDR devices in use.\n";
+                }
+                if (displayConfig.MosaicConfig.MosaicGridTopos.Length == 1)
+                {
+                    stringToReturn += $"There is 1 NVIDIA HDR devices in use.\n";
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the source info for source adapter #{path.SourceInfo.AdapterId}");
+                    stringToReturn += $"There are no NVIDIA HDR devices in use.\n";
                 }
 
-
-                // get display target name
-                var targetInfo = new DISPLAYCONFIG_TARGET_DEVICE_NAME();
-                targetInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
-                targetInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_TARGET_DEVICE_NAME>();
-                targetInfo.Header.AdapterId = path.TargetInfo.AdapterId;
-                targetInfo.Header.Id = path.TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref targetInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
+                foreach (KeyValuePair<uint, NV_HDR_CAPABILITIES_V2> hdrCapabilityItem in displayConfig.HdrConfig.HdrCapabilities)
                 {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Connector Instance: {targetInfo.ConnectorInstance} for source {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: EDID Manufacturer ID: {targetInfo.EdidManufactureId} for source {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: EDID Product Code ID: {targetInfo.EdidProductCodeId} for source {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Flags Friendly Name from EDID: {targetInfo.Flags.FriendlyNameFromEdid} for source {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Flags Friendly Name Forced: {targetInfo.Flags.FriendlyNameForced} for source {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Flags EDID ID is Valid: {targetInfo.Flags.EdidIdsValid} for source {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Monitor Device Path: {targetInfo.MonitorDevicePath} for source {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Monitor Friendly Device Name: {targetInfo.MonitorFriendlyDeviceName} for source {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Output Technology: {targetInfo.OutputTechnology} for source {path.TargetInfo.Id}.");
-
-                    stringToReturn += $"****** Interrogating Display Target {targetInfo.MonitorFriendlyDeviceName} *******\n";
-                    stringToReturn += $" Connector Instance: {targetInfo.ConnectorInstance}\n";
-                    stringToReturn += $" EDID Manufacturer ID: {targetInfo.EdidManufactureId}\n";
-                    stringToReturn += $" EDID Product Code ID: {targetInfo.EdidProductCodeId}\n";
-                    stringToReturn += $" Flags Friendly Name from EDID: {targetInfo.Flags.FriendlyNameFromEdid}\n";
-                    stringToReturn += $" Flags Friendly Name Forced: {targetInfo.Flags.FriendlyNameForced}\n";
-                    stringToReturn += $" Flags EDID ID is Valid: {targetInfo.Flags.EdidIdsValid}\n";
-                    stringToReturn += $" Monitor Device Path: {targetInfo.MonitorDevicePath}\n";
-                    stringToReturn += $" Monitor Friendly Device Name: {targetInfo.MonitorFriendlyDeviceName}\n";
-                    stringToReturn += $" Output Technology: {targetInfo.OutputTechnology}\n";
-                    stringToReturn += $"\n";
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the target info for display #{path.TargetInfo.Id}");
-                }
-
-
-                // get display adapter name
-                var adapterInfo = new DISPLAYCONFIG_ADAPTER_NAME();
-                adapterInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADAPTER_NAME;
-                adapterInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_ADAPTER_NAME>();
-                adapterInfo.Header.AdapterId = path.TargetInfo.AdapterId;
-                adapterInfo.Header.Id = path.TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref adapterInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/PrintActiveConfig: Found Adapter Device Path {adapterInfo.AdapterDevicePath} for source {path.TargetInfo.AdapterId}.");
-                    stringToReturn += $"****** Interrogating Display Adapter {adapterInfo.AdapterDevicePath} *******\n";
-                    stringToReturn += $" Display Adapter {adapterInfo.AdapterDevicePath}\n";
-                    stringToReturn += $"\n";
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the adapter device path for target #{path.TargetInfo.AdapterId}");
-                }
-
-                // get display target preferred mode
-                var targetPreferredInfo = new DISPLAYCONFIG_TARGET_PREFERRED_MODE();
-                targetPreferredInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_PREFERRED_MODE;
-                targetPreferredInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_TARGET_PREFERRED_MODE>();
-                targetPreferredInfo.Header.AdapterId = path.TargetInfo.AdapterId;
-                targetPreferredInfo.Header.Id = path.TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref targetPreferredInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Preferred Width {targetPreferredInfo.Width} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Preferred Height {targetPreferredInfo.Height} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Active Size: ({targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ActiveSize.Cx}x{targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ActiveSize.Cy} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Total Size: ({targetPreferredInfo.TargetMode.TargetVideoSignalInfo.TotalSize.Cx}x{targetPreferredInfo.TargetMode.TargetVideoSignalInfo.TotalSize.Cy} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Video Signal Info HSync Frequency: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.HSyncFreq} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Video Signal Info VSync Frequency: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.VSyncFreq} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Pixel Rate: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.PixelRate} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Scan Line Ordering: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ScanLineOrdering} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Video Standard: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.VideoStandard} for target {path.TargetInfo.Id}.");
-
-                    stringToReturn += $"****** Interrogating Target Preferred Mode for Display {path.TargetInfo.Id} *******\n";
-                    stringToReturn += $" Target Preferred Width {targetPreferredInfo.Width} for target {path.TargetInfo.Id}\n";
-                    stringToReturn += $" Target Preferred Height {targetPreferredInfo.Height} for target {path.TargetInfo.Id}\n";
-                    stringToReturn += $" Target Video Signal Info Active Size: ({targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ActiveSize.Cx}x{targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ActiveSize.Cy}\n";
-                    stringToReturn += $" Target Video Signal Info Total Size: ({targetPreferredInfo.TargetMode.TargetVideoSignalInfo.TotalSize.Cx}x{targetPreferredInfo.TargetMode.TargetVideoSignalInfo.TotalSize.Cy}\n";
-                    stringToReturn += $" Target Video Signal Info HSync Frequency: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.HSyncFreq}\n";
-                    stringToReturn += $" Target Video Signal Info VSync Frequency: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.VSyncFreq}\n";
-                    stringToReturn += $" Target Video Signal Info Pixel Rate: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.PixelRate}\n";
-                    stringToReturn += $" Target Video Signal Info Scan Line Ordering: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ScanLineOrdering}\n";
-                    stringToReturn += $" Target Video Signal Info Video Standard: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.VideoStandard}\n";
-                    stringToReturn += $"\n";
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the preferred target name for display #{path.TargetInfo.Id}");
-                }
-
-                // get display target base type
-                var targetBaseTypeInfo = new DISPLAYCONFIG_TARGET_BASE_TYPE();
-                targetBaseTypeInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_BASE_TYPE;
-                targetBaseTypeInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_TARGET_BASE_TYPE>();
-                targetBaseTypeInfo.Header.AdapterId = path.TargetInfo.AdapterId;
-                targetBaseTypeInfo.Header.Id = path.TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref targetBaseTypeInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Virtual Resolution is Disabled: {targetBaseTypeInfo.BaseOutputTechnology} for target {path.TargetInfo.Id}.");
-
-                    stringToReturn += $"****** Interrogating Target Base Type for Display {path.TargetInfo.Id} *******\n";
-                    stringToReturn += $" Base Output Technology: {targetBaseTypeInfo.BaseOutputTechnology}\n";
-                    stringToReturn += $"\n";
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the target base type for display #{path.TargetInfo.Id}");
-                }
-
-                // get display support virtual resolution
-                var supportVirtResInfo = new DISPLAYCONFIG_SUPPORT_VIRTUAL_RESOLUTION();
-                supportVirtResInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SUPPORT_VIRTUAL_RESOLUTION;
-                supportVirtResInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SUPPORT_VIRTUAL_RESOLUTION>();
-                supportVirtResInfo.Header.AdapterId = path.TargetInfo.AdapterId;
-                supportVirtResInfo.Header.Id = path.TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref supportVirtResInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Base Output Technology: {supportVirtResInfo.IsMonitorVirtualResolutionDisabled} for target {path.TargetInfo.Id}.");
-                    stringToReturn += $"****** Interrogating Target Supporting virtual resolution for Display {path.TargetInfo.Id} *******\n";
-                    stringToReturn += $" Virtual Resolution is Disabled: {supportVirtResInfo.IsMonitorVirtualResolutionDisabled}\n";
-                    stringToReturn += $"\n";
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the virtual resolution support for display #{path.TargetInfo.Id}");
-                }
-
-                //get advanced color info
-                var colorInfo = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
-                colorInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
-                colorInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
-                colorInfo.Header.AdapterId = path.TargetInfo.AdapterId;
-                colorInfo.Header.Id = path.TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref colorInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Advanced Color Supported: {colorInfo.AdvancedColorSupported} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Advanced Color Enabled: {colorInfo.AdvancedColorEnabled} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Advanced Color Force Disabled: {colorInfo.AdvancedColorForceDisabled} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Bits per Color Channel: {colorInfo.BitsPerColorChannel} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Color Encoding: {colorInfo.ColorEncoding} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found Wide Color Enforced: {colorInfo.WideColorEnforced} for target {path.TargetInfo.Id}.");
-
-                    stringToReturn += $"****** Interrogating Advanced Color Info for Display {path.TargetInfo.Id} *******\n";
-                    stringToReturn += $" Advanced Color Supported: {colorInfo.AdvancedColorSupported}\n";
-                    stringToReturn += $" Advanced Color Enabled: {colorInfo.AdvancedColorEnabled}\n";
-                    stringToReturn += $" Advanced Color Force Disabled: {colorInfo.AdvancedColorForceDisabled}\n";
-                    stringToReturn += $" Bits per Color Channel: {colorInfo.BitsPerColorChannel}\n";
-                    stringToReturn += $" Color Encoding: {colorInfo.ColorEncoding}\n";
-                    stringToReturn += $" Wide Color Enforced: {colorInfo.WideColorEnforced}\n";
-                    stringToReturn += $"\n";
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the virtual resolution support for display #{path.TargetInfo.Id}");
-                }
-
-                // get SDR white levels
-                var whiteLevelInfo = new DISPLAYCONFIG_SDR_WHITE_LEVEL();
-                whiteLevelInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
-                whiteLevelInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SDR_WHITE_LEVEL>();
-                whiteLevelInfo.Header.AdapterId = path.TargetInfo.AdapterId;
-                whiteLevelInfo.Header.Id = path.TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref whiteLevelInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
-                {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetWindowsDisplayConfig: Found SDR White Level: {whiteLevelInfo.SDRWhiteLevel} for target {path.TargetInfo.Id}.");
-
-                    stringToReturn += $"****** Interrogating SDR Whilte Level for Display {path.TargetInfo.Id} *******\n";
-                    stringToReturn += $" SDR White Level: {whiteLevelInfo.SDRWhiteLevel}\n";
-                    stringToReturn += $"\n";
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the SDL white level for display #{path.TargetInfo.Id}");
+                    string displayId = hdrCapabilityItem.Key.ToString();
+                    if (hdrCapabilityItem.Value.IsDolbyVisionSupported)
+                    {
+                        stringToReturn += $"Display {displayId} supports DolbyVision HDR.\n";
+                    }
+                    else
+                    {
+                        stringToReturn += $"Display {displayId} DOES NOT support DolbyVision HDR.\n";
+                    }
+                    if (hdrCapabilityItem.Value.IsST2084EotfSupported)
+                    {
+                        stringToReturn += $"Display {displayId} supports ST2084EOTF HDR Mode.\n";
+                    }
+                    else
+                    {
+                        stringToReturn += $"Display {displayId} DOES NOT support ST2084EOTF HDR Mode.\n";
+                    }
+                    if (hdrCapabilityItem.Value.IsTraditionalHdrGammaSupported)
+                    {
+                        stringToReturn += $"Display {displayId} supports Traditional HDR Gamma.\n";
+                    }
+                    else
+                    {
+                        stringToReturn += $"Display {displayId} DOES NOT support Traditional HDR Gamma.\n";
+                    }
+                    if (hdrCapabilityItem.Value.IsEdrSupported)
+                    {
+                        stringToReturn += $"Display {displayId} supports EDR.\n";
+                    }
+                    else
+                    {
+                        stringToReturn += $"Display {displayId} DOES NOT support EDR.\n";
+                    }
+                    if (hdrCapabilityItem.Value.IsTraditionalSdrGammaSupported)
+                    {
+                        stringToReturn += $"Display {displayId} supports SDR Gamma.\n";
+                    }
+                    else
+                    {
+                        stringToReturn += $"Display {displayId} DOES NOT support SDR Gamma.\n";
+                    }
                 }
             }
+            else
+            {
+                stringToReturn += $"NVIDIA HDR is Disabled (HDR may still be enabled within Windows itself)\n";
+            }
+
+            stringToReturn += $"\n\n";
+            // Now we also get the Windows CCD Library info, and add it to the above
+            stringToReturn += WinLibrary.GetLibrary().PrintActiveConfig();
+
             return stringToReturn;
         }
 
