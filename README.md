@@ -10,10 +10,24 @@ NVIDIAInfo records exactly how you setup your display settings, including screen
 
 NOTE: NVIDIAInfo doesn't handle AMD Eyefinity. Please see [AMDInfo](https://github.com/terrymacdonald/AMDInfo) for that!
 
-You can store a unique NVIDIAInfo settings file for each of your display configurations. Then you can use NVIDIAInfo to load an apply those settings! 
-
 Command line examples:
 
-- Show what settings you currently are using: `NVIDIAInfo`
+- Show what settings you currently are using: `NVIDIAInfo print`
 - Save the settings you currently are using to a file to use later: `NVIDIAInfo save my-cool-settings.cfg`
 - Load the settings you saved earlier and use them now: `NVIDIAInfo load my-cool-settings.cfg`
+- Show whether the display config file can be used: `NVIDIAInfo possible my-cool-settings.cfg`
+
+
+## To setup this software:
+
+- Firstly, set up your display configuration using NVIDIA settings and the Windows Display settings exactly as you want to use them (e.g. one single NVIDIA Surround window using 3 screens)
+- Next, save the settings you currently are using to a file to use later, using a command like `NVIDIAInfo save triple-surround-on.cfg`
+- Next, change your display configuration using NVIDIA settings and the Windows Display settings to another display configuration you'd like to have (e.g. 3 single screens without using NVIDIA Surround)
+- Next, save those settings to a different file to use later, using a command like `NVIDIAInfo save triple-screen.cfg`
+
+Now that you've set up the different display configurations, you can swap between them using a command like this:
+
+- To load the triple screen setup using NVIDIA surround: `NVIDIAInfo load triple-surround-on.cfg`
+- To load the triple screen without NVIDIA surround: `NVIDIAInfo load triple-screen.cfg`
+
+Feel free to use different config file names, and to set up what ever display configurations you like. Enjoy!
