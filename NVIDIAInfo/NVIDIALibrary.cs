@@ -1461,7 +1461,7 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 //We want to get the name of the physical device
                 string gpuName = "";
-                //NVStatus = NVImport.NvAPI_GPU_GetFullName(physicalGpus[physicalGpuIndex], ref gpuName);
+                NVStatus = NVImport.NvAPI_GPU_GetFullName(physicalGpus[physicalGpuIndex], ref gpuName);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetFullName returned OK. The GPU Full Name is {gpuName}");
@@ -1666,7 +1666,8 @@ namespace DisplayMagicianShared.NVIDIA
                         }
 
                         //edidInfo = GetEDIDInfo(physicalGpu, gpuOutputId);
-                        // We try to get an EDID block                
+                        // We try to get an EDID block
+                        
                         NV_EDID_V3 edidInfo = new NV_EDID_V3();
                         NVStatus = NVImport.NvAPI_GPU_GetEDID(physicalGpu, gpuOutputId, ref edidInfo);
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)

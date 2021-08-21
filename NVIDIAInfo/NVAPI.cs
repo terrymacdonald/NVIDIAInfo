@@ -3446,7 +3446,7 @@ namespace DisplayMagicianShared.NVIDIA
         //NVAPI_INTERFACE NvAPI_GPU_GetFullName(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString szName);
         private delegate NVAPI_STATUS GPU_GetFullNameDelegate(
             [In] PhysicalGpuHandle gpuHandle,
-            [In][Out] IntPtr gpuNameBuffer);
+            [In][Out] StringBuilder gpuNameBuffer);
         private static readonly GPU_GetFullNameDelegate GPU_GetFullNameInternal;
         /// <summary>
         //!  This API gets High Dynamic Range (HDR) capabilities of the display.
@@ -3457,18 +3457,20 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            IntPtr gpuNameBuffer = (IntPtr)Marshal.StringToHGlobalAnsi(gpuName);
+            StringBuilder gpuNameBuffer = new StringBuilder((int)NVImport.NV_SHORT_STRING_MAX);
+            //IntPtr gpuNameBuffer = (IntPtr)Marshal.StringToHGlobalAnsi(gpuName);
 
             if (GPU_GetFullNameInternal != null) { status = GPU_GetFullNameInternal(gpuHandle, gpuNameBuffer); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             // Convert the char array to a string
-            gpuName = Marshal.PtrToStringAnsi(gpuNameBuffer);
+            //gpuName = Marshal.PtrToStringAnsi(gpuNameBuffer);
 
-            Marshal.ZeroFreeGlobalAllocAnsi(gpuNameBuffer);
+            //Marshal.ZeroFreeGlobalAllocAnsi(gpuNameBuffer);
             //Marshal.FreeHGlobal(gpuNameBuffer);
-            
-            string gpuName2 = Marshal.PtrToStringAnsi(gpuNameBuffer);
+
+            //string gpuName2 = Marshal.PtrToStringAnsi(gpuNameBuffer);
+            gpuName = gpuNameBuffer.ToString();
 
             return status;
         }
