@@ -11,7 +11,7 @@ using EDIDParser;
 
 namespace DisplayMagicianShared.NVIDIA
 {
-    
+
     [StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_MOSAIC_CONFIG : IEquatable<NVIDIA_MOSAIC_CONFIG>
     {
@@ -31,9 +31,9 @@ namespace DisplayMagicianShared.NVIDIA
            MosaicDisplaySettings.Equals(other.MosaicDisplaySettings) &&
            OverlapX == other.OverlapX &&
            OverlapY == other.OverlapY &&
-           MosaicGridTopos.Equals(other.MosaicGridTopos) &&
+           MosaicGridTopos.SequenceEqual(other.MosaicGridTopos) &&
            MosaicGridCount == other.MosaicGridCount &&
-           MosaicViewports.Equals(other.MosaicViewports) &&
+           MosaicViewports.SequenceEqual(other.MosaicViewports) &&
            PrimaryDisplayId == other.PrimaryDisplayId;
 
         public override int GetHashCode()
@@ -50,8 +50,8 @@ namespace DisplayMagicianShared.NVIDIA
         public bool IsNvHdrEnabled;
 
         public bool Equals(NVIDIA_HDR_CONFIG other)
-        => HdrCapabilities == other.HdrCapabilities &&
-           HdrColorData == other.HdrColorData &&
+        => HdrCapabilities.SequenceEqual(other.HdrCapabilities) &&
+           HdrColorData.SequenceEqual(other.HdrColorData) &&
            IsNvHdrEnabled == other.IsNvHdrEnabled;
 
         public override int GetHashCode()
@@ -65,19 +65,20 @@ namespace DisplayMagicianShared.NVIDIA
     {
         public NVIDIA_MOSAIC_CONFIG MosaicConfig;
         public NVIDIA_HDR_CONFIG HdrConfig;
-        public List<string>DisplayIdentifiers;
+        public List<string> DisplayIdentifiers;
 
         public bool Equals(NVIDIA_DISPLAY_CONFIG other)
         => MosaicConfig.Equals(other.MosaicConfig) &&
-           HdrConfig.Equals(other.HdrConfig);
+           HdrConfig.Equals(other.HdrConfig) &&
+           DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers);
 
         public override int GetHashCode()
         {
-            return (MosaicConfig, HdrConfig).GetHashCode();
+            return (MosaicConfig, HdrConfig, DisplayIdentifiers).GetHashCode();
         }
     }
 
-    class NVIDIALibrary : IDisposable
+    public class NVIDIALibrary : IDisposable
     {
 
         // Static members are 'eagerly initialized', that is, 
@@ -99,7 +100,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         static NVIDIALibrary() { }
         public NVIDIALibrary()
-        {           
+        {
 
             try
             {
@@ -122,7 +123,7 @@ namespace DisplayMagicianShared.NVIDIA
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error intialising NVIDIA NVAPI library. NvAPI_Initialize() returned error code {NVStatus}");
                     }
-                    
+
                 }
                 catch (Exception ex)
                 {
@@ -155,7 +156,7 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 // If this fires, then the DLL isn't available, so we need don't try to do anything else
                 SharedLogger.logger.Info(ex, $"NVIDIALibrary/NVIDIALibrary: Exception trying to load the NVIDIA NVAPI DLL. This generally means you don't have the NVIDIA driver installed.");
-            }                        
+            }
 
         }
 
@@ -182,10 +183,10 @@ namespace DisplayMagicianShared.NVIDIA
                             SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error destroying the NVAPI library DRS session handle. NvAPI_DRS_DestorySession() returned error code {NVStatus}");
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception destroying the NVIDIA NVAPI library. NvAPI_DRS_DestorySession() caused an exception.");
-                    }                
+                    }
                 }
 
                 try
@@ -193,11 +194,11 @@ namespace DisplayMagicianShared.NVIDIA
                     //NVImport.NvAPI_Unload();
                     SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was unloaded successfully");
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception unloading the NVIDIA NVAPI library. NvAPI_Unload() caused an exception.");
                 }
-                
+
             }
         }
 
@@ -246,8 +247,8 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return _instance;
         }
-        
-       
+
+
 
         public NVIDIA_DISPLAY_CONFIG GetActiveConfig()
         {
@@ -304,13 +305,13 @@ namespace DisplayMagicianShared.NVIDIA
 
                 // Get current Mosaic Topology settings in brief (check whether Mosaic is on)
                 NV_MOSAIC_TOPO_BRIEF mosaicTopoBrief = new NV_MOSAIC_TOPO_BRIEF();
-                NV_MOSAIC_DISPLAY_SETTING_V2  mosaicDisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2();
+                NV_MOSAIC_DISPLAY_SETTING_V2 mosaicDisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2();
                 int mosaicOverlapX = 0;
                 int mosaicOverlapY = 0;
                 NVStatus = NVImport.NvAPI_Mosaic_GetCurrentTopo(ref mosaicTopoBrief, ref mosaicDisplaySettings, out mosaicOverlapX, out mosaicOverlapY);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                 {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");                    
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
                 }
                 else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
                 {
@@ -350,39 +351,39 @@ namespace DisplayMagicianShared.NVIDIA
 
                     // Get more Mosaic Topology detailed settings
                     NV_MOSAIC_TOPO_GROUP mosaicTopoGroup = new NV_MOSAIC_TOPO_GROUP();
-                     NVStatus = NVImport.NvAPI_Mosaic_GetTopoGroup(ref mosaicTopoBrief, ref mosaicTopoGroup);
-                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                     {
-                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
-                     }
-                     else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
-                     {
-                         SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                     }
-                     else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
-                     {
-                         SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                     }
-                     else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
-                     {
-                         SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                     }
-                     else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
-                     {
-                         SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                     }
-                     else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
-                     {
-                         SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not supported by this driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                     }
-                     else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
-                     {
-                         SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                     }
-                     else
-                     {
-                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                     }
+                    NVStatus = NVImport.NvAPI_Mosaic_GetTopoGroup(ref mosaicTopoBrief, ref mosaicTopoGroup);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not supported by this driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                    }
 
                     // Figure out how many Mosaic Grid topoligies there are                    
                     uint mosaicGridCount = 0;
@@ -393,7 +394,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
-                    NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];                    
+                    NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];
                     NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridTopos, ref mosaicGridCount);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
@@ -477,7 +478,7 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // Mosaic isn't enabled
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Mosaic is NOT enabled.");
-                    myDisplayConfig.MosaicConfig.MosaicTopologyBrief = mosaicTopoBrief; 
+                    myDisplayConfig.MosaicConfig.MosaicTopologyBrief = mosaicTopoBrief;
                     myDisplayConfig.MosaicConfig.IsMosaicEnabled = false;
                     myDisplayConfig.MosaicConfig.MosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[] { };
                     myDisplayConfig.MosaicConfig.MosaicViewports = new List<NV_RECT[]>();
@@ -597,7 +598,7 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_DISP_GetGDIPrimaryDisplayId() returned error code {NVStatus}");
                         }
-                        
+
 
                         // Time to get the HDR capabilities and settings for each display
                         bool isNvHdrEnabled = false;
@@ -621,8 +622,8 @@ namespace DisplayMagicianShared.NVIDIA
                                     continue;
                                 }
                             }
-                            
-                            
+
+
 
                             // Now we get the HDR capabilities of the display
                             NV_HDR_CAPABILITIES_V2 hdrCapabilities = new NV_HDR_CAPABILITIES_V2();
@@ -680,7 +681,7 @@ namespace DisplayMagicianShared.NVIDIA
                                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Display {displayIds[displayIndex].DisplayId} DOES NOT support Driver Expanded Default HDR Parameters ");
                                 }
 
-                                allHdrCapabilities.Add(displayIds[displayIndex].DisplayId,hdrCapabilities);
+                                allHdrCapabilities.Add(displayIds[displayIndex].DisplayId, hdrCapabilities);
                             }
                             else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
                             {
@@ -716,8 +717,8 @@ namespace DisplayMagicianShared.NVIDIA
                                 if (hdrColorData.HdrMode != NV_HDR_MODE.NV_HDR_MODE_OFF)
                                 {
                                     isNvHdrEnabled = true;
-                                }                                
-                                allHdrColorData.Add(displayIds[displayIndex].DisplayId,hdrColorData);
+                                }
+                                allHdrColorData.Add(displayIds[displayIndex].DisplayId, hdrColorData);
                             }
                             else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
                             {
@@ -737,7 +738,7 @@ namespace DisplayMagicianShared.NVIDIA
                             }
                             else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
                             {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}.");                                
+                                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}.");
                             }
                             else
                             {
@@ -751,7 +752,7 @@ namespace DisplayMagicianShared.NVIDIA
                         myDisplayConfig.HdrConfig.HdrColorData = allHdrColorData;
 
                     }
-                    
+
                 }
                 myDisplayConfig.DisplayIdentifiers = GetCurrentDisplayIdentifiers();
             }
@@ -760,7 +761,7 @@ namespace DisplayMagicianShared.NVIDIA
                 SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: ERROR - Tried to run GetNVIDIADisplayConfig but the NVIDIA ADL library isn't initialised!");
                 throw new NVIDIALibraryException($"Tried to run GetNVIDIADisplayConfig but the NVIDIA ADL library isn't initialised!");
             }
-            
+
             // Return the configuration
             return myDisplayConfig;
         }
@@ -854,7 +855,7 @@ namespace DisplayMagicianShared.NVIDIA
             stringToReturn += $"\n****** NVIDIA SURROUND/MOSAIC *******\n";
             if (displayConfig.MosaicConfig.IsMosaicEnabled)
             {
-                stringToReturn += $"NVIDIA Surround/Mosaic is Enabled\n";                
+                stringToReturn += $"NVIDIA Surround/Mosaic is Enabled\n";
                 if (displayConfig.MosaicConfig.MosaicGridTopos.Length > 1)
                 {
                     stringToReturn += $"There are {displayConfig.MosaicConfig.MosaicGridTopos.Length} NVIDIA Surround/Mosaic Grid Topologies in use.\n";
@@ -863,7 +864,7 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     stringToReturn += $"There is 1 NVIDIA Surround/Mosaic Grid Topology in use.\n";
                 }
-                else 
+                else
                 {
                     stringToReturn += $"There are no NVIDIA Surround/Mosaic Grid Topologies in use.\n";
                 }
@@ -875,12 +876,12 @@ namespace DisplayMagicianShared.NVIDIA
                     stringToReturn += $"The NVIDIA Surround/Mosaic Grid Topology #{count} is {gridTopology.Rows} Rows x {gridTopology.Columns} Columns\n";
                     stringToReturn += $"The NVIDIA Surround/Mosaic Grid Topology #{count} involves {gridTopology.DisplayCount} Displays\n";
                     count++;
-                }                
+                }
             }
             else
             {
                 stringToReturn += $"NVIDIA Surround/Mosaic is Disabled\n";
-            }            
+            }
 
             // Start printing out things
             stringToReturn += $"\n****** NVIDIA HDR CONFIG *******\n";
@@ -974,7 +975,7 @@ namespace DisplayMagicianShared.NVIDIA
                 {
 
                     // We need to change to a Mosaic profile, so we need to apply the new Mosaic Topology
-                    NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;                    
+                    NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
 
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Yay! The display settings provided are valid to apply! Attempting to apply them now.");
                     // If we get here then the display is valid, so now we actually apply the new Mosaic Topology
@@ -1023,7 +1024,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
                     }
 
-                }                
+                }
                 else if (!displayConfig.MosaicConfig.IsMosaicEnabled && currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
                 {
                     // We are on a Mosaic profile now, and we need to change to a non-Mosaic profile
@@ -1119,7 +1120,7 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Disp_HdrColorControl() returned error code {NVStatus}. It's most likely that your monitor {wantedHdrColorData.Key} doesn't support HDR.");
                         }
-                    }                    
+                    }
                 }
 
             }
@@ -1130,7 +1131,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
 
-            
+
             return true;
         }
 
@@ -1587,7 +1588,7 @@ namespace DisplayMagicianShared.NVIDIA
                             // We want to skip this display as it is non-active, and we only want active displays
                             continue;
                         }
-                        
+
                         // Now we try to get the GPU and Output ID from the DisplayID
                         PhysicalGpuHandle physicalGpu = new PhysicalGpuHandle();
                         UInt32 gpuOutputId = 0;
@@ -1670,7 +1671,7 @@ namespace DisplayMagicianShared.NVIDIA
                             {
                                 SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_GPU_GetEDID() returned error code {NVStatus}");
                             }
-                        }                        
+                        }
 
 
                         // Create an array of all the important display info we need to record
@@ -1757,7 +1758,7 @@ namespace DisplayMagicianShared.NVIDIA
                             displayIdentifiers.Add(displayIdentifier);
                             SharedLogger.logger.Debug($"ProfileRepository/GenerateProfileDisplayIdentifiers: DisplayIdentifier: {displayIdentifier}");
                         }
-                    }                    
+                    }
                 }
             }
 
