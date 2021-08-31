@@ -127,6 +127,56 @@ namespace NVIDIAInfo
                     }
                     possibleFromFile(args[1]);
                 }
+                else if (args[0] == "equal")
+                {
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: The equal command was provided");
+                    if (args.Length != 3)
+                    {
+                        Console.WriteLine($"ERROR - You need to provide two filenames in order for us to see if they are equal.");
+                        Console.WriteLine($"        Equal means they are exactly the same.");
+                        SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - You need to provide two filenames in order for us to see if they are equal.");
+                        Environment.Exit(1);
+                    }
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing if {args[1]} and {args[2]} are both a valid display config files as equals command was provided");
+                    if (!File.Exists(args[1]))
+                    {
+                        Console.WriteLine($"ERROR - Couldn't find the file {args[1]} to check the settings from it");
+                        SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - Couldn't find the file {args[1]} to check the settings from it");
+                        Environment.Exit(1);
+                    }
+                    if (!File.Exists(args[2]))
+                    {
+                        Console.WriteLine($"ERROR - Couldn't find the file {args[2]} to check the settings from it");
+                        SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - Couldn't find the file {args[2]} to check the settings from it");
+                        Environment.Exit(1);
+                    }
+                    equalFromFiles(args[1],args[2]);
+                }
+                else if (args[0] == "equivalent")
+                {
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: The equivalent command was provided");
+                    if (args.Length != 3)
+                    {
+                        Console.WriteLine($"ERROR - You need to provide two filenames in order for us to see if they are equivalent.");
+                        Console.WriteLine($"        Equivalent means they will have the same result if applied, but may have some differences like name.");
+                        SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - You need to provide two filenames in order for us to see if they are equivalent.");
+                        Environment.Exit(1);
+                    }
+                    SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing if {args[1]} and {args[2]} are both a valid display config files as equivalent command was provided");
+                    if (!File.Exists(args[1]))
+                    {
+                        Console.WriteLine($"ERROR - Couldn't find the file {args[1]} to check the settings from it");
+                        SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - Couldn't find the file {args[1]} to check the settings from it");
+                        Environment.Exit(1);
+                    }
+                    if (!File.Exists(args[2]))
+                    {
+                        Console.WriteLine($"ERROR - Couldn't find the file {args[2]} to check the settings from it");
+                        SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - Couldn't find the file {args[2]} to check the settings from it");
+                        Environment.Exit(1);
+                    }
+                    equivalentFromFiles(args[1], args[2]);
+                }
                 else if (args[0] == "currentids")
                 {
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing currently connected display ids as currentids command was provided");
@@ -382,6 +432,175 @@ namespace NVIDIAInfo
             {
                 SharedLogger.logger.Error($"NVIDIAInfo/possibleFromFile: The {filename} profile JSON file exists but is empty! So we're going to treat it as if it didn't exist.");
                 Console.WriteLine($"NVIDIAInfo/possibleFromFile: The {filename} profile JSON file exists but is empty! So we're going to treat it as if it didn't exist.");
+            }
+        }
+
+        static void equalFromFiles(string filename, string otherFilename)
+        {
+            string json = ""; 
+            string otherJson = "";
+            NVIDIAINFO_DISPLAY_CONFIG displayConfig = new NVIDIAINFO_DISPLAY_CONFIG();
+            NVIDIAINFO_DISPLAY_CONFIG otherDisplayConfig = new NVIDIAINFO_DISPLAY_CONFIG();
+            SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Attempting to compare the display configuration from {filename} and {otherFilename} to see if they are equal.");
+            try
+            {
+                json = File.ReadAllText(filename, Encoding.Unicode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"NVIDIAInfo/equalFromFile: ERROR - Tried to read the JSON file {filename} to memory but File.ReadAllTextthrew an exception.");
+                SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to read the JSON file {filename} to memory but File.ReadAllTextthrew an exception.");
+            }
+
+            try
+            {
+                otherJson = File.ReadAllText(otherFilename, Encoding.Unicode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"NVIDIAInfo/equalFromFile: ERROR - Tried to read the JSON file {otherFilename} to memory but File.ReadAllTextthrew an exception.");
+                SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to read the JSON file {otherFilename} to memory but File.ReadAllTextthrew an exception.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(json)&&!string.IsNullOrWhiteSpace(otherJson))
+            {
+                try
+                {
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Contents exist within {filename} so trying to read them as JSON.");
+                    displayConfig = JsonConvert.DeserializeObject<NVIDIAINFO_DISPLAY_CONFIG>(json, new JsonSerializerSettings
+                    {
+                        MissingMemberHandling = MissingMemberHandling.Ignore,
+                        NullValueHandling = NullValueHandling.Ignore,
+                        DefaultValueHandling = DefaultValueHandling.Include,
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        ObjectCreationHandling = ObjectCreationHandling.Replace
+                    });
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Successfully parsed {filename} as JSON.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"NVIDIAInfo/equalFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                }
+                try
+                {
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Contents exist within {otherFilename} so trying to read them as JSON.");
+                    otherDisplayConfig = JsonConvert.DeserializeObject<NVIDIAINFO_DISPLAY_CONFIG>(otherJson, new JsonSerializerSettings
+                    {
+                        MissingMemberHandling = MissingMemberHandling.Ignore,
+                        NullValueHandling = NullValueHandling.Ignore,
+                        DefaultValueHandling = DefaultValueHandling.Include,
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        ObjectCreationHandling = ObjectCreationHandling.Replace
+                    });
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Successfully parsed {filename} as JSON.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"NVIDIAInfo/equalFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                }
+
+                if (displayConfig.NVIDIAConfig.Equals(otherDisplayConfig.NVIDIAConfig))
+                {
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: The NVIDIA display settings in {filename} and {otherFilename} are equal.");
+                    Console.WriteLine($"The NVIDIA display settings in {filename} and {otherFilename} are equal.");
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: The NVIDIA display settings in {filename} and {otherFilename} are NOT equal.");
+                    Console.WriteLine($"The NVIDIA display settings in {filename} and {otherFilename} are NOT equal.");
+                }
+
+            }
+            else
+            {
+                SharedLogger.logger.Error($"NVIDIAInfo/equalFromFile: The {filename} or {otherFilename} JSON files exist but at least one of them is empty! Cannot continue.");
+                Console.WriteLine($"NVIDIAInfo/equalFromFile: The {filename} or {otherFilename} JSON files exist but at least one of them is empty! Cannot continue.");
+            }
+        }
+        static void equivalentFromFiles(string filename, string otherFilename)
+        {
+            string json = "";
+            string otherJson = "";
+            NVIDIAINFO_DISPLAY_CONFIG displayConfig = new NVIDIAINFO_DISPLAY_CONFIG();
+            NVIDIAINFO_DISPLAY_CONFIG otherDisplayConfig = new NVIDIAINFO_DISPLAY_CONFIG();             
+            SharedLogger.logger.Trace($"NVIDIAInfo/equivalentFromFile: Attempting to compare the display configuration from {filename} and {otherFilename} to see if they are equal.");
+            try
+            {
+                json = File.ReadAllText(filename, Encoding.Unicode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"NVIDIAInfo/equivalentFromFile: ERROR - Tried to read the JSON file {filename} to memory but File.ReadAllTextthrew an exception.");
+                SharedLogger.logger.Error(ex, $"NVIDIAInfo/equivalentFromFile: Tried to read the JSON file {filename} to memory but File.ReadAllTextthrew an exception.");
+            }
+
+            try
+            {
+                otherJson = File.ReadAllText(otherFilename, Encoding.Unicode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"NVIDIAInfo/equivalentFromFile: ERROR - Tried to read the JSON file {otherFilename} to memory but File.ReadAllTextthrew an exception.");
+                SharedLogger.logger.Error(ex, $"NVIDIAInfo/equivalentFromFile: Tried to read the JSON file {otherFilename} to memory but File.ReadAllTextthrew an exception.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(json) && !string.IsNullOrWhiteSpace(otherJson))
+            {
+                try
+                {
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equivalentFromFile: Contents exist within {filename} so trying to read them as JSON.");
+                    displayConfig = JsonConvert.DeserializeObject<NVIDIAINFO_DISPLAY_CONFIG>(json, new JsonSerializerSettings
+                    {
+                        MissingMemberHandling = MissingMemberHandling.Ignore,
+                        NullValueHandling = NullValueHandling.Ignore,
+                        DefaultValueHandling = DefaultValueHandling.Include,
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        ObjectCreationHandling = ObjectCreationHandling.Replace
+                    });
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equivalentFromFile: Successfully parsed {filename} as JSON.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"NVIDIAInfo/equivalentFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    SharedLogger.logger.Error(ex, $"NVIDIAInfo/equivalentFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                }
+                try
+                {
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equivalentFromFile: Contents exist within {otherFilename} so trying to read them as JSON.");
+                    otherDisplayConfig = JsonConvert.DeserializeObject<NVIDIAINFO_DISPLAY_CONFIG>(otherJson, new JsonSerializerSettings
+                    {
+                        MissingMemberHandling = MissingMemberHandling.Ignore,
+                        NullValueHandling = NullValueHandling.Ignore,
+                        DefaultValueHandling = DefaultValueHandling.Include,
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        ObjectCreationHandling = ObjectCreationHandling.Replace
+                    });
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equivalentFromFile: Successfully parsed {filename} as JSON.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"NVIDIAInfo/equivalentFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    SharedLogger.logger.Error(ex, $"NVIDIAInfo/equivalentFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                }
+
+                if (NVIDIALibrary.GetLibrary().IsEquivalentConfig(displayConfig.NVIDIAConfig, otherDisplayConfig.NVIDIAConfig))
+                {
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equivalentFromFile: The NVIDIA display settings in {filename} and {otherFilename} are equivalent.");
+                    Console.WriteLine($"The NVIDIA display settings in {filename} and {otherFilename} are equivalent.");
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVIDIAInfo/equivalentFromFile: The NVIDIA display settings in {filename} and {otherFilename} are NOT equivalent.");
+                    Console.WriteLine($"The NVIDIA display settings in {filename} and {otherFilename} are NOT equivalent.");
+                }
+
+            }
+            else
+            {
+                SharedLogger.logger.Error($"NVIDIAInfo/equivalentFromFile: The {filename} or {otherFilename} JSON files exist but at least one of them is empty! Cannot continue.");
+                Console.WriteLine($"NVIDIAInfo/equivalentFromFile: The {filename} or {otherFilename} JSON files exist but at least one of them is empty! Cannot continue.");
             }
         }
     }

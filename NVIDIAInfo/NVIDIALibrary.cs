@@ -1086,7 +1086,7 @@ namespace DisplayMagicianShared.NVIDIA
                 // Now, we have the current HDR settings, and the existing HDR settings, so we go through and we attempt to set each display color settings
                 foreach (var wantedHdrColorData in displayConfig.HdrConfig.HdrColorData)
                 {
-                    // If we have HDR settings for the display, then attempt to set them
+                    // If we have HDR settings stored for the display, then attempt to set them
                     if (currentDisplayConfig.HdrConfig.HdrColorData.ContainsKey(wantedHdrColorData.Key))
                     {
                         // Now we set the HDR colour settings of the display
@@ -1380,6 +1380,47 @@ namespace DisplayMagicianShared.NVIDIA
                 return false;
             }
 
+        }
+
+        public bool IsEquivalentConfig(NVIDIA_DISPLAY_CONFIG displayConfig, NVIDIA_DISPLAY_CONFIG otherDisplayConfig)
+        {
+            // We want to check if the NVIDIA configurations are the equiavalent of each other
+            // IMPORTANT: This function differs from Equals in that Equivalent allows some fields to differ in order to still match.
+            // The goal is to identify when two display configurations would be the same if they were applied.
+
+            SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Testing whether the NVIDIA display configuration is equivalent to another");
+            if (_initialised)
+            {
+                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
+
+                // Check that displayConfig DisplayIdentifiers match
+                if (!displayConfig.DisplayIdentifiers.All(value => otherDisplayConfig.DisplayIdentifiers.Contains(value)))
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Uh oh! The NVIDIA display identifiers don't match so NVIDIA Config is not equivalent to the other one.");
+                    return false;
+                }
+
+                // Check that displayConfig Mosaic Configs match
+                if (!displayConfig.MosaicConfig.Equals(otherDisplayConfig.MosaicConfig))
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Uh oh! The NVIDIA Mosaic Configs don't match so NVIDIA Config is not equivalent to the other one.");
+                    return false;
+                }
+
+                // Check that displayConfig Hdr Configs match
+                if (!displayConfig.HdrConfig.Equals(otherDisplayConfig.HdrConfig))
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Uh oh! The NVIDIA Hdr Configs don't match so NVIDIA Config is not equivalent to the other one.");
+                    return false;
+                }
+
+                SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Success! The NVIDIA display configuration is possible to be used now");
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public List<string> GetCurrentDisplayIdentifiers()
