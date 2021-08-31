@@ -22,6 +22,7 @@ namespace DisplayMagicianShared.NVIDIA
         public Int32 OverlapY;
         public NV_MOSAIC_GRID_TOPO_V2[] MosaicGridTopos;
         public UInt32 MosaicGridCount;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS)]
         public List<NV_RECT[]> MosaicViewports;
         public UInt32 PrimaryDisplayId;
 
@@ -35,7 +36,7 @@ namespace DisplayMagicianShared.NVIDIA
            OverlapY == other.OverlapY &&
            MosaicGridTopos.SequenceEqual(other.MosaicGridTopos) &&
            MosaicGridCount == other.MosaicGridCount &&
-           MosaicViewports.SequenceEqual(other.MosaicViewports) &&
+           NVIDIALibrary.ListOfArraysEqual(MosaicViewports, other.MosaicViewports)&&
            PrimaryDisplayId == other.PrimaryDisplayId;
 
         public override int GetHashCode()
@@ -441,7 +442,7 @@ namespace DisplayMagicianShared.NVIDIA
                     myDisplayConfig.MosaicConfig.MosaicGridTopos = mosaicGridTopos;
                     myDisplayConfig.MosaicConfig.MosaicGridCount = mosaicGridCount;
 
-                    List<NV_RECT[]> allViewports = new List<NV_RECT[]> { };
+                    List<NV_RECT[]> allViewports = new List<NV_RECT[]>();
                     foreach (NV_MOSAIC_GRID_TOPO_V2 gridTopo in mosaicGridTopos)
                     {
                         // Get Current Mosaic Grid settings using the Grid topologies numbers we got before
@@ -1822,6 +1823,55 @@ namespace DisplayMagicianShared.NVIDIA
             return displayIdentifiers;
         }
 
+        public static bool ListOfArraysEqual(List<NV_RECT[]> a1, List<NV_RECT[]> a2)
+        {
+            if (a1.Count == a2.Count)
+            {
+                for (int i = 0; i < a1.Count; i++)
+                {
+                    if (a1[i].Length == a2[i].Length)
+                    {
+                        for (int j = 0; j < a1[i].Length; j++)
+                        {
+                            if (a1[i][j] != a2[i][j])
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public static bool Arrays2DEqual(int[][] a1, int[][] a2)
+        {
+            if (a1.Length == a2.Length)
+            {
+                for (int i = 0; i < a1.Length; i++)
+                {
+                    if (a1[i].Length == a2[i].Length)
+                    {
+                        for (int j = 0; j < a1[i].Length; j++)
+                        {
+                            if (a1[i][j] != a2[i][j])
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }            
+        }
     }
 
 

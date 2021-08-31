@@ -152,7 +152,7 @@ namespace NVIDIAInfo
                     }
                     equalFromFiles(args[1],args[2]);
                 }
-                else if (args[0] == "equivalent")
+                /*else if (args[0] == "equivalent")
                 {
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: The equivalent command was provided");
                     if (args.Length != 3)
@@ -176,7 +176,7 @@ namespace NVIDIAInfo
                         Environment.Exit(1);
                     }
                     equivalentFromFiles(args[1], args[2]);
-                }
+                }*/
                 else if (args[0] == "currentids")
                 {
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing currently connected display ids as currentids command was provided");
@@ -519,7 +519,7 @@ namespace NVIDIAInfo
                 Console.WriteLine($"NVIDIAInfo/equalFromFile: The {filename} or {otherFilename} JSON files exist but at least one of them is empty! Cannot continue.");
             }
         }
-        static void equivalentFromFiles(string filename, string otherFilename)
+        /*static void equivalentFromFiles(string filename, string otherFilename)
         {
             string json = "";
             string otherJson = "";
@@ -602,6 +602,6 @@ namespace NVIDIAInfo
                 SharedLogger.logger.Error($"NVIDIAInfo/equivalentFromFile: The {filename} or {otherFilename} JSON files exist but at least one of them is empty! Cannot continue.");
                 Console.WriteLine($"NVIDIAInfo/equivalentFromFile: The {filename} or {otherFilename} JSON files exist but at least one of them is empty! Cannot continue.");
             }
-        }
+        }*/
     }
 }

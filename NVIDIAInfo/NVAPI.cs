@@ -917,19 +917,24 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_VIEWPORTF : IEquatable<NV_VIEWPORTF>
     {
-        public float X;    //!<  x-coordinate of the viewport top-left poInt32
-        public float Y;    //!<  y-coordinate of the viewport top-left poInt32
+        public float X;    //!<  x-coordinate of the viewport top-left point
+        public float Y;    //!<  y-coordinate of the viewport top-left point
         public float W;    //!<  Width of the viewport
         public float H;    //!<  Height of the viewport
 
         public override bool Equals(object obj) => obj is NV_VIEWPORTF other && this.Equals(other);
 
         // NOTE: Using Math.Round for equality testing between floats.
+        /*public bool Equals(NV_VIEWPORTF other)
+        => Math.Round(X, 5) == Math.Round(other.X, 5) &&
+           Math.Round(Y, 5) == Math.Round(other.Y, 5) &&
+           Math.Round(W, 5) == Math.Round(other.W, 5) &&
+           Math.Round(H, 5) == Math.Round(other.H, 5);*/
         public bool Equals(NV_VIEWPORTF other)
-        => Math.Round(X, 7) == Math.Round(other.X, 7) &&
-           Math.Round(Y, 7) == Math.Round(other.Y, 7) &&
-           Math.Round(W, 7) == Math.Round(other.W, 7) &&
-           Math.Round(H, 7) == Math.Round(other.H, 7);
+        => X == other.X &&
+           Y == other.Y &&
+           W == other.W &&
+           H == other.H;
 
         public override Int32 GetHashCode()
         {
@@ -1001,14 +1006,14 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2>
     {
         public UInt32 DisplayId;  //!< Display ID
-        NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] Details;    //!< May be NULL if no advanced settings are required
+        NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO Details;    //!< May be NULL if no advanced settings are required
         public UInt32 TargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
 
         public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 other && this.Equals(other);
 
         public bool Equals(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 other)
         => DisplayId == other.DisplayId &&
-           Details.SequenceEqual(other.Details) &&
+           Details.Equals(other.Details) &&
            TargetId == other.TargetId;
 
         public override Int32 GetHashCode()
@@ -1027,8 +1032,8 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 SourceId;               //!< Identifies sourceId used by Windows CCD. This can be optionally set.
 
         public UInt32 TargetInfoCount;            //!< Number of elements in targetInfo array
-        public NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[] TargetInfo;
-        public NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1[] sourceModeInfo;             //!< May be NULL if mode info is not important
+        public NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 TargetInfo;
+        public NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo;             //!< May be NULL if mode info is not important
                                                                                   //public UInt32 IsNonNVIDIAAdapter : 1;     //!< True for non-NVIDIA adapter.
                                                                                   //public UInt32 reserved : 31;              //!< Must be 0
                                                                                   //public LUID pOSAdapterID;              //!< Used by Non-NVIDIA adapter for poInt32er to OS Adapter of LUID
@@ -1086,14 +1091,14 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO>
     {
         public UInt32 DisplayId;  //!< Display ID
-        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] Details;    //!< May be NULL if no advanced settings are required
+        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO Details;    //!< May be NULL if no advanced settings are required
         public UInt32 TargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
 
         public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_TARGET_INFO other && this.Equals(other);
 
         public bool Equals(NV_DISPLAYCONFIG_PATH_TARGET_INFO other)
         => DisplayId == other.DisplayId &&
-           Details.SequenceEqual(other.Details) &&
+           Details.Equals(other.Details) &&
            TargetId == other.TargetId;
 
         public override Int32 GetHashCode()
