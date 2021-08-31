@@ -924,11 +924,12 @@ namespace DisplayMagicianShared.NVIDIA
 
         public override bool Equals(object obj) => obj is NV_VIEWPORTF other && this.Equals(other);
 
+        // NOTE: Using Math.Round for equality testing between floats.
         public bool Equals(NV_VIEWPORTF other)
-        => X == other.X &&
-           Y == other.Y &&
-           W == other.W &&
-           H == other.H;
+        => Math.Round(X, 7) == Math.Round(other.X, 7) &&
+           Math.Round(Y, 7) == Math.Round(other.Y, 7) &&
+           Math.Round(W, 7) == Math.Round(other.W, 7) &&
+           Math.Round(H, 7) == Math.Round(other.H, 7);
 
         public override Int32 GetHashCode()
         {
