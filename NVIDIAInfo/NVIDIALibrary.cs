@@ -25,6 +25,8 @@ namespace DisplayMagicianShared.NVIDIA
         public List<NV_RECT[]> MosaicViewports;
         public UInt32 PrimaryDisplayId;
 
+        public override bool Equals(object obj) => obj is NVIDIA_MOSAIC_CONFIG other && this.Equals(other);
+
         public bool Equals(NVIDIA_MOSAIC_CONFIG other)
         => IsMosaicEnabled == other.IsMosaicEnabled &&
            MosaicTopologyBrief.Equals(other.MosaicTopologyBrief) &&
@@ -40,6 +42,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (IsMosaicEnabled, MosaicTopologyBrief, MosaicDisplaySettings, OverlapX, OverlapY, MosaicGridTopos, MosaicGridCount, MosaicViewports, PrimaryDisplayId).GetHashCode();
         }
+        public static bool operator ==(NVIDIA_MOSAIC_CONFIG lhs, NVIDIA_MOSAIC_CONFIG rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NVIDIA_MOSAIC_CONFIG lhs, NVIDIA_MOSAIC_CONFIG rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -49,6 +54,7 @@ namespace DisplayMagicianShared.NVIDIA
         public Dictionary<UInt32, NV_HDR_COLOR_DATA_V2> HdrColorData;
         public bool IsNvHdrEnabled;
 
+        public override bool Equals(object obj) => obj is NVIDIA_HDR_CONFIG other && this.Equals(other);
         public bool Equals(NVIDIA_HDR_CONFIG other)
         => HdrCapabilities.SequenceEqual(other.HdrCapabilities) &&
            HdrColorData.SequenceEqual(other.HdrColorData) &&
@@ -58,6 +64,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (HdrCapabilities, HdrColorData, IsNvHdrEnabled).GetHashCode();
         }
+        public static bool operator ==(NVIDIA_HDR_CONFIG lhs, NVIDIA_HDR_CONFIG rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NVIDIA_HDR_CONFIG lhs, NVIDIA_HDR_CONFIG rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -67,6 +76,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NVIDIA_HDR_CONFIG HdrConfig;
         public List<string> DisplayIdentifiers;
 
+        public override bool Equals(object obj) => obj is NVIDIA_DISPLAY_CONFIG other && this.Equals(other);
         public bool Equals(NVIDIA_DISPLAY_CONFIG other)
         => MosaicConfig.Equals(other.MosaicConfig) &&
            HdrConfig.Equals(other.HdrConfig) &&
@@ -76,6 +86,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (MosaicConfig, HdrConfig, DisplayIdentifiers).GetHashCode();
         }
+        public static bool operator ==(NVIDIA_DISPLAY_CONFIG lhs, NVIDIA_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NVIDIA_DISPLAY_CONFIG lhs, NVIDIA_DISPLAY_CONFIG rhs) => !(lhs == rhs);
     }
 
     public class NVIDIALibrary : IDisposable

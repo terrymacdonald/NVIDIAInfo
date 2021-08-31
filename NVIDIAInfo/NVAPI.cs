@@ -630,6 +630,8 @@ namespace DisplayMagicianShared.NVIDIA
     {
         public IntPtr Ptr;
 
+        public override bool Equals(object obj) => obj is DisplayHandle other && this.Equals(other);
+
         public bool Equals(DisplayHandle other)
         => Ptr == other.Ptr;
 
@@ -637,12 +639,18 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Ptr).GetHashCode();
         }
+
+        public static bool operator ==(DisplayHandle lhs, DisplayHandle rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(DisplayHandle lhs, DisplayHandle rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct UnAttachedDisplayHandle : IEquatable<UnAttachedDisplayHandle>
     {
         public IntPtr Ptr;
+
+        public override bool Equals(object obj) => obj is UnAttachedDisplayHandle other && this.Equals(other);
 
         public bool Equals(UnAttachedDisplayHandle other)
         => Ptr == other.Ptr;
@@ -651,12 +659,19 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Ptr).GetHashCode();
         }
+
+        public static bool operator ==(UnAttachedDisplayHandle lhs, UnAttachedDisplayHandle rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(UnAttachedDisplayHandle lhs, UnAttachedDisplayHandle rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct PhysicalGpuHandle : IEquatable<PhysicalGpuHandle>
     {
         public IntPtr Ptr;
+
+        public override bool Equals(object obj) => obj is PhysicalGpuHandle other && this.Equals(other);
+
         public bool Equals(PhysicalGpuHandle other)
         => Ptr == other.Ptr;
 
@@ -664,6 +679,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Ptr).GetHashCode();
         }
+        public static bool operator ==(PhysicalGpuHandle lhs, PhysicalGpuHandle rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(PhysicalGpuHandle lhs, PhysicalGpuHandle rhs) => !(lhs == rhs);
     }
 
 
@@ -671,6 +689,9 @@ namespace DisplayMagicianShared.NVIDIA
     public struct LogicalGpuHandle : IEquatable<LogicalGpuHandle>
     {
         public IntPtr Ptr;
+
+        public override bool Equals(object obj) => obj is LogicalGpuHandle other && this.Equals(other);
+
         public bool Equals(LogicalGpuHandle other)
         => Ptr == other.Ptr;
 
@@ -678,6 +699,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Ptr).GetHashCode();
         }
+        public static bool operator ==(LogicalGpuHandle lhs, LogicalGpuHandle rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(LogicalGpuHandle lhs, LogicalGpuHandle rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -687,6 +711,8 @@ namespace DisplayMagicianShared.NVIDIA
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         public byte[] BoardNum;               //!< Board Serial Number [16]
 
+        public override bool Equals(object obj) => obj is NV_BOARD_INFO_V1 other && this.Equals(other);
+
         public bool Equals(NV_BOARD_INFO_V1 other)
         => Version == other.Version &&
            BoardNum.SequenceEqual(other.BoardNum);
@@ -695,7 +721,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, BoardNum).GetHashCode();
         }
+        public static bool operator ==(NV_BOARD_INFO_V1 lhs, NV_BOARD_INFO_V1 rhs) => lhs.Equals(rhs);
 
+        public static bool operator !=(NV_BOARD_INFO_V1 lhs, NV_BOARD_INFO_V1 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -712,6 +740,8 @@ namespace DisplayMagicianShared.NVIDIA
                                  //!< If the read succeeds with edidSize > NV_EDID_DATA_SIZE,
                                  //!< call back again with offset+256 until we have read the entire buffer
 
+        public override bool Equals(object obj) => obj is NV_EDID_V3 other && this.Equals(other);
+
         public bool Equals(NV_EDID_V3 other)
         => Version == other.Version &&
            EDID_Data.SequenceEqual(other.EDID_Data) &&
@@ -723,6 +753,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, EDID_Data, SizeofEDID, EdidId, Offset).GetHashCode();
         }
+        public static bool operator ==(NV_EDID_V3 lhs, NV_EDID_V3 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_EDID_V3 lhs, NV_EDID_V3 rhs) => !(lhs == rhs);
     }
 
 
@@ -738,6 +771,8 @@ namespace DisplayMagicianShared.NVIDIA
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (Int32)NVImport.NVAPI_UNICODE_STRING_MAX)]
         public string Name;      //!< Timing name
 
+        public override bool Equals(object obj) => obj is NV_TIMINGEXT other && this.Equals(other);
+
         public bool Equals(NV_TIMINGEXT other)
         => Flag == other.Flag &&
            Rr == other.Rr &&
@@ -751,6 +786,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Flag, Rr, Rrx1k, Aspect, Rep, Status, Name).GetHashCode();
         }
+        public static bool operator ==(NV_TIMINGEXT lhs, NV_TIMINGEXT rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_TIMINGEXT lhs, NV_TIMINGEXT rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -777,6 +815,8 @@ namespace DisplayMagicianShared.NVIDIA
         //other timing related extras
         NV_TIMINGEXT Etc;
 
+        public override bool Equals(object obj) => obj is NV_TIMING other && this.Equals(other);
+
         public bool Equals(NV_TIMING other)
         => HVisible == other.HVisible &&
            HBorder == other.HBorder &&
@@ -798,6 +838,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (HVisible, HBorder, HFrontPorch, HSyncWidth, HTotal, HSyncPol, VVisible, VBorder, VFrontPorch, VSyncWidth, VTotal, VSyncPol, Interlaced, Pclk, Etc).GetHashCode();
         }
+        public static bool operator ==(NV_TIMING lhs, NV_TIMING rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_TIMING lhs, NV_TIMING rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -807,6 +850,8 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 Top;
         public UInt32 Right;
         public UInt32 Bottom;
+
+        public override bool Equals(object obj) => obj is NV_RECT other && this.Equals(other);
 
         public bool Equals(NV_RECT other)
         => Left == other.Left &&
@@ -818,6 +863,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Left, Top, Right, Bottom).GetHashCode();
         }
+        public static bool operator ==(NV_RECT lhs, NV_RECT rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_RECT lhs, NV_RECT rhs) => !(lhs == rhs);
     }
 
 
@@ -827,6 +875,8 @@ namespace DisplayMagicianShared.NVIDIA
         public Int32 X;
         public Int32 Y;
 
+        public override bool Equals(object obj) => obj is NV_POSITION other && this.Equals(other);
+
         public bool Equals(NV_POSITION other)
         => X == other.X &&
            Y == other.Y;
@@ -835,6 +885,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (X, Y).GetHashCode();
         }
+        public static bool operator ==(NV_POSITION lhs, NV_POSITION rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_POSITION lhs, NV_POSITION rhs) => !(lhs == rhs);
     }
 
 
@@ -845,6 +898,8 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 Height;
         public UInt32 ColorDepth;
 
+        public override bool Equals(object obj) => obj is NV_RESOLUTION other && this.Equals(other);
+
         public bool Equals(NV_RESOLUTION other)
         => Width == other.Width &&
            Height == other.Height &&
@@ -854,6 +909,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Width, Height, ColorDepth).GetHashCode();
         }
+        public static bool operator ==(NV_RESOLUTION lhs, NV_RESOLUTION rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_RESOLUTION lhs, NV_RESOLUTION rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -863,6 +921,8 @@ namespace DisplayMagicianShared.NVIDIA
         public float Y;    //!<  y-coordinate of the viewport top-left poInt32
         public float W;    //!<  Width of the viewport
         public float H;    //!<  Height of the viewport
+
+        public override bool Equals(object obj) => obj is NV_VIEWPORTF other && this.Equals(other);
 
         public bool Equals(NV_VIEWPORTF other)
         => X == other.X &&
@@ -874,6 +934,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (X, Y, W, H).GetHashCode();
         }
+        public static bool operator ==(NV_VIEWPORTF lhs, NV_VIEWPORTF rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_VIEWPORTF lhs, NV_VIEWPORTF rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -912,6 +975,8 @@ namespace DisplayMagicianShared.NVIDIA
                                              //!< The value NV_TIMING::NV_TIMINGEXT::rrx1k is obtained from the EDID. The driver may
                                              //!< tweak this value for HDTV, stereo, etc., before reporting it to the OS.
 
+        public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO other && this.Equals(other);
+
         public bool Equals(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO other)
         => Version == other.Version &&
            Rotation == other.Rotation &&
@@ -926,6 +991,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Rotation, Scaling, RefreshRate1K, Connector, TvFormat, TimingOverride, Timing).GetHashCode();
         }
+        public static bool operator ==(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO lhs, NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO lhs, NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -934,6 +1002,8 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 DisplayId;  //!< Display ID
         NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] Details;    //!< May be NULL if no advanced settings are required
         public UInt32 TargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
+
+        public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 other && this.Equals(other);
 
         public bool Equals(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 other)
         => DisplayId == other.DisplayId &&
@@ -944,6 +1014,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (DisplayId, Details, TargetId).GetHashCode();
         }
+        public static bool operator ==(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -960,6 +1033,8 @@ namespace DisplayMagicianShared.NVIDIA
                                                                                   //public LUID pOSAdapterID;              //!< Used by Non-NVIDIA adapter for poInt32er to OS Adapter of LUID
                                                                                   //!< type, type casted to void *.
 
+        public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_INFO_V2 other && this.Equals(other);
+
         public bool Equals(NV_DISPLAYCONFIG_PATH_INFO_V2 other)
         => Version == other.Version &&
            SourceId == other.SourceId &&
@@ -971,6 +1046,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, SourceId, TargetInfoCount, TargetInfo, sourceModeInfo).GetHashCode();
         }
+        public static bool operator ==(NV_DISPLAYCONFIG_PATH_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_INFO_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_DISPLAYCONFIG_PATH_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_INFO_V2 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -986,6 +1064,8 @@ namespace DisplayMagicianShared.NVIDIA
                                                        //public UInt32 bSLIFocus : 1;
                                                        //public UInt32 reserved : 30;              //!< Must be 0
 
+        public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 other && this.Equals(other);
+
         public bool Equals(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 other)
         => Resolution.Equals(other.Resolution) &&
            ColorFormat == other.ColorFormat &&
@@ -995,6 +1075,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Resolution, ColorFormat, Position).GetHashCode();
         }
+        public static bool operator ==(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 lhs, NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 lhs, NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 rhs) => !(lhs == rhs);
     }
 
 
@@ -1005,6 +1088,8 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO[] Details;    //!< May be NULL if no advanced settings are required
         public UInt32 TargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
 
+        public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_TARGET_INFO other && this.Equals(other);
+
         public bool Equals(NV_DISPLAYCONFIG_PATH_TARGET_INFO other)
         => DisplayId == other.DisplayId &&
            Details.SequenceEqual(other.Details) &&
@@ -1014,6 +1099,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (DisplayId, Details, TargetId).GetHashCode();
         }
+        public static bool operator ==(NV_DISPLAYCONFIG_PATH_TARGET_INFO lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_DISPLAYCONFIG_PATH_TARGET_INFO lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO rhs) => !(lhs == rhs);
     }
 
 
@@ -1024,6 +1112,8 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_TOPO Topo;     //!< The topology
         public UInt32 Enabled;            //!< 1 if topo is enabled, else 0
         public UInt32 IsPossible;         //!< 1 if topo *can* be enabled, else 0
+
+        public override bool Equals(object obj) => obj is NV_MOSAIC_TOPO_BRIEF other && this.Equals(other);
 
         public bool Equals(NV_MOSAIC_TOPO_BRIEF other)
         => Version == other.Version &&
@@ -1036,7 +1126,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Topo, Enabled, IsPossible).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_TOPO_BRIEF lhs, NV_MOSAIC_TOPO_BRIEF rhs) => lhs.Equals(rhs);
 
+        public static bool operator !=(NV_MOSAIC_TOPO_BRIEF lhs, NV_MOSAIC_TOPO_BRIEF rhs) => !(lhs == rhs);
     }
 
     //
@@ -1065,6 +1157,8 @@ namespace DisplayMagicianShared.NVIDIA
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
         public NV_MOSAIC_TOPO_DETAILS[] Topos;      //!< Topo Array with 1 or 2 entries in it
 
+        public override bool Equals(object obj) => obj is NV_MOSAIC_TOPO_GROUP other && this.Equals(other);
+
         public bool Equals(NV_MOSAIC_TOPO_GROUP other)
         => Version == other.Version &&
            Brief.Equals(other.Brief) &&
@@ -1075,7 +1169,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Brief, Count, Topos).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_TOPO_GROUP lhs, NV_MOSAIC_TOPO_GROUP rhs) => lhs.Equals(rhs);
 
+        public static bool operator !=(NV_MOSAIC_TOPO_GROUP lhs, NV_MOSAIC_TOPO_GROUP rhs) => !(lhs == rhs);
     }
 
 
@@ -1121,7 +1217,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
         }
 
-
+        public override bool Equals(object obj) => obj is NV_MOSAIC_TOPO_DETAILS other && this.Equals(other);
         public bool Equals(NV_MOSAIC_TOPO_DETAILS other)
         => Version == other.Version &&
            LogicalGPUHandle.Equals(other.LogicalGPUHandle) &&
@@ -1144,7 +1240,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, LogicalGPUHandle, ValidityMask, RowCount, ColCount, ValidityMask).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_TOPO_DETAILS lhs, NV_MOSAIC_TOPO_DETAILS rhs) => lhs.Equals(rhs);
 
+        public static bool operator !=(NV_MOSAIC_TOPO_DETAILS lhs, NV_MOSAIC_TOPO_DETAILS rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1154,6 +1252,8 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 DisplayOutputId;            //!< Connected display target(0 if no display connected) size is 8
         public Int32 OverlapX;         //!< Pixels of overlap on left of target: (+overlap, -gap) size is 8
         public Int32 OverlapY;         //!< Pixels of overlap on top of target: (+overlap, -gap) size is 8
+
+        public override bool Equals(object obj) => obj is NV_MOSAIC_TOPO_GPU_LAYOUT_CELL other && this.Equals(other);
 
         public bool Equals(NV_MOSAIC_TOPO_GPU_LAYOUT_CELL other)
         => PhysicalGPUHandle.Equals(other.PhysicalGPUHandle) &&
@@ -1165,7 +1265,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (PhysicalGPUHandle, DisplayOutputId, OverlapX, OverlapY).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_TOPO_GPU_LAYOUT_CELL lhs, NV_MOSAIC_TOPO_GPU_LAYOUT_CELL rhs) => lhs.Equals(rhs);
 
+        public static bool operator !=(NV_MOSAIC_TOPO_GPU_LAYOUT_CELL lhs, NV_MOSAIC_TOPO_GPU_LAYOUT_CELL rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1176,6 +1278,8 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 Height;             //!< Per-display height
         public UInt32 Bpp;                //!< Bits per pixel
         public UInt32 Freq;               //!< Display frequency
+
+        public override bool Equals(object obj) => obj is NV_MOSAIC_DISPLAY_SETTING_V1 other && this.Equals(other);
 
         public bool Equals(NV_MOSAIC_DISPLAY_SETTING_V1 other)
         => Version == other.Version &&
@@ -1188,6 +1292,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Width, Height, Bpp, Freq).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_DISPLAY_SETTING_V1 lhs, NV_MOSAIC_DISPLAY_SETTING_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_DISPLAY_SETTING_V1 lhs, NV_MOSAIC_DISPLAY_SETTING_V1 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1199,6 +1306,8 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 Bpp;                //!< Bits per pixel
         public UInt32 Freq;               //!< Display frequency
         public UInt32 Rrx1k;              //!< Display frequency in x1k
+
+        public override bool Equals(object obj) => obj is NV_MOSAIC_DISPLAY_SETTING_V2 other && this.Equals(other);
 
         public bool Equals(NV_MOSAIC_DISPLAY_SETTING_V2 other)
         => Version == other.Version &&
@@ -1212,6 +1321,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Width, Height, Bpp, Freq, Rrx1k).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_DISPLAY_SETTING_V2 lhs, NV_MOSAIC_DISPLAY_SETTING_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_DISPLAY_SETTING_V2 lhs, NV_MOSAIC_DISPLAY_SETTING_V2 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1226,12 +1338,13 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_GRID_TOPO_DISPLAY_V1[] Displays;
         public NV_MOSAIC_DISPLAY_SETTING_V1 DisplaySettings;
 
-
         public bool ApplyWithBezelCorrect => (Flags & 0x1) == 0x1;
         public bool ImmersiveGaming => (Flags & 0x2) == 0x2;
         public bool BaseMosaic => (Flags & 0x4) == 0x4;
         public bool DriverReloadAllowed => (Flags & 0x8) == 0x8;
         public bool AcceleratePrimaryDisplay => (Flags & 0x10) == 0x10;
+
+        public override bool Equals(object obj) => obj is NV_MOSAIC_GRID_TOPO_DISPLAY_V1 other && this.Equals(other);
 
         public bool Equals(NV_MOSAIC_GRID_TOPO_V1 other)
         => Version == other.Version &&
@@ -1246,6 +1359,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Rows, Columns, DisplayCount, Flags, Displays, DisplaySettings).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_GRID_TOPO_V1 lhs, NV_MOSAIC_GRID_TOPO_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_GRID_TOPO_V1 lhs, NV_MOSAIC_GRID_TOPO_V1 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1260,13 +1376,14 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_GRID_TOPO_DISPLAY_V2[] Displays;
         public NV_MOSAIC_DISPLAY_SETTING_V1 DisplaySettings;
 
-
         public bool ApplyWithBezelCorrect => (Flags & 0x1) == 0x1;
         public bool ImmersiveGaming => (Flags & 0x2) == 0x2;
         public bool BaseMosaic => (Flags & 0x4) == 0x4;
         public bool DriverReloadAllowed => (Flags & 0x8) == 0x8;
         public bool AcceleratePrimaryDisplay => (Flags & 0x10) == 0x10;
         public bool PixelShift => (Flags & 0x20) == 0x20;
+
+        public override bool Equals(object obj) => obj is NV_MOSAIC_GRID_TOPO_V2 other && this.Equals(other);
 
         public bool Equals(NV_MOSAIC_GRID_TOPO_V2 other)
         => Version == other.Version &&
@@ -1281,6 +1398,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Rows, Columns, DisplayCount, Flags, Displays, DisplaySettings).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_GRID_TOPO_V2 lhs, NV_MOSAIC_GRID_TOPO_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_GRID_TOPO_V2 lhs, NV_MOSAIC_GRID_TOPO_V2 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1292,6 +1412,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_ROTATE Rotation;                //!< Rotation of display
         public UInt32 CloneGroup;                //!< Reserved, must be 0
 
+        public override bool Equals(object obj) => obj is NV_MOSAIC_GRID_TOPO_DISPLAY_V1 other && this.Equals(other);
         public bool Equals(NV_MOSAIC_GRID_TOPO_DISPLAY_V1 other)
         => DisplayId == other.DisplayId &&
            OverlapX == other.OverlapX &&
@@ -1303,6 +1424,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (DisplayId, OverlapX, OverlapY, Rotation, CloneGroup).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_GRID_TOPO_DISPLAY_V1 lhs, NV_MOSAIC_GRID_TOPO_DISPLAY_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_GRID_TOPO_DISPLAY_V1 lhs, NV_MOSAIC_GRID_TOPO_DISPLAY_V1 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1316,6 +1440,7 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 CloneGroup;                //!< Reserved, must be 0
         public NV_PIXEL_SHIFT_TYPE PixelShiftType;  //!< Type of the pixel shift enabled display
 
+        public override bool Equals(object obj) => obj is NV_MOSAIC_GRID_TOPO_DISPLAY_V2 other && this.Equals(other);
         public bool Equals(NV_MOSAIC_GRID_TOPO_DISPLAY_V2 other)
         => Version == other.Version &&
            DisplayId == other.DisplayId &&
@@ -1329,6 +1454,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, DisplayId, OverlapX, OverlapY, Rotation, CloneGroup, PixelShiftType).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_GRID_TOPO_DISPLAY_V2 lhs, NV_MOSAIC_GRID_TOPO_DISPLAY_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_GRID_TOPO_DISPLAY_V2 lhs, NV_MOSAIC_GRID_TOPO_DISPLAY_V2 rhs) => !(lhs == rhs);
     }
 
 
@@ -1343,6 +1471,8 @@ namespace DisplayMagicianShared.NVIDIA
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_MOSAIC_DISPLAY_SETTINGS_MAX)]
         public NV_MOSAIC_DISPLAY_SETTING_V1[] DisplaySettings;                //!< List of per display settings possible
 
+        public override bool Equals(object obj) => obj is NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 other && this.Equals(other);
+
         public bool Equals(NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 other)
         => Version == other.Version &&
            TopoBriefsCount == other.TopoBriefsCount &&
@@ -1354,6 +1484,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, TopoBriefsCount, TopoBriefs, DisplaySettingsCount, DisplaySettings).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 lhs, NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 lhs, NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1367,6 +1500,7 @@ namespace DisplayMagicianShared.NVIDIA
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_MOSAIC_DISPLAY_SETTINGS_MAX)]
         public NV_MOSAIC_DISPLAY_SETTING_V2[] DisplaySettings;                //!< List of per display settings possible
 
+        public override bool Equals(object obj) => obj is NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 other && this.Equals(other);
         public bool Equals(NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 other)
         => Version == other.Version &&
            TopoBriefsCount == other.TopoBriefsCount &&
@@ -1378,6 +1512,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, TopoBriefsCount, TopoBriefs, DisplaySettingsCount, DisplaySettings).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 lhs, NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 lhs, NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1388,6 +1525,8 @@ namespace DisplayMagicianShared.NVIDIA
                                                                 //!< GPU connector type from NvAPI_GPU_GetConnectorInfo/NvAPI_GPU_GetConnectorInfoEx
         public UInt32 DisplayId;             //!< this is a unique identifier for each device
         public UInt32 Flags;
+
+        public override bool Equals(object obj) => obj is NV_GPU_DISPLAYIDS_V2 other && this.Equals(other);
 
         public bool Equals(NV_GPU_DISPLAYIDS_V2 other)
         => Version == other.Version &&
@@ -1410,6 +1549,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, ConnectorType, DisplayId, Flags).GetHashCode();
         }
+        public static bool operator ==(NV_GPU_DISPLAYIDS_V2 lhs, NV_GPU_DISPLAYIDS_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_GPU_DISPLAYIDS_V2 lhs, NV_GPU_DISPLAYIDS_V2 rhs) => !(lhs == rhs);
     }
 
 
@@ -1423,6 +1565,8 @@ namespace DisplayMagicianShared.NVIDIA
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_MAX_DISPLAYS)]
         public NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[] Displays;    // displays[NV_MAX_DISPLAYS] array
 
+        public override bool Equals(object obj) => obj is NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 other && this.Equals(other);
+
         public bool Equals(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 other)
         => Version == other.Version &&
            ErrorFlags == other.ErrorFlags &&
@@ -1434,6 +1578,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, ErrorFlags, WarningFlags, DisplayCount, Displays).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 lhs, NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 lhs, NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1443,8 +1590,9 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS ErrorFlags;            //!< (OUT) Any of the NV_MOSAIC_DISPLAYCAPS_PROBLEM_* flags.
         public NV_MOSAIC_DISPLAYTOPO_WARNING_FLAGS WarningFlags;          //!< (OUT) Any of the NV_MOSAIC_DISPLAYTOPO_WARNING_* flags.
         public UInt32 GeneralFlags;
-
         public bool SupportsRotation => (GeneralFlags & 0x1) == 0x1; //!< (OUT) This display can be rotated
+
+        public override bool Equals(object obj) => obj is NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY other && this.Equals(other);
 
         public bool Equals(NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY other)
         => DisplayId == other.DisplayId &&
@@ -1456,6 +1604,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (DisplayId, ErrorFlags, WarningFlags, GeneralFlags).GetHashCode();
         }
+        public static bool operator ==(NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY lhs, NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY lhs, NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY rhs) => !(lhs == rhs);
     }
 
 
@@ -1475,6 +1626,7 @@ namespace DisplayMagicianShared.NVIDIA
         public bool IsTraditionalHdrGammaSupported => SupportFlags.HasFlag(NV_HDR_CAPABILITIES_V2_FLAGS.IsTraditionalHdrGammaSupported);
         public bool IsTraditionalSdrGammaSupported => SupportFlags.HasFlag(NV_HDR_CAPABILITIES_V2_FLAGS.IsTraditionalSdrGammaSupported);
 
+        public override bool Equals(object obj) => obj is NV_HDR_CAPABILITIES_V2 other && this.Equals(other);
 
         public bool Equals(NV_HDR_CAPABILITIES_V2 other)
         => Version == other.Version &&
@@ -1487,6 +1639,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, SupportFlags, StaticMetadataDescriptorId, DisplayData, DvStaticMetadata).GetHashCode();
         }
+        public static bool operator ==(NV_HDR_CAPABILITIES_V2 lhs, NV_HDR_CAPABILITIES_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_HDR_CAPABILITIES_V2 lhs, NV_HDR_CAPABILITIES_V2 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1504,6 +1659,7 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt16 CCWhiteX;
         public UInt16 CCWhiteY;
 
+        public override bool Equals(object obj) => obj is NV_HDR_DV_STATIC_METADATA other && this.Equals(other);
         public bool Equals(NV_HDR_DV_STATIC_METADATA other)
         => Flags == other.Flags &&
            TargetMinLuminance == other.TargetMinLuminance &&
@@ -1522,6 +1678,9 @@ namespace DisplayMagicianShared.NVIDIA
             return (Flags, TargetMinLuminance, TargetMaxLuminance, CCRedX, CCRedY, CCGreenX, CCGreenY, CCBlueX,
                     CCBlueY, CCWhiteX, CCWhiteY).GetHashCode();
         }
+        public static bool operator ==(NV_HDR_DV_STATIC_METADATA lhs, NV_HDR_DV_STATIC_METADATA rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_HDR_DV_STATIC_METADATA lhs, NV_HDR_DV_STATIC_METADATA rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1539,6 +1698,7 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt16 DesiredContentMinLuminance;
         public UInt16 DesiredContentMaxFrameAverageLuminance;
 
+        public override bool Equals(object obj) => obj is NV_HDR_CAPABILITIES_DISPLAY_DATA other && this.Equals(other);
         public bool Equals(NV_HDR_CAPABILITIES_DISPLAY_DATA other)
         => DisplayPrimaryX0 == other.DisplayPrimaryX0 &&
            DisplayPrimaryY0 == other.DisplayPrimaryY0 &&
@@ -1557,6 +1717,9 @@ namespace DisplayMagicianShared.NVIDIA
             return (DisplayPrimaryX0, DisplayPrimaryY0, DisplayPrimaryX1, DisplayPrimaryY1, DisplayPrimaryX2, DisplayPrimaryY2, DisplayWhitePointX, DisplayWhitePointY,
                     DisplayWhitePointX, DisplayWhitePointY, DesiredContentMaxLuminance, DesiredContentMinLuminance, DesiredContentMaxFrameAverageLuminance).GetHashCode();
         }
+        public static bool operator ==(NV_HDR_CAPABILITIES_DISPLAY_DATA lhs, NV_HDR_CAPABILITIES_DISPLAY_DATA rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_HDR_CAPABILITIES_DISPLAY_DATA lhs, NV_HDR_CAPABILITIES_DISPLAY_DATA rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1574,6 +1737,7 @@ namespace DisplayMagicianShared.NVIDIA
                                                                           //!<                    If invalid or no combination is passed driver will force default combination of RGB format + full range + 8bpc.
                                                                           //!< HDR mode: These fields are ignored in hdr mode
 
+        public override bool Equals(object obj) => obj is NV_HDR_COLOR_DATA_V2 other && this.Equals(other);
         public bool Equals(NV_HDR_COLOR_DATA_V2 other)
             => Version == other.Version &&
                Cmd == other.Cmd &&
@@ -1588,6 +1752,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Cmd, HdrMode, StaticMetadataDescriptorId, MasteringDisplayData, HdrColorFormat, HdrDynamicRange, HdrBpc).GetHashCode();
         }
+        public static bool operator ==(NV_HDR_COLOR_DATA_V2 lhs, NV_HDR_COLOR_DATA_V2 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_HDR_COLOR_DATA_V2 lhs, NV_HDR_COLOR_DATA_V2 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1606,6 +1773,7 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt16 MaxContentLightLevel;
         public UInt16 MaxFrameAverageLightLevel;
 
+        public override bool Equals(object obj) => obj is NV_HDR_COLOR_DISPLAY_DATA other && this.Equals(other);
         public bool Equals(NV_HDR_COLOR_DISPLAY_DATA other)
         => DisplayPrimaryX0 == other.DisplayPrimaryX0 &&
            DisplayPrimaryY0 == other.DisplayPrimaryY0 &&
@@ -1625,6 +1793,9 @@ namespace DisplayMagicianShared.NVIDIA
             return (DisplayPrimaryX0, DisplayPrimaryY0, DisplayPrimaryX1, DisplayPrimaryY1, DisplayPrimaryX2, DisplayPrimaryY2, DisplayWhitePointX, DisplayWhitePointY,
                     DisplayWhitePointX, DisplayWhitePointY, MaxDisplayMasteringLuminance, MinDisplayMasteringLuminance, MaxContentLightLevel, MaxFrameAverageLightLevel).GetHashCode();
         }
+        public static bool operator ==(NV_HDR_COLOR_DISPLAY_DATA lhs, NV_HDR_COLOR_DISPLAY_DATA rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_HDR_COLOR_DISPLAY_DATA lhs, NV_HDR_COLOR_DISPLAY_DATA rhs) => !(lhs == rhs);
     }
 
     // ==================================
