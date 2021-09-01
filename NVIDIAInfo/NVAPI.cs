@@ -3128,7 +3128,10 @@ namespace DisplayMagicianShared.NVIDIA
         }
         #endregion
 
-        // NVAPI_INTERFACE NvAPI_DISP_GetDisplayConfig(__inout NvU32 *pathInfoCount, __out_ecount_full_opt(*pathInfoCount) NV_DISPLAYCONFIG_PATH_INFO *pathInfo);
+
+        // ******** IMPORTANT! This code has an error when attempting to perform the third pass as required by NVAPI documentation *********
+        // ******** FOr this reason I have disabled the code as I don't actually need to get it going. ******** 
+/*        // NVAPI_INTERFACE NvAPI_DISP_GetDisplayConfig(__inout NvU32 *pathInfoCount, __out_ecount_full_opt(*pathInfoCount) NV_DISPLAYCONFIG_PATH_INFO *pathInfo);
         private delegate NVAPI_STATUS DISP_GetDisplayConfigDelegate(
             [In][Out] ref UInt32 pathInfoCount,
             [In][Out] IntPtr pathInfoBuffer);
@@ -3163,10 +3166,10 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // Copy the information passed in, into the buffer we want to pass
                     //PathInfos[x].Version = MAKE_NVAPI_VERSION(Marshal.SizeOf(passedPathInfo[x]),1);
-                    /*PathInfos[x].SourceId = passedPathInfo[x].SourceId;
+                    *//*PathInfos[x].SourceId = passedPathInfo[x].SourceId;
                     PathInfos[x].TargetInfoCount = passedPathInfo[x].TargetInfoCount;
                     PathInfos[x].TargetInfo = passedPathInfo[x].TargetInfo;                   
-                    PathInfos[x].SourceModeInfo = = passedPathInfo[x].SourceModeInfo;*/
+                    PathInfos[x].SourceModeInfo = = passedPathInfo[x].SourceModeInfo;*//*
                     overallTargetCount += (int)PathInfos[x].TargetInfoCount;
                 }
                 // Initialize unmanged memory to hold the unmanaged array of structs
@@ -3273,7 +3276,7 @@ namespace DisplayMagicianShared.NVIDIA
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;
-        }
+        }*/
 
 
         // NVAPI_INTERFACE NvAPI_DISP_GetDisplayIdByDisplayName(const char *displayName, NvU32* displayId);
