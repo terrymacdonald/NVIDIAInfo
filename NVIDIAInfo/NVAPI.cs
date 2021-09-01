@@ -1034,10 +1034,10 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 TargetInfoCount;            //!< Number of elements in targetInfo array
         public NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 TargetInfo;
         public NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo;             //!< May be NULL if mode info is not important
-                                                                                  //public UInt32 IsNonNVIDIAAdapter : 1;     //!< True for non-NVIDIA adapter.
-                                                                                  //public UInt32 reserved : 31;              //!< Must be 0
-                                                                                  //public LUID pOSAdapterID;              //!< Used by Non-NVIDIA adapter for poInt32er to OS Adapter of LUID
-                                                                                  //!< type, type casted to void *.
+                                                                                //public UInt32 IsNonNVIDIAAdapter : 1;     //!< True for non-NVIDIA adapter.
+                                                                                //public UInt32 reserved : 31;              //!< Must be 0
+                                                                                //public LUID pOSAdapterID;              //!< Used by Non-NVIDIA adapter for poInt32er to OS Adapter of LUID
+                                                                                //!< type, type casted to void *.
 
         public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_INFO_V2 other && this.Equals(other);
 

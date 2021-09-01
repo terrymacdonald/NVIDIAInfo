@@ -36,7 +36,7 @@ namespace DisplayMagicianShared.NVIDIA
            OverlapY == other.OverlapY &&
            MosaicGridTopos.SequenceEqual(other.MosaicGridTopos) &&
            MosaicGridCount == other.MosaicGridCount &&
-           NVIDIALibrary.ListOfArraysEqual(MosaicViewports, other.MosaicViewports)&&
+           NVIDIALibrary.ListOfArraysEqual(MosaicViewports, other.MosaicViewports) &&
            PrimaryDisplayId == other.PrimaryDisplayId;
 
         public override int GetHashCode()
@@ -143,6 +143,25 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception intialising NVIDIA NVAPI library. NvAPI_Initialize() caused an exception.");
                 }
+
+                // Step 2: Get a session handle that we can use for all other interactions
+                /*try
+                {
+                    NVStatus = NVImport.NvAPI_DRS_CreateSession(out _nvapiSessionHandle);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        _haveSessionHandle = true;
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library DRS session handle was created successfully");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error creating a NVAPI library DRS session handle. NvAPI_DRS_CreateSession() returned error code {NVStatus}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception creating a NVAPI library DRS session handle. NvAPI_DRS_CreateSession() caused an exception.");
+                }*/
 
                 _winLibrary = WinLibrary.GetLibrary();
 
@@ -1377,6 +1396,46 @@ namespace DisplayMagicianShared.NVIDIA
 
         }
 
+        public bool IsEquivalentConfig(NVIDIA_DISPLAY_CONFIG displayConfig, NVIDIA_DISPLAY_CONFIG otherDisplayConfig)
+        {
+            // We want to check if the NVIDIA configurations are the equiavalent of each other
+            // IMPORTANT: This function differs from Equals in that Equivalent allows some fields to differ in order to still match.
+            // The goal is to identify when two display configurations would be the same if they were applied.
+
+            SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Testing whether the NVIDIA display configuration is equivalent to another");
+            if (_initialised)
+            {
+                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
+
+                // Check that displayConfig DisplayIdentifiers match
+                if (!displayConfig.DisplayIdentifiers.All(value => otherDisplayConfig.DisplayIdentifiers.Contains(value)))
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Uh oh! The NVIDIA display identifiers don't match so NVIDIA Config is not equivalent to the other one.");
+                    return false;
+                }
+
+                // Check that displayConfig Mosaic Configs match
+                if (!displayConfig.MosaicConfig.Equals(otherDisplayConfig.MosaicConfig))
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Uh oh! The NVIDIA Mosaic Configs don't match so NVIDIA Config is not equivalent to the other one.");
+                    return false;
+                }
+
+                // Check that displayConfig Hdr Configs match
+                if (!displayConfig.HdrConfig.Equals(otherDisplayConfig.HdrConfig))
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Uh oh! The NVIDIA Hdr Configs don't match so NVIDIA Config is not equivalent to the other one.");
+                    return false;
+                }
+
+                SharedLogger.logger.Trace($"NVIDIALibrary/IsEquivalentConfig: Success! The NVIDIA display configuration is possible to be used now");
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         public List<string> GetCurrentDisplayIdentifiers()
         {
@@ -1811,7 +1870,7 @@ namespace DisplayMagicianShared.NVIDIA
             else
             {
                 return false;
-            }            
+            }
         }
     }
 
