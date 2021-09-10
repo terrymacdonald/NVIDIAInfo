@@ -41,6 +41,9 @@ namespace DisplayMagicianShared.Windows
         public DISPLAYCONFIG_PATH_INFO[] DisplayConfigPaths;
         public DISPLAYCONFIG_MODE_INFO[] DisplayConfigModes;
         public ADVANCED_HDR_INFO_PER_PATH[] DisplayHDRStates;
+        // Note: We purposely have left out the DisplaySources from the Equals as it's order keeps changing after each reboot and after each profile swap
+        // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
+        // generating the profile icon.
         public Dictionary<string, uint> DisplaySources;
         public List<string> DisplayIdentifiers;
 
@@ -48,7 +51,8 @@ namespace DisplayMagicianShared.Windows
         public bool Equals(WINDOWS_DISPLAY_CONFIG other)
         => DisplayConfigPaths.SequenceEqual(other.DisplayConfigPaths) &&
            DisplayConfigModes.SequenceEqual(other.DisplayConfigModes) &&
-           DisplayHDRStates.SequenceEqual(other.DisplayHDRStates);
+           DisplayHDRStates.SequenceEqual(other.DisplayHDRStates) &&
+           DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers);
 
         public override int GetHashCode()
         {
@@ -784,6 +788,9 @@ namespace DisplayMagicianShared.Windows
 
             SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: SUCCESS! The display configuration has been successfully applied");
 
+            SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Waiting 0.5 seconds to let the display change take place before adjusting the Windows CCD HDR settings");
+            System.Threading.Thread.Sleep(500);
+
             foreach (ADVANCED_HDR_INFO_PER_PATH myHDRstate in displayConfig.DisplayHDRStates)
             {
                 SharedLogger.logger.Trace($"Trying to get information whether HDR color is in use now on Display {myHDRstate.Id}.");
@@ -919,13 +926,13 @@ namespace DisplayMagicianShared.Windows
 
         public List<string> GetCurrentDisplayIdentifiers()
         {
-            SharedLogger.logger.Error($"WinLibrary/GetCurrentDisplayIdentifiers: Getting the current display identifiers for the displays in use now");
+            SharedLogger.logger.Trace($"WinLibrary/GetCurrentDisplayIdentifiers: Getting the current display identifiers for the displays in use now");
             return GetSomeDisplayIdentifiers(QDC.QDC_ONLY_ACTIVE_PATHS);
         }
 
         public List<string> GetAllConnectedDisplayIdentifiers()
         {
-            SharedLogger.logger.Error($"WinLibrary/GetAllConnectedDisplayIdentifiers: Getting all the display identifiers that can possibly be used");
+            SharedLogger.logger.Trace($"WinLibrary/GetAllConnectedDisplayIdentifiers: Getting all the display identifiers that can possibly be used");
             return GetSomeDisplayIdentifiers(QDC.QDC_ALL_PATHS);
         }
 
