@@ -1367,7 +1367,47 @@ namespace DisplayMagicianShared.NVIDIA
             {
 
                 NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
- 
+                               
+                // Now, we have the current HDR settings, and the existing HDR settings, so we go through and we attempt to set each display color settings
+                foreach (var wantedHdrColorData in displayConfig.HdrConfig.HdrColorData)
+                {
+                    // Now we set the HDR colour settings of the display
+                    NV_HDR_COLOR_DATA_V2 hdrColorData = wantedHdrColorData.Value;
+                    hdrColorData.Cmd = NV_HDR_CMD.CMD_SET;
+                    NVStatus = NVImport.NvAPI_Disp_HdrColorControl(wantedHdrColorData.Key, ref hdrColorData);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_Disp_HdrColorControl returned OK. We just successfully set the HDR mode to {hdrColorData.HdrMode.ToString("G")}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The input buffer is not large enough to hold it's contents. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The input monitor is either not connected or is not a DP or HDMI panel. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The NvAPI API needs to be initialized first. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: This entry point not available in this NVIDIA Driver. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: A miscellaneous error occurred. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Disp_HdrColorControl() returned error code {NVStatus}. It's most likely that your monitor {wantedHdrColorData.Key} doesn't support HDR.");
+                    }
+                }
+
+                //SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 0.5 seconds to let the display change take place before adjusting the NVIDIA HDR settings");
+                //System.Threading.Thread.Sleep(500);
+
                 // Now, we have the current color settings to set, so we go through and we attempt to set each display color settings
                 foreach (var wantedColorData in displayConfig.ColorConfig.ColorData)
                 {
@@ -1407,46 +1447,6 @@ namespace DisplayMagicianShared.NVIDIA
                     else
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while seting the color settings! NvAPI_Disp_ColorControl() returned error code {NVStatus}. It's most likely that your monitor {wantedColorData.Key} doesn't support this color mode.");
-                    }
-                }
-
-                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 0.5 seconds to let the display change take place before adjusting the NVIDIA HDR settings");
-                System.Threading.Thread.Sleep(500);
-
-                // Now, we have the current HDR settings, and the existing HDR settings, so we go through and we attempt to set each display color settings
-                foreach (var wantedHdrColorData in displayConfig.HdrConfig.HdrColorData)
-                {
-                    // Now we set the HDR colour settings of the display
-                    NV_HDR_COLOR_DATA_V2 hdrColorData = wantedHdrColorData.Value;
-                    hdrColorData.Cmd = NV_HDR_CMD.CMD_SET;
-                    NVStatus = NVImport.NvAPI_Disp_HdrColorControl(wantedHdrColorData.Key, ref hdrColorData);
-                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_Disp_HdrColorControl returned OK. We just successfully set the HDR mode to {hdrColorData.HdrMode.ToString("G")}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The input buffer is not large enough to hold it's contents. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The input monitor is either not connected or is not a DP or HDMI panel. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The NvAPI API needs to be initialized first. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: This entry point not available in this NVIDIA Driver. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
-                    }
-                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: A miscellaneous error occurred. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
-                    }
-                    else
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Disp_HdrColorControl() returned error code {NVStatus}. It's most likely that your monitor {wantedHdrColorData.Key} doesn't support HDR.");
                     }
                 }
 
