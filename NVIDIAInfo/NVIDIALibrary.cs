@@ -148,6 +148,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         private bool _initialised = false;
         private bool _haveSessionHandle = false;
+        private bool _haveActiveDisplayConfig = false;
 
         // To detect redundant calls
         private bool _disposed = false;
@@ -155,6 +156,7 @@ namespace DisplayMagicianShared.NVIDIA
         // Instantiate a SafeHandle instance.
         private SafeHandle _safeHandle = new SafeFileHandle(IntPtr.Zero, true);
         private IntPtr _nvapiSessionHandle = IntPtr.Zero;
+        private NVIDIA_DISPLAY_CONFIG _activeDisplayConfig;
 
         static NVIDIALibrary() { }
         public NVIDIALibrary()
@@ -297,6 +299,23 @@ namespace DisplayMagicianShared.NVIDIA
             get
             {
                 return new List<string>() { "10DE" };
+            }
+        }
+
+        public NVIDIA_DISPLAY_CONFIG ActiveDisplayConfig
+        {
+            get
+            {
+                if (!_haveActiveDisplayConfig)
+                {
+                    _activeDisplayConfig = GetActiveConfig();
+                    _haveActiveDisplayConfig = true;
+                }
+                return _activeDisplayConfig;
+            }
+            set
+            {
+                _activeDisplayConfig = value;
             }
         }
 
@@ -1220,8 +1239,6 @@ namespace DisplayMagicianShared.NVIDIA
             {
 
                 NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
-                // We want to get the current config
-                NVIDIA_DISPLAY_CONFIG currentDisplayConfig = GetNVIDIADisplayConfig();
 
                 // We want to check the NVIDIA Surround (Mosaic) config is valid
                 SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Testing whether the display configuration is valid");
@@ -1280,7 +1297,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                 }
-                else if (!displayConfig.MosaicConfig.IsMosaicEnabled && currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
+                else if (!displayConfig.MosaicConfig.IsMosaicEnabled && ActiveDisplayConfig.MosaicConfig.IsMosaicEnabled)
                 {
                     // We are on a Mosaic profile now, and we need to change to a non-Mosaic profile
                     // We need to disable the Mosaic Topology
@@ -1331,7 +1348,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
                     }
                 }
-                else if (!displayConfig.MosaicConfig.IsMosaicEnabled && !currentDisplayConfig.MosaicConfig.IsMosaicEnabled)
+                else if (!displayConfig.MosaicConfig.IsMosaicEnabled && !ActiveDisplayConfig.MosaicConfig.IsMosaicEnabled)
                 {
                     // We are on a non-Mosaic profile now, and we are changing to a non-Mosaic profile
                     // so there is nothing to do as far as NVIDIA is concerned!
@@ -1447,11 +1464,11 @@ namespace DisplayMagicianShared.NVIDIA
         {
             // Get the current windows display configs to compare to the one we loaded
             bool allDisplays = false;
-            NVIDIA_DISPLAY_CONFIG currentDisplayConfig = GetNVIDIADisplayConfig(allDisplays);
+            _activeDisplayConfig = GetNVIDIADisplayConfig(allDisplays);
 
             // Check whether the display config is in use now
             SharedLogger.logger.Trace($"NVIDIALibrary/IsActiveConfig: Checking whether the display configuration is already being used.");
-            if (displayConfig.Equals(currentDisplayConfig))
+            if (displayConfig.Equals(_activeDisplayConfig))
             {
                 SharedLogger.logger.Trace($"NVIDIALibrary/IsActiveConfig: The display configuration is already being used (supplied displayConfig Equals currentDisplayConfig");
                 return true;
