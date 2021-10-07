@@ -536,7 +536,6 @@ namespace DisplayMagicianShared.NVIDIA
         AUTO = 0xFF
     }
 
-
     public enum NV_DYNAMIC_RANGE : byte
     {
         VESA = 0x0,
@@ -545,8 +544,7 @@ namespace DisplayMagicianShared.NVIDIA
         AUTO = 0xFF
     }
 
-
-    public enum NV_BPC : UInt32
+    public enum NV_BPC : byte
     {
         BPC_DEFAULT = 0,
         BPC_6 = 1,
@@ -556,6 +554,26 @@ namespace DisplayMagicianShared.NVIDIA
         BPC_16 = 5,
     }
 
+    public enum NV_HDR_COLOR_FORMAT : UInt32
+    {
+        RGB = 0,
+        YUV422,
+        YUV444,
+        YUV420,
+
+        DEFAULT = 0xFE,
+        AUTO = 0xFF
+    }
+
+    public enum NV_HDR_DYNAMIC_RANGE : UInt32
+    {
+        VESA = 0x0,
+        CEA = 0x1,
+
+        AUTO = 0xFF
+    }
+
+    
     public enum NV_COLOR_CMD : byte
     {
         NV_COLOR_CMD_GET = 1,
@@ -564,7 +582,7 @@ namespace DisplayMagicianShared.NVIDIA
         NV_COLOR_CMD_GET_DEFAULT
     }
 
-    public enum NV_COLOR_COLORIMETRY : byte
+    public enum NV_COLOR_COLORIMETRY : UInt32
     {
         NV_COLOR_COLORIMETRY_RGB = 0,
         NV_COLOR_COLORIMETRY_YCC601,
@@ -1844,8 +1862,8 @@ namespace DisplayMagicianShared.NVIDIA
         public NV_HDR_MODE HdrMode;                                 //!< HDR mode
         public NV_STATIC_METADATA_DESCRIPTOR_ID StaticMetadataDescriptorId;           //!< Static Metadata Descriptor Id (0 for static metadata type 1)
         public NV_HDR_COLOR_DISPLAY_DATA MasteringDisplayData; //!< Static Metadata Descriptor Type 1, CEA-861.3, SMPTE ST2086
-        public NV_COLOR_FORMAT HdrColorFormat;                                     //!< Optional, One of NV_COLOR_FORMAT enum values, if set it will apply requested color format for HDR session
-        public NV_DYNAMIC_RANGE HdrDynamicRange;                                    //!< Optional, One of NV_DYNAMIC_RANGE enum values, if set it will apply requested dynamic range for HDR session
+        public NV_HDR_COLOR_FORMAT HdrColorFormat;                                     //!< Optional, One of NV_COLOR_FORMAT enum values, if set it will apply requested color format for HDR session
+        public NV_HDR_DYNAMIC_RANGE HdrDynamicRange;                                    //!< Optional, One of NV_DYNAMIC_RANGE enum values, if set it will apply requested dynamic range for HDR session
         public NV_BPC HdrBpc;                                             //!< Optional, One of NV_BPC enum values, if set it will apply requested color depth
                                                                           //!< Dolby Vision mode: DV supports specific combinations of colorformat, dynamic range and bpc. Please refer Dolby Vision specification.
                                                                           //!<                    If invalid or no combination is passed driver will force default combination of RGB format + full range + 8bpc.

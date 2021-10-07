@@ -847,6 +847,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                             // Now we get the HDR colour settings of the display
                             NV_HDR_COLOR_DATA_V2 hdrColorData = new NV_HDR_COLOR_DATA_V2();
+                            hdrColorData.Cmd = NV_HDR_CMD.CMD_GET;
                             NVStatus = NVImport.NvAPI_Disp_HdrColorControl(displayIds[displayIndex].DisplayId, ref hdrColorData);
                             if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                             {
@@ -1417,6 +1418,7 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // Now we set the HDR colour settings of the display
                     NV_HDR_COLOR_DATA_V2 hdrColorData = wantedHdrColorData.Value;
+                    hdrColorData.Cmd = NV_HDR_CMD.CMD_SET;
                     NVStatus = NVImport.NvAPI_Disp_HdrColorControl(wantedHdrColorData.Key, ref hdrColorData);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
