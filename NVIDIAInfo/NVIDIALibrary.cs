@@ -1338,9 +1338,18 @@ namespace DisplayMagicianShared.NVIDIA
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We are on a non-Mosaic profile now, and we are changing to a non-Mosaic profile so there is nothing to do as far as NVIDIA is concerned!");
                 }
 
-                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 0.5 seconds to let the display change take place before adjusting the NVIDIA Color settings");
-                System.Threading.Thread.Sleep(500);
+            }
+            return true;
+        }
 
+        public bool SetActiveConfigOverride(NVIDIA_DISPLAY_CONFIG displayConfig)
+        {
+
+            if (_initialised)
+            {
+
+                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
+ 
                 // Now, we have the current color settings to set, so we go through and we attempt to set each display color settings
                 foreach (var wantedColorData in displayConfig.ColorConfig.ColorData)
                 {
@@ -1382,7 +1391,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while seting the color settings! NvAPI_Disp_ColorControl() returned error code {NVStatus}. It's most likely that your monitor {wantedColorData.Key} doesn't support this color mode.");
                     }
                 }
-                
+
                 SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 0.5 seconds to let the display change take place before adjusting the NVIDIA HDR settings");
                 System.Threading.Thread.Sleep(500);
 

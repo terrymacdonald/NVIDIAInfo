@@ -316,8 +316,18 @@ namespace NVIDIAInfo
                             bool itWorkedforWindows = WinLibrary.GetLibrary().SetActiveConfig(myDisplayConfig.WindowsConfig);
                             if (itWorkedforWindows)
                             {
-                                SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The Windows CCD display settings within {filename} were successfully applied.");
-                                Console.WriteLine($"NVIDIAInfo Display config successfully applied");
+                                bool itWorkedforNVIDIAColor = NVIDIALibrary.GetLibrary().SetActiveConfigOverride(myDisplayConfig.NVIDIAConfig);
+
+                                if (itWorkedforNVIDIAColor)
+                                {
+                                    SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings that override windows within {filename} were successfully applied.");
+                                    Console.WriteLine($"NVIDIAInfo Display config successfully applied");
+                                }
+                                else
+                                {
+                                    SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings that override windows within {filename} were NOT applied correctly.");
+                                    Console.WriteLine($"ERROR - NVIDIAInfo NVIDIA Override settings were not applied correctly.");
+                                }
                             }
                             else
                             {
