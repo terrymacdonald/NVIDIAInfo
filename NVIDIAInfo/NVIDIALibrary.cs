@@ -1383,6 +1383,18 @@ namespace DisplayMagicianShared.NVIDIA
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: NvAPI_Disp_ColorControl returned OK. BPC is set to {colorData.Bpc.ToString("G")}. Color Format is set to {colorData.ColorFormat.ToString("G")}. Colorimetry is set to {colorData.Colorimetry.ToString("G")}. Color Selection Policy is set to {colorData.ColorSelectionPolicy.ToString("G")}. Color Depth is set to {colorData.Depth.ToString("G")}. Dynamic Range is set to {colorData.DynamicRange.ToString("G")}");
+                            switch (colorData.ColorSelectionPolicy)
+                            {
+                                case NV_COLOR_SELECTION_POLICY.NV_COLOR_SELECTION_POLICY_USER:                                
+                                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: Color Selection Policy is set to NV_COLOR_SELECTION_POLICY_USER so the color settings have been set by the user in the NVIDIA Control Panel.");
+                                    break;
+                                case NV_COLOR_SELECTION_POLICY.NV_COLOR_SELECTION_POLICY_BEST_QUALITY: // Also matches NV_COLOR_SELECTION_POLICY_DEFAULT as it is 1
+                                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: Color Selection Policy is set to NV_COLOR_SELECTION_POLICY_BEST_QUALITY so the color settings are being handled by the Windows OS.");
+                                    break;
+                                case NV_COLOR_SELECTION_POLICY.NV_COLOR_SELECTION_POLICY_UNKNOWN:
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfigOverride: Color Selection Policy is set to NV_COLOR_SELECTION_POLICY_UNKNOWN so the color settings aren't being handled by either the Windows OS or the NVIDIA Setup!");
+                                    break;
+                            }
                         }
                         else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
                         {
@@ -1428,8 +1440,8 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // Now we set the HDR colour settings of the display
                     NV_HDR_COLOR_DATA_V2 hdrColorData = wantedHdrColorData.Value;
-                    // Only change this color setting if we're on a different setting from the one we want
-                    if (!hdrColorData.Equals(ActiveDisplayConfig.ColorConfig.ColorData[wantedHdrColorData.Key]))
+                    // Only change this HDR color setting if we're on a different setting from the one we want
+                    if (!hdrColorData.Equals(ActiveDisplayConfig.HdrConfig.HdrColorData[wantedHdrColorData.Key]))
                     {
                         hdrColorData.Cmd = NV_HDR_CMD.CMD_SET;
                         NVStatus = NVImport.NvAPI_Disp_HdrColorControl(wantedHdrColorData.Key, ref hdrColorData);
