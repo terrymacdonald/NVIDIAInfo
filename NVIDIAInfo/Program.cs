@@ -53,10 +53,10 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.0.6");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.0.7");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v1.0.6");
+            Console.WriteLine($"\nNVIDIAInfo v1.0.7");
             Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald 2021\n");
 
@@ -486,7 +486,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (displayConfig.NVIDIAConfig.Equals(otherDisplayConfig.NVIDIAConfig))
+                if (displayConfig.NVIDIAConfig.Equals(otherDisplayConfig.NVIDIAConfig) && displayConfig.WindowsConfig.Equals(otherDisplayConfig.WindowsConfig))
                 {
                     SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: The NVIDIA display settings in {filename} and {otherFilename} are equal.");
                     Console.WriteLine($"The NVIDIA display settings in {filename} and {otherFilename} are equal.");
