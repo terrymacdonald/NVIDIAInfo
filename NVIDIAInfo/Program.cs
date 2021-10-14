@@ -208,7 +208,7 @@ namespace NVIDIAInfo
         {
             Console.WriteLine($"NVIDIAInfo is a little program to help test setting display layout and HDR settings in Windows 10 64-bit and later.\n");
             Console.WriteLine($"You need to have the latest NVIDIA Driver installed and an NVIDIA video card in order to run this software.\n");
-            Console.WriteLine($"You can run it without any command line parameters, and it will print all the information it can find from the \nNVIDIA driver and the Windows Display CCD interface.\n");
+            Console.WriteLine($"You can run it without any command line parameters, and it will print all the information it can find from the \nNVIDIA driver and the Windows Display CCD and GDI interfaces.\n");
             Console.WriteLine($"You can also run it with 'NVIDIAInfo save myfilename.cfg' and it will save the current display configuration into\nthe myfilename.cfg file.\n");
             Console.WriteLine($"This is most useful when you subsequently use the 'NVIDIAInfo load myfilename.cfg' command, as it will load the\ndisplay configuration from the myfilename.cfg file and make it live. In this way, you can make yourself a library\nof different cfg files with different display layouts, then use the NVIDIAInfo load command to swap between them.\n\n");
             Console.WriteLine($"Valid commands:\n");
