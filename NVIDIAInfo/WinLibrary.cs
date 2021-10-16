@@ -325,9 +325,7 @@ namespace DisplayMagicianShared.Windows
                     if (windowsDisplayConfig.DisplaySources.ContainsKey(sourceInfo.ViewGdiDeviceName))
                     {
                         // We already have at least one display using this source, so we need to add the other cloned display to the existing list
-                        List<uint> sourceIds = windowsDisplayConfig.DisplaySources[sourceInfo.ViewGdiDeviceName];
-                        sourceIds.Add(path.SourceInfo.Id);
-                        windowsDisplayConfig.DisplaySources.Add(sourceInfo.ViewGdiDeviceName, sourceIds);
+                        windowsDisplayConfig.DisplaySources[sourceInfo.ViewGdiDeviceName].Add(path.SourceInfo.Id);
                     }
                     else
                     {
