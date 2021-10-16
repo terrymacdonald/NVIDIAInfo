@@ -573,7 +573,7 @@ namespace DisplayMagicianShared.NVIDIA
         AUTO = 0xFF
     }
 
-    
+
     public enum NV_COLOR_CMD : byte
     {
         NV_COLOR_CMD_GET = 1,
@@ -599,7 +599,7 @@ namespace DisplayMagicianShared.NVIDIA
         NV_COLOR_COLORIMETRY_DEFAULT = 0xFE,
         NV_COLOR_COLORIMETRY_AUTO = 0xFF
     }
-    
+
     public enum NV_COLOR_SELECTION_POLICY : UInt32
     {
         NV_COLOR_SELECTION_POLICY_USER = 0,     //!< app/nvcpl make decision to select the desire color format
@@ -607,7 +607,7 @@ namespace DisplayMagicianShared.NVIDIA
         NV_COLOR_SELECTION_POLICY_DEFAULT = NV_COLOR_SELECTION_POLICY_BEST_QUALITY,
         NV_COLOR_SELECTION_POLICY_UNKNOWN = 0xFF,
     }
-    
+
     public enum NV_DESKTOP_COLOR_DEPTH
     {
         NV_DESKTOP_COLOR_DEPTH_DEFAULT = 0x0,                                    // set if the current setting should be kept
@@ -617,7 +617,7 @@ namespace DisplayMagicianShared.NVIDIA
         NV_DESKTOP_COLOR_DEPTH_16BPC_FLOAT_WCG = 0x4,                                    //16 bit float per color component (16 bit float alpha) wide color gamut
         NV_DESKTOP_COLOR_DEPTH_16BPC_FLOAT_HDR = 0x5,                                    //16 bit float per color component (16 bit float alpha) HDR
         NV_DESKTOP_COLOR_DEPTH_MAX_VALUE = NV_DESKTOP_COLOR_DEPTH_16BPC_FLOAT_HDR, // must be set to highest enum value
-    }    
+    }
 
     [Flags]
     public enum NV_HDR_CAPABILITIES_V2_FLAGS : UInt32
@@ -1964,11 +1964,11 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator !=(NV_COLOR_DATA_V5 lhs, NV_COLOR_DATA_V5 rhs) => !(lhs == rhs);
     }
 
-// ==================================
-// NVImport Class
-// ==================================
+    // ==================================
+    // NVImport Class
+    // ==================================
 
-static class NVImport
+    static class NVImport
     {
 
         public const UInt32 NV_MAX_HEADS = 4;
@@ -2035,7 +2035,7 @@ static class NVImport
         public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V1>(1);
         public static UInt32 NV_MOSAIC_SUPPORTED_TOPO_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_SUPPORTED_TOPO_INFO_V2>(2);
         public static UInt32 NV_HDR_COLOR_DATA_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_COLOR_DATA_V2>(2);
-        public static UInt32 NV_COLOR_DATA_V5_VER = MAKE_NVAPI_VERSION<NV_COLOR_DATA_V5>(5);        
+        public static UInt32 NV_COLOR_DATA_V5_VER = MAKE_NVAPI_VERSION<NV_COLOR_DATA_V5>(5);
         public static UInt32 NV_HDR_CAPABILITIES_V2_VER = MAKE_NVAPI_VERSION<NV_HDR_CAPABILITIES_V2>(2);
         public static UInt32 NV_MOSAIC_DISPLAY_TOPO_STATUS_V1_VER = MAKE_NVAPI_VERSION<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1>(1);
         public static UInt32 NV_GPU_DISPLAYIDS_V2_VER = MAKE_NVAPI_VERSION<NV_GPU_DISPLAYIDS_V2>(3); // NOTE: There is a bug in R470 that sets the NV_GPU_DISPLAYIDS_V2 version to 3!

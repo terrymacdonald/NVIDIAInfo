@@ -1282,7 +1282,7 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     NV_COLOR_DATA_V5 colorData = colorDataDict.Value;
                     UInt32 displayId = colorDataDict.Key;
-                    
+
                     // If this is a setting that says it will use default windows colour settings, then we turn it off
                     if (colorData.ColorSelectionPolicy == NV_COLOR_SELECTION_POLICY.NV_COLOR_SELECTION_POLICY_DEFAULT &&
                         ActiveDisplayConfig.ColorConfig.ColorData[displayId].ColorSelectionPolicy != colorData.ColorSelectionPolicy)
@@ -1431,13 +1431,13 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     NV_COLOR_DATA_V5 colorData = colorDataDict.Value;
                     UInt32 displayId = colorDataDict.Key;
-                    
+
                     // If this is a setting that says it uses user colour settings, then we turn it off
                     if (colorData.ColorSelectionPolicy != NV_COLOR_SELECTION_POLICY.NV_COLOR_SELECTION_POLICY_DEFAULT &&
                         ActiveDisplayConfig.ColorConfig.ColorData[displayId].ColorSelectionPolicy != colorData.ColorSelectionPolicy)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: We want to use custom NVIDIA HDR Colour for display {displayId}.");
-                        
+
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: We want the standard colour settings to be {displayConfig.ColorConfig.ColorData[displayId].ColorSelectionPolicy.ToString("G")} for Mosaic display {displayId}.");
                         colorData = displayConfig.ColorConfig.ColorData[displayId];
 
