@@ -336,7 +336,7 @@ namespace DisplayMagicianShared.NVIDIA
             myDefaultConfig.MosaicConfig.MosaicViewports = new List<NV_RECT[]>();
             myDefaultConfig.HdrConfig.HdrCapabilities = new Dictionary<uint, NV_HDR_CAPABILITIES_V2>();
             myDefaultConfig.HdrConfig.HdrColorData = new Dictionary<uint, NV_HDR_COLOR_DATA_V2>();
-            myDefaultConfig.ColorConfig.ColorData= new Dictionary<uint, NV_COLOR_DATA_V5>();
+            myDefaultConfig.ColorConfig.ColorData = new Dictionary<uint, NV_COLOR_DATA_V5>();
             myDefaultConfig.DisplayNames = new Dictionary<uint, string>();
             myDefaultConfig.DisplayIdentifiers = new List<string>();
 
@@ -892,7 +892,7 @@ namespace DisplayMagicianShared.NVIDIA
                 // Now we need to loop through each of the windows paths so we can record the Windows DisplayName to DisplayID mapping
                 // This is needed for us to piece together the Screen layout for when we draw the NVIDIA screens!
                 myDisplayConfig.DisplayNames = new Dictionary<uint, string>();
-                foreach (KeyValuePair<string, uint> displaySource in WinLibrary.GetDisplaySourceNames())
+                foreach (KeyValuePair<string, List<uint>> displaySource in WinLibrary.GetDisplaySourceNames())
                 {
                     // Now we try to get the information about the displayIDs and map them to windows \\DISPLAY names e.g. \\DISPLAY1
                     string displayName = displaySource.Key;
@@ -1215,7 +1215,7 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Display Grids! NvAPI_Mosaic_SetDisplayGrids() returned error code {NVStatus}");
                         }
-                    }                    
+                    }
 
                 }
                 else if (!displayConfig.MosaicConfig.IsMosaicEnabled && ActiveDisplayConfig.MosaicConfig.IsMosaicEnabled)
@@ -1400,7 +1400,7 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Disp_HdrColorControl() returned error code {NVStatus}. It's most likely that your monitor {displayId} doesn't support HDR.");
                         }
-                    }                    
+                    }
                 }
 
             }
