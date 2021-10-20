@@ -299,7 +299,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/loadFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (!NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig.NVIDIAConfig) && !WinLibrary.GetLibrary().IsActiveConfig(myDisplayConfig.WindowsConfig))
+                if (!WinLibrary.GetLibrary().IsActiveConfig(myDisplayConfig.WindowsConfig) || !NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig.NVIDIAConfig))
                 {
                     if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                     {
@@ -486,7 +486,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (displayConfig.NVIDIAConfig.Equals(otherDisplayConfig.NVIDIAConfig) && displayConfig.WindowsConfig.Equals(otherDisplayConfig.WindowsConfig))
+                if (displayConfig.WindowsConfig.Equals(otherDisplayConfig.WindowsConfig) && displayConfig.NVIDIAConfig.Equals(otherDisplayConfig.NVIDIAConfig))
                 {
                     SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: The NVIDIA display settings in {filename} and {otherFilename} are equal.");
                     Console.WriteLine($"The NVIDIA display settings in {filename} and {otherFilename} are equal.");

@@ -357,7 +357,7 @@ namespace DisplayMagicianShared.NVIDIA
             if (_initialised)
             {
                 // Enumerate all the Physical GPUs
-                PhysicalGpuHandle[] physicalGpus = new PhysicalGpuHandle[NVImport.NV_MAX_PHYSICAL_GPUS];
+                PhysicalGpuHandle[] physicalGpus = new PhysicalGpuHandle[NVImport.NVAPI_MAX_PHYSICAL_GPUS];
                 uint physicalGpuCount = 0;
                 NVAPI_STATUS NVStatus = NVImport.NvAPI_EnumPhysicalGPUs(ref physicalGpus, out physicalGpuCount);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
@@ -934,8 +934,8 @@ namespace DisplayMagicianShared.NVIDIA
             }
             else
             {
-                SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: ERROR - Tried to run GetNVIDIADisplayConfig but the NVIDIA ADL library isn't initialised!");
-                throw new NVIDIALibraryException($"Tried to run GetNVIDIADisplayConfig but the NVIDIA ADL library isn't initialised!");
+                SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: ERROR - Tried to run GetNVIDIADisplayConfig but the NVIDIA NVAPI library isn't initialised!");
+                throw new NVIDIALibraryException($"Tried to run GetNVIDIADisplayConfig but the NVIDIA NVAPI library isn't initialised!");
             }
 
             // Return the configuration

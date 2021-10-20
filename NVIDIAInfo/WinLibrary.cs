@@ -1015,8 +1015,8 @@ namespace DisplayMagicianShared.Windows
                 GDI_DISPLAY_SETTING displayDeviceSettings = myGdiDisplaySettings.Value;
                 SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Trying to change Device Mode for Display {displayDeviceName}.");
                 DEVICE_MODE modeToUse = displayDeviceSettings.DeviceMode;
-                //CHANGE_DISPLAY_RESULTS result = GDIImport.ChangeDisplaySettingsEx(displayDeviceName, ref modeToUse, IntPtr.Zero, CHANGE_DISPLAY_SETTINGS_FLAGS.CDS_UPDATEREGISTRY, IntPtr.Zero);
-                CHANGE_DISPLAY_RESULTS result = GDIImport.ChangeDisplaySettingsEx(null, ref modeToUse, IntPtr.Zero, CHANGE_DISPLAY_SETTINGS_FLAGS.CDS_UPDATEREGISTRY, IntPtr.Zero);
+                CHANGE_DISPLAY_RESULTS result = GDIImport.ChangeDisplaySettingsEx(displayDeviceName, ref modeToUse, IntPtr.Zero, CHANGE_DISPLAY_SETTINGS_FLAGS.CDS_UPDATEREGISTRY, IntPtr.Zero);
+                //CHANGE_DISPLAY_RESULTS result = GDIImport.ChangeDisplaySettingsEx(null, ref modeToUse, IntPtr.Zero, CHANGE_DISPLAY_SETTINGS_FLAGS.CDS_UPDATEREGISTRY, IntPtr.Zero);
                 if (result == CHANGE_DISPLAY_RESULTS.Successful)
                 {
                     SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Successfully changed display {displayDeviceName} to use the new mode!");
