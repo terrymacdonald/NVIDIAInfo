@@ -127,8 +127,6 @@ namespace DisplayMagicianShared.NVIDIA
 
         private bool _initialised = false;
         private NVIDIA_DISPLAY_CONFIG _activeConfig;
-        private bool _haveSessionHandle = false;
-        private bool _haveActiveDisplayConfig = false;
 
         // To detect redundant calls
         private bool _disposed = false;
@@ -140,7 +138,7 @@ namespace DisplayMagicianShared.NVIDIA
         static NVIDIALibrary() { }
         public NVIDIALibrary()
         {
-
+            _activeDisplayConfig = CreateDefaultConfig();
             try
             {
                 SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Attempting to load the NVIDIA NVAPI DLL");
@@ -157,6 +155,8 @@ namespace DisplayMagicianShared.NVIDIA
                     {
                         _initialised = true;
                         SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was initialised successfully");
+                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Running UpdateActiveConfig to ensure there is a config to use later");
+                        _activeDisplayConfig = GetActiveConfig();
                     }
                     else
                     {
@@ -181,43 +181,7 @@ namespace DisplayMagicianShared.NVIDIA
         ~NVIDIALibrary()
         {
             SharedLogger.logger.Trace("NVIDIALibrary/~NVIDIALibrary: Destroying NVIDIA NVAPI library interface");
-            // If the NVAPI library was initialised, then we need to free it up.
-            if (_initialised)
-            {
-                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
-                // If we have a session handle we need to free it up first
-                if (_haveSessionHandle)
-                {
-                    try
-                    {
-                        //NVStatus = NVImport.NvAPI_DRS_DestorySession(_nvapiSessionHandle);
-                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                        {
-                            _haveSessionHandle = true;
-                            SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library DRS session handle was successfully destroyed");
-                        }
-                        else
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error destroying the NVAPI library DRS session handle. NvAPI_DRS_DestorySession() returned error code {NVStatus}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception destroying the NVIDIA NVAPI library. NvAPI_DRS_DestorySession() caused an exception.");
-                    }
-                }
-
-                try
-                {
-                    //NVImport.NvAPI_Unload();
-                    SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was unloaded successfully");
-                }
-                catch (Exception ex)
-                {
-                    SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception unloading the NVIDIA NVAPI library. NvAPI_Unload() caused an exception.");
-                }
-
-            }
+            // The NVAPI library automatically runs NVAPI_Unload on Exit, so no need for anything here.
         }
 
         // Public implementation of Dispose pattern callable by consumers.
@@ -233,8 +197,6 @@ namespace DisplayMagicianShared.NVIDIA
 
             if (disposing)
             {
-
-                //NVImport.ADL_Main_Control_Destroy();
 
                 // Dispose managed state (managed objects).
                 _safeHandle?.Dispose();
@@ -280,11 +242,6 @@ namespace DisplayMagicianShared.NVIDIA
         {
             get
             {
-                if (!_haveActiveDisplayConfig)
-                {
-                    _activeDisplayConfig = GetActiveConfig();
-                    _haveActiveDisplayConfig = true;
-                }
                 return _activeDisplayConfig;
             }
             set

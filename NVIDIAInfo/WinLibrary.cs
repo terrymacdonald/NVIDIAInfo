@@ -90,7 +90,7 @@ namespace DisplayMagicianShared.Windows
         {
             SharedLogger.logger.Trace("WinLibrary/WinLibrary: Intialising Windows CCD library interface");
             _initialised = true;
-            _activeConfig = CreateDefaultConfig();
+            _activeConfig = GetActiveConfig();
         }
 
         ~WinLibrary()
