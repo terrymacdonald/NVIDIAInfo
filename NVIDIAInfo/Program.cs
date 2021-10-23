@@ -71,6 +71,12 @@ namespace NVIDIAInfo
                 Environment.Exit(1);
             }
 
+            // Update the configuration
+            NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
+            WinLibrary winLibrary = WinLibrary.GetLibrary();
+            nvidiaLibrary.UpdateActiveConfig();
+            winLibrary.UpdateActiveConfig();
+
             if (args.Length > 0)
             {
                 if (args[0] == "save")
@@ -157,7 +163,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing currently connected display ids as currentids command was provided");
                     Console.WriteLine("The current display identifiers are:");
                     SharedLogger.logger.Info($"NVIDIAInfo/Main: The current display identifiers are:");
-                    foreach (string displayId in NVIDIALibrary.GetLibrary().GetCurrentDisplayIdentifiers())
+                    foreach (string displayId in nvidiaLibrary.CurrentDisplayIdentifiers)
                     {
                         Console.WriteLine(@displayId);
                         SharedLogger.logger.Info($@"{displayId}");
@@ -168,7 +174,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing all display ids as allids command was provided");
                     Console.WriteLine("All connected display identifiers are:");
                     SharedLogger.logger.Info($"NVIDIAInfo/Main: All connected display identifiers are:");
-                    foreach (string displayId in NVIDIALibrary.GetLibrary().GetAllConnectedDisplayIdentifiers())
+                    foreach (string displayId in nvidiaLibrary.GetCurrentDisplayIdentifiers())
                     {
                         Console.WriteLine(@displayId);
                         SharedLogger.logger.Info($@"{displayId}");
@@ -177,7 +183,7 @@ namespace NVIDIAInfo
                 else if (args[0] == "print")
                 {
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: printing display info as print command was provided");
-                    Console.WriteLine(NVIDIALibrary.GetLibrary().PrintActiveConfig());                    
+                    Console.WriteLine(nvidiaLibrary.PrintActiveConfig());                    
                 }
 
                 else if (args[0] == "help" || args[0] == "--help" || args[0] == "-h" || args[0] == "/?" || args[0] == "-?")
@@ -224,9 +230,12 @@ namespace NVIDIAInfo
             SharedLogger.logger.Trace($"NVIDIAInfo/saveToFile: Attempting to save the current display configuration to the {filename}.");
 
             SharedLogger.logger.Trace($"NVIDIAInfo/saveToFile: Getting the current Active Config");
+            // Get references to the libraries used
+            NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
+            WinLibrary winLibrary = WinLibrary.GetLibrary();
             // Get the current configuration
-            myDisplayConfig.NVIDIAConfig = NVIDIALibrary.GetLibrary().GetActiveConfig();
-            myDisplayConfig.WindowsConfig = WinLibrary.GetLibrary().GetActiveConfig();
+            myDisplayConfig.NVIDIAConfig = nvidiaLibrary.ActiveConfig;
+            myDisplayConfig.WindowsConfig = winLibrary.ActiveConfig;
 
             SharedLogger.logger.Trace($"NVIDIAInfo/saveToFile: Attempting to convert the current Active Config objects to JSON format");
             // Save the object to file!
@@ -299,13 +308,17 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/loadFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (!WinLibrary.GetLibrary().IsActiveConfig(myDisplayConfig.WindowsConfig) || !NVIDIALibrary.GetLibrary().IsActiveConfig(myDisplayConfig.NVIDIAConfig))
+                // Get references to the libraries used
+                NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
+                WinLibrary winLibrary = WinLibrary.GetLibrary();
+                
+                if (!winLibrary.IsActiveConfig(myDisplayConfig.WindowsConfig) || !nvidiaLibrary.IsActiveConfig(myDisplayConfig.NVIDIAConfig))
                 {
-                    if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
+                    if (nvidiaLibrary.IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
                     {
                         SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} are possible to use right now, so we'll use attempt to use them.");
                         Console.WriteLine($"Attempting to apply NVIDIA display config from {filename}");
-                        bool itWorkedforNVIDIA = NVIDIALibrary.GetLibrary().SetActiveConfig(myDisplayConfig.NVIDIAConfig);                        
+                        bool itWorkedforNVIDIA = nvidiaLibrary.SetActiveConfig(myDisplayConfig.NVIDIAConfig);                        
                         
                         if (itWorkedforNVIDIA) 
                         {
@@ -313,10 +326,10 @@ namespace NVIDIAInfo
                             // Then let's try to also apply the windows changes
                             // Note: we are unable to check if the Windows CCD display config is possible, as it won't match if either the current display config is a Mosaic config,
                             // or if the display config we want to change to is a Mosaic config. So we just have to assume that it will work!
-                            bool itWorkedforWindows = WinLibrary.GetLibrary().SetActiveConfig(myDisplayConfig.WindowsConfig);
+                            bool itWorkedforWindows = winLibrary.SetActiveConfig(myDisplayConfig.WindowsConfig);
                             if (itWorkedforWindows)
                             {
-                                bool itWorkedforNVIDIAColor = NVIDIALibrary.GetLibrary().SetActiveConfigOverride(myDisplayConfig.NVIDIAConfig);
+                                bool itWorkedforNVIDIAColor = nvidiaLibrary.SetActiveConfigOverride(myDisplayConfig.NVIDIAConfig);
 
                                 if (itWorkedforNVIDIAColor)
                                 {
@@ -365,6 +378,10 @@ namespace NVIDIAInfo
 
         static void possibleFromFile(string filename)
         {
+            // Get references to the libraries used
+            NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
+            WinLibrary winLibrary = WinLibrary.GetLibrary();
+            
             string json = "";
             try
             {
@@ -398,7 +415,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/possibleFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                 }
 
-                if (NVIDIALibrary.GetLibrary().IsPossibleConfig(myDisplayConfig.NVIDIAConfig))
+                if (nvidiaLibrary.IsPossibleConfig(myDisplayConfig.NVIDIAConfig) && winLibrary.IsPossibleConfig(myDisplayConfig.WindowsConfig))
                 {
                     SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: The NVIDIA & Windows CCD display settings in {filename} are compatible with this computer.");
                     Console.WriteLine($"The NVIDIA display settings in {filename} are compatible with this computer.");

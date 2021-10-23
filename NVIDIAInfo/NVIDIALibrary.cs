@@ -88,25 +88,6 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator !=(NVIDIA_COLOR_CONFIG lhs, NVIDIA_COLOR_CONFIG rhs) => !(lhs == rhs);
     }
 
-    /*[StructLayout(LayoutKind.Sequential)]
-    public struct NVIDIA_WINDOWS_DISPLAY_CONFIG : IEquatable<NVIDIA_WINDOWS_DISPLAY_CONFIG>
-    {
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_MAX_DISPLAYS)]
-        public NV_DISPLAYCONFIG_PATH_INFO_V2[] WindowsPaths;
-        
-        public override bool Equals(object obj) => obj is NVIDIA_WINDOWS_DISPLAY_CONFIG other && this.Equals(other);
-        public bool Equals(NVIDIA_WINDOWS_DISPLAY_CONFIG other)
-        => WindowsPaths.SequenceEqual(other.WindowsPaths);
-
-        public override int GetHashCode()
-        {
-            return (WindowsPaths).GetHashCode();
-        }
-        public static bool operator ==(NVIDIA_WINDOWS_DISPLAY_CONFIG lhs, NVIDIA_WINDOWS_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
-
-        public static bool operator !=(NVIDIA_WINDOWS_DISPLAY_CONFIG lhs, NVIDIA_WINDOWS_DISPLAY_CONFIG rhs) => !(lhs == rhs);
-    }*/
-
     [StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_DISPLAY_CONFIG : IEquatable<NVIDIA_DISPLAY_CONFIG>
     {
@@ -144,9 +125,8 @@ namespace DisplayMagicianShared.NVIDIA
         // .NET guarantees thread safety for static initialization
         private static NVIDIALibrary _instance = new NVIDIALibrary();
 
-        private static WinLibrary _winLibrary = new WinLibrary();
-
         private bool _initialised = false;
+        private NVIDIA_DISPLAY_CONFIG _activeConfig;
         private bool _haveSessionHandle = false;
         private bool _haveActiveDisplayConfig = false;
 
@@ -155,7 +135,6 @@ namespace DisplayMagicianShared.NVIDIA
 
         // Instantiate a SafeHandle instance.
         private SafeHandle _safeHandle = new SafeFileHandle(IntPtr.Zero, true);
-        private IntPtr _nvapiSessionHandle = IntPtr.Zero;
         private NVIDIA_DISPLAY_CONFIG _activeDisplayConfig;
 
         static NVIDIALibrary() { }
@@ -189,27 +168,6 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception intialising NVIDIA NVAPI library. NvAPI_Initialize() caused an exception.");
                 }
-
-                // Step 2: Get a session handle that we can use for all other interactions
-                /*try
-                {
-                    NVStatus = NVImport.NvAPI_DRS_CreateSession(out _nvapiSessionHandle);
-                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                    {
-                        _haveSessionHandle = true;
-                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library DRS session handle was created successfully");
-                    }
-                    else
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Error creating a NVAPI library DRS session handle. NvAPI_DRS_CreateSession() returned error code {NVStatus}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    SharedLogger.logger.Trace(ex, $"NVIDIALibrary/NVIDIALibrary: Exception creating a NVAPI library DRS session handle. NvAPI_DRS_CreateSession() caused an exception.");
-                }*/
-
-                _winLibrary = WinLibrary.GetLibrary();
 
             }
             catch (DllNotFoundException ex)
@@ -294,6 +252,22 @@ namespace DisplayMagicianShared.NVIDIA
             }
         }
 
+        public NVIDIA_DISPLAY_CONFIG ActiveConfig
+        {
+            get
+            {
+                return _activeConfig;
+            }
+        }
+
+        public List<string> CurrentDisplayIdentifiers
+        {
+            get
+            {
+                return _activeConfig.DisplayIdentifiers;
+            }
+        }
+
         public List<string> PCIVendorIDs
         {
             get
@@ -341,6 +315,22 @@ namespace DisplayMagicianShared.NVIDIA
             myDefaultConfig.DisplayIdentifiers = new List<string>();
 
             return myDefaultConfig;
+        }
+
+        public bool UpdateActiveConfig()
+        {
+            SharedLogger.logger.Trace($"NVIDIALibrary/UpdateActiveConfig: Updating the currently active config");
+            try
+            {
+                _activeConfig = GetActiveConfig();
+            }
+            catch (Exception ex)
+            {
+                SharedLogger.logger.Trace(ex, $"NVIDIALibrary/UpdateActiveConfig: Exception updating the currently active config");
+                return false;
+            }
+
+            return true;
         }
 
         public NVIDIA_DISPLAY_CONFIG GetActiveConfig()
@@ -392,7 +382,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
                     else
                     {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error GETTING qUADRO STATUS. NvAPI_GPU_GetQuadroStatus() returned error code {NVStatus}");
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting Quadro status. NvAPI_GPU_GetQuadroStatus() returned error code {NVStatus}");
                     }
                 }
 
