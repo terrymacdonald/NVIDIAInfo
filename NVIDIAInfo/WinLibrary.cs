@@ -77,7 +77,7 @@ namespace DisplayMagicianShared.Windows
         private static WinLibrary _instance = new WinLibrary();
 
         private bool _initialised = false;
-        private WINDOWS_DISPLAY_CONFIG _activeConfig;
+        private WINDOWS_DISPLAY_CONFIG _activeDisplayConfig;
 
         // To detect redundant calls
         private bool _disposed = false;
@@ -90,7 +90,7 @@ namespace DisplayMagicianShared.Windows
         {
             SharedLogger.logger.Trace("WinLibrary/WinLibrary: Intialising Windows CCD library interface");
             _initialised = true;
-            _activeConfig = GetActiveConfig();
+            _activeDisplayConfig = GetActiveConfig();
         }
 
         ~WinLibrary()
@@ -128,11 +128,11 @@ namespace DisplayMagicianShared.Windows
             }
         }
 
-        public WINDOWS_DISPLAY_CONFIG ActiveConfig
+        public WINDOWS_DISPLAY_CONFIG ActiveDisplayConfig
         {
             get
             {
-                return _activeConfig;
+                return _activeDisplayConfig;
             }
         }
 
@@ -140,7 +140,7 @@ namespace DisplayMagicianShared.Windows
         {
             get
             {
-                return _activeConfig.DisplayIdentifiers;
+                return _activeDisplayConfig.DisplayIdentifiers;
             }
         }
 
@@ -268,7 +268,7 @@ namespace DisplayMagicianShared.Windows
             SharedLogger.logger.Trace($"WinLibrary/UpdateActiveConfig: Updating the currently active config");
             try
             {
-                _activeConfig = GetActiveConfig();
+                _activeDisplayConfig = GetActiveConfig();
             }
             catch (Exception ex)
             {
@@ -683,7 +683,7 @@ namespace DisplayMagicianShared.Windows
             string stringToReturn = "";
 
             // Get the current config
-            WINDOWS_DISPLAY_CONFIG displayConfig = GetActiveConfig();
+            WINDOWS_DISPLAY_CONFIG displayConfig = ActiveDisplayConfig;
 
             WIN32STATUS err = WIN32STATUS.ERROR_GEN_FAILURE;
             stringToReturn += $"****** WINDOWS CCD CONFIGURATION *******\n";
@@ -1155,12 +1155,9 @@ namespace DisplayMagicianShared.Windows
 
         public bool IsActiveConfig(WINDOWS_DISPLAY_CONFIG displayConfig)
         {
-            // Get the current windows display configs to compare to the one we loaded
-            WINDOWS_DISPLAY_CONFIG currentWindowsDisplayConfig = GetWindowsDisplayConfig(QDC.QDC_ONLY_ACTIVE_PATHS);
-
             // Check whether the display config is in use now
             SharedLogger.logger.Trace($"WinLibrary/IsActiveConfig: Checking whether the display configuration is already being used.");
-            if (displayConfig.Equals(currentWindowsDisplayConfig))
+            if (displayConfig.Equals(ActiveDisplayConfig))
             {
                 SharedLogger.logger.Trace($"WinLibrary/IsActiveConfig: The display configuration is already being used (supplied displayConfig Equals currentWindowsDisplayConfig");
                 return true;

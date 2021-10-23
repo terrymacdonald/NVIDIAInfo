@@ -74,8 +74,8 @@ namespace NVIDIAInfo
             // Update the configuration
             NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
             WinLibrary winLibrary = WinLibrary.GetLibrary();
-            nvidiaLibrary.UpdateActiveConfig();
-            winLibrary.UpdateActiveConfig();
+            /*nvidiaLibrary.UpdateActiveConfig();
+            winLibrary.UpdateActiveConfig();*/
 
             if (args.Length > 0)
             {
@@ -174,7 +174,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Debug($"NVIDIAInfo/Main: showing all display ids as allids command was provided");
                     Console.WriteLine("All connected display identifiers are:");
                     SharedLogger.logger.Info($"NVIDIAInfo/Main: All connected display identifiers are:");
-                    foreach (string displayId in nvidiaLibrary.GetCurrentDisplayIdentifiers())
+                    foreach (string displayId in nvidiaLibrary.GetAllConnectedDisplayIdentifiers())
                     {
                         Console.WriteLine(@displayId);
                         SharedLogger.logger.Info($@"{displayId}");
@@ -234,8 +234,8 @@ namespace NVIDIAInfo
             NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
             WinLibrary winLibrary = WinLibrary.GetLibrary();
             // Get the current configuration
-            myDisplayConfig.NVIDIAConfig = nvidiaLibrary.ActiveConfig;
-            myDisplayConfig.WindowsConfig = winLibrary.ActiveConfig;
+            myDisplayConfig.NVIDIAConfig = nvidiaLibrary.ActiveDisplayConfig;
+            myDisplayConfig.WindowsConfig = winLibrary.ActiveDisplayConfig;
 
             SharedLogger.logger.Trace($"NVIDIAInfo/saveToFile: Attempting to convert the current Active Config objects to JSON format");
             // Save the object to file!
