@@ -515,6 +515,16 @@ namespace DisplayMagicianShared.Windows
                 }
             }
 
+            // And then we need to go through the list of modes again and patch the 'cloned' displays with a real display ID so the display layout is right in cloned displays
+            for (int i = 0; i < modes.Length; i++)
+            {
+                // We only change the ids that match in InfoType for target displays
+                if (modes[i].InfoType == DISPLAYCONFIG_MODE_INFO_TYPE.DISPLAYCONFIG_MODE_INFO_TYPE_TARGET && targetIdsToChange.Contains(modes[i].Id))
+                {
+                    // Patch the cloned ids with a real working one!
+                    modes[i].Id = targetIdMap[modes[i].Id];
+                }
+            }
 
             // Store the active paths and modes in our display config object
             windowsDisplayConfig.DisplayConfigPaths = paths;
