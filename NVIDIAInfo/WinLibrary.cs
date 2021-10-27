@@ -62,6 +62,7 @@ namespace DisplayMagicianShared.Windows
         public override int GetHashCode()
         {
             return (DisplayConfigPaths, DisplayConfigModes, DisplayHDRStates, GdiDisplaySettings, IsCloned, DisplayIdentifiers).GetHashCode();
+            //return (DisplayConfigPaths, DisplayConfigModes, DisplayHDRStates, IsCloned, DisplayIdentifiers).GetHashCode();
         }
         public static bool operator ==(WINDOWS_DISPLAY_CONFIG lhs, WINDOWS_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
 
@@ -272,7 +273,7 @@ namespace DisplayMagicianShared.Windows
             }
             catch (Exception ex)
             {
-                SharedLogger.logger.Trace(ex, $"WinLibrary/UpdateActiveConfig: Exception updating the currently active config"); 
+                SharedLogger.logger.Trace(ex, $"WinLibrary/UpdateActiveConfig: Exception updating the currently active config");
                 return false;
             }
 
@@ -531,7 +532,7 @@ namespace DisplayMagicianShared.Windows
             windowsDisplayConfig.DisplayConfigModes = modes;
             windowsDisplayConfig.DisplayHDRStates = hdrInfos;
             windowsDisplayConfig.GdiDisplaySettings = GetGdiDisplaySettings();
-            
+
             return windowsDisplayConfig;
         }
 
