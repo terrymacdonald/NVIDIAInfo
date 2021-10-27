@@ -426,13 +426,13 @@ namespace DisplayMagicianShared.Windows
                 // DeviceName == other.DeviceName && // Had to remove this as the device name often changes after a reboot!
                 DeviceString == other.DeviceString &&
                 //StateFlags == other.StateFlags &&
-                DeviceId == other.DeviceId &&
-                DeviceKey == other.DeviceKey;
+                DeviceId == other.DeviceId;
+                //DeviceKey == other.DeviceKey;
 
         public override int GetHashCode()
         {
             //return (Size, DeviceName, DeviceString, StateFlags, DeviceId, DeviceKey).GetHashCode();
-            return (Size, DeviceString, DeviceId, DeviceKey).GetHashCode();
+            return (Size, DeviceString, DeviceId).GetHashCode();
         }
 
         public static bool operator ==(DISPLAY_DEVICE lhs, DISPLAY_DEVICE rhs) => lhs.Equals(rhs);
