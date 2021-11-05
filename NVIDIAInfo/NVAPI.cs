@@ -364,6 +364,47 @@ namespace DisplayMagicianShared.NVIDIA
         UNKNOWN = 0xFFFFFFFF,
     }
 
+    public enum TIMING_SCAN_MODE : ushort
+    {
+        /// <summary>
+        ///     Progressive scan mode
+        /// </summary>
+        Progressive = 0,
+
+        /// <summary>
+        ///     Interlaced scan mode
+        /// </summary>
+        Interlaced = 1,
+
+        /// <summary>
+        ///     Interlaced scan mode with extra vertical blank
+        /// </summary>
+        InterlacedWithExtraVerticalBlank = 1,
+
+        /// <summary>
+        ///     Interlaced scan mode without extra vertical blank
+        /// </summary>
+        InterlacedWithNoExtraVerticalBlank = 2
+    }
+
+    public enum TIMING_VERTICAL_SYNC_POLARITY : byte
+    {
+        /// <summary>
+        ///     Positive vertical synchronized polarity
+        /// </summary>
+        Positive = 0,
+
+        /// <summary>
+        ///     Negative vertical synchronized polarity
+        /// </summary>
+        Negative = 1,
+
+        /// <summary>
+        ///     Default vertical synchronized polarity
+        /// </summary>
+        Default = Positive
+    }
+
     public enum NV_TIMING_OVERRIDE : UInt32
     {
         CURRENT = 0,          //!< get the current timing
@@ -822,36 +863,38 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
-    public struct NV_TIMINGEXT : IEquatable<NV_TIMINGEXT>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_TIMING_EXTRA : IEquatable<NV_TIMING_EXTRA>
     {
-        public UInt32 Flag;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
-        public ushort Rr;            //!< Logical refresh rate to present
-        public UInt32 Rrx1k;         //!< Physical vertical refresh rate in 0.001Hz
-        public UInt32 Aspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
-        public ushort Rep;           //!< Bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
-        public UInt32 Status;        //!< Timing standard
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (Int32)NVImport.NVAPI_UNICODE_STRING_MAX)]
+        public UInt32 Flags;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
+        public ushort RefreshRate;            //!< Logical refresh rate to present
+        public UInt32 FrequencyInMillihertz;         //!< Physical vertical refresh rate in 0.001Hz
+        public ushort VerticalAspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
+        public ushort HorizontalAspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
+        public ushort HorizontalPixelRepetition;           //!< Bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
+        public UInt32 TimingStandard;        //!< Timing standard
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
         public string Name;      //!< Timing name
 
-        public override bool Equals(object obj) => obj is NV_TIMINGEXT other && this.Equals(other);
+        public override bool Equals(object obj) => obj is NV_TIMING_EXTRA other && this.Equals(other);
 
-        public bool Equals(NV_TIMINGEXT other)
-        => Flag == other.Flag &&
-           Rr == other.Rr &&
-           Rrx1k == other.Rrx1k &&
-           Aspect == other.Aspect &&
-           Rep == other.Rep &&
-           Status == other.Status &&
+        public bool Equals(NV_TIMING_EXTRA other)
+        => Flags == other.Flags &&
+           RefreshRate == other.RefreshRate &&
+           FrequencyInMillihertz == other.FrequencyInMillihertz &&
+           VerticalAspect == other.VerticalAspect &&
+           HorizontalAspect == other.HorizontalAspect &&
+           HorizontalPixelRepetition == other.HorizontalPixelRepetition &&
+           TimingStandard == other.TimingStandard &&
            Name == other.Name;
 
         public override Int32 GetHashCode()
         {
-            return (Flag, Rr, Rrx1k, Aspect, Rep, Status, Name).GetHashCode();
+            return (Flags, RefreshRate, FrequencyInMillihertz, HorizontalAspect, HorizontalPixelRepetition, TimingStandard, Name).GetHashCode();
         }
-        public static bool operator ==(NV_TIMINGEXT lhs, NV_TIMINGEXT rhs) => lhs.Equals(rhs);
+        public static bool operator ==(NV_TIMING_EXTRA lhs, NV_TIMING_EXTRA rhs) => lhs.Equals(rhs);
 
-        public static bool operator !=(NV_TIMINGEXT lhs, NV_TIMINGEXT rhs) => !(lhs == rhs);
+        public static bool operator !=(NV_TIMING_EXTRA lhs, NV_TIMING_EXTRA rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -870,13 +913,13 @@ namespace DisplayMagicianShared.NVIDIA
         public ushort VFrontPorch;      //!< vertical front porch
         public ushort VSyncWidth;       //!< vertical sync width
         public ushort VTotal;           //!< vertical total
-        public byte VSyncPol;         //!< vertical sync polarity: 1-negative, 0-positive
+        public TIMING_VERTICAL_SYNC_POLARITY VSyncPol;         //!< vertical sync polarity: 1-negative, 0-positive
 
-        public ushort Interlaced;       //!< 1-Int32erlaced, 0-progressive
+        public TIMING_SCAN_MODE ScanMode;       //!< 1-Int32erlaced, 0-progressive
         public UInt32 Pclk;             //!< pixel clock in 10 kHz
 
         //other timing related extras
-        NV_TIMINGEXT Etc;
+        NV_TIMING_EXTRA Extra;
 
         public override bool Equals(object obj) => obj is NV_TIMING other && this.Equals(other);
 
@@ -893,13 +936,13 @@ namespace DisplayMagicianShared.NVIDIA
            VSyncWidth == other.VSyncWidth &&
            VTotal == other.VTotal &&
            VSyncPol == other.VSyncPol &&
-           Interlaced == other.Interlaced &&
+           ScanMode == other.ScanMode &&
            Pclk == other.Pclk &&
-           Etc.Equals(other.Etc);
+           Extra.Equals(other.Extra);
 
         public override Int32 GetHashCode()
         {
-            return (HVisible, HBorder, HFrontPorch, HSyncWidth, HTotal, HSyncPol, VVisible, VBorder, VFrontPorch, VSyncWidth, VTotal, VSyncPol, Interlaced, Pclk, Etc).GetHashCode();
+            return (HVisible, HBorder, HFrontPorch, HSyncWidth, HTotal, HSyncPol, VVisible, VBorder, VFrontPorch, VSyncWidth, VTotal, VSyncPol, ScanMode, Pclk, Extra).GetHashCode();
         }
         public static bool operator ==(NV_TIMING lhs, NV_TIMING rhs) => lhs.Equals(rhs);
 
@@ -984,6 +1027,14 @@ namespace DisplayMagicianShared.NVIDIA
         public float Y;    //!<  y-coordinate of the viewport top-left point
         public float W;    //!<  Width of the viewport
         public float H;    //!<  Height of the viewport
+
+        public NV_VIEWPORTF(float myX, float myY, float myW, float myH) : this()
+        {
+            X = myX;
+            Y = myY;
+            W = myW;
+            H = myH;
+        }
 
         public override bool Equals(object obj) => obj is NV_VIEWPORTF other && this.Equals(other);
 
@@ -1964,6 +2015,45 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator !=(NV_COLOR_DATA_V5 lhs, NV_COLOR_DATA_V5 rhs) => !(lhs == rhs);
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_CUSTOM_DISPLAY_V1 : IEquatable<NV_CUSTOM_DISPLAY_V1>
+    {
+        public UInt32 Version; //!< Version of this structure
+        public UInt32 Width; //!< Source surface(source mode) width
+        public UInt32 Height;            //!< Source surface(source mode) height
+        public UInt32 Depth;             //!< Source surface color depth."0" means all 8/16/32bpp
+        public NV_FORMAT ColorFormat;       //!< Color format (optional)
+        public NV_VIEWPORTF SourcePartition;      //!< For multimon support, should be set to (0,0,1.0,1.0) for now.
+        public float XRatio;            //!< Horizontal scaling ratio
+        public float YRatio;            //!< Vertical scaling ratio
+        public NV_TIMING Timing;            //!< Timing used to program TMDS/DAC/LVDS/HDMI/TVEncoder, etc.
+        public UInt32 Flags; //!< If set to 1, it means a hardware modeset without OS update
+
+        //     Gets a boolean value indicating that a hardware mode-set without OS update should be performed.
+        public bool IsHardwareModeSetOnly => Flags.GetBit(0);
+
+        public override bool Equals(object obj) => obj is NV_CUSTOM_DISPLAY_V1 other && this.Equals(other);
+        public bool Equals(NV_CUSTOM_DISPLAY_V1 other)
+        => Version == other.Version &&
+           Width == other.Width &&
+           Height == other.Height &&
+           Depth == other.Depth &&
+           ColorFormat == other.ColorFormat &&
+           SourcePartition == other.SourcePartition &&
+            XRatio == other.XRatio &&
+            YRatio == other.YRatio &&
+            Timing == other.Timing &&
+            Flags == other.Flags;
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, Width, Height, Depth, ColorFormat, SourcePartition, XRatio, YRatio, Timing, Flags).GetHashCode();
+        }
+        public static bool operator ==(NV_CUSTOM_DISPLAY_V1 lhs, NV_CUSTOM_DISPLAY_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_CUSTOM_DISPLAY_V1 lhs, NV_CUSTOM_DISPLAY_V1 rhs) => !(lhs == rhs);
+    }
+
     // ==================================
     // NVImport Class
     // ==================================
@@ -2044,7 +2134,8 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_EDID_V3_VER = MAKE_NVAPI_VERSION<NV_EDID_V3>(3);
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V1>(1);
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2>(2);
-
+        public static UInt32 NV_CUSTOM_DISPLAY_V1_VER = MAKE_NVAPI_VERSION<NV_CUSTOM_DISPLAY_V1>(1);
+        
 
         #region Internal Constant
         [DllImport("nvapi64.dll", EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
@@ -2181,6 +2272,7 @@ namespace DisplayMagicianShared.NVIDIA
                 /*GetDelegate(NvId_DISP_GetDisplayConfig, out DISP_GetDisplayConfigInternal);
                 GetDelegate(NvId_DISP_GetDisplayConfig, out DISP_GetDisplayConfigInternalNull); // null version of the submission*/
                 GetDelegate(NvId_DISP_GetDisplayIdByDisplayName, out DISP_GetDisplayIdByDisplayNameInternal);
+                GetDelegate(NvId_DISP_EnumCustomDisplay, out Disp_EnumCustomDisplayInternal);
 
                 // GPUs
                 GetDelegate(NvId_EnumPhysicalGPUs, out EnumPhysicalGPUsInternal);
@@ -4129,6 +4221,28 @@ namespace DisplayMagicianShared.NVIDIA
             NVAPI_STATUS status;
             colorData.Version = NVImport.NV_COLOR_DATA_V5_VER;
             if (Disp_ColorControlInternal != null) { status = Disp_ColorControlInternal(displayId, ref colorData); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        //NVAPI_INTERFACE NvAPI_DISP_EnumCustomDisplay(__in NvU32 displayId, __inout NV_HDR_CAPABILITIES *pHdrCapabilities);
+        private delegate NVAPI_STATUS Disp_EnumCustomDisplayDelegate(
+            [In] UInt32 displayId,
+            [In] UInt32 index,
+            [In][Out] ref NV_CUSTOM_DISPLAY_V1 pCustDisp);
+        private static readonly Disp_EnumCustomDisplayDelegate Disp_EnumCustomDisplayInternal;
+        /// <summary>
+        //!  This API gets High Dynamic Range (HDR) capabilities of the display.
+        /// <param name="displayId"></param>
+        /// <param name="pHdrCapabilities"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DISP_EnumCustomDisplay(UInt32 displayId, UInt32 index, ref NV_CUSTOM_DISPLAY_V1 pCustDisp)
+        {
+            NVAPI_STATUS status;
+            pCustDisp.Version = NVImport.NV_CUSTOM_DISPLAY_V1_VER;
+            pCustDisp.SourcePartition = new NV_VIEWPORTF(0,0,1,1);
+            if (Disp_EnumCustomDisplayInternal != null) { status = Disp_EnumCustomDisplayInternal(displayId, index, ref pCustDisp); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;

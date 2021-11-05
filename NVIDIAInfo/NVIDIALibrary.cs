@@ -809,6 +809,55 @@ namespace DisplayMagicianShared.NVIDIA
                             {
                                 SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting HDR color settings! NvAPI_Disp_HdrColorControl() returned error code {NVStatus}. It's most likely that your monitor {displayIds[displayIndex].DisplayId} doesn't support HDR.");
                             }
+
+                            // Now we get the Custom Display settings of the display (if there are any)
+                            for (UInt32 d = 0; d < UInt32.MaxValue; d++)
+                            {
+                                NV_CUSTOM_DISPLAY_V1 customDisplay = new NV_CUSTOM_DISPLAY_V1();
+                                NVStatus = NVImport.NvAPI_DISP_EnumCustomDisplay(displayIds[displayIndex].DisplayId, d, ref customDisplay);
+                                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                                {
+                                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_EnumCustomDisplay returned OK. Custom Display settings retrieved.");
+                                    //allHdrColorData.Add(displayIds[displayIndex].DisplayId, hdrColorData);
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_END_ENUMERATION)
+                                {
+                                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: We've reached the end of the list of Custom Displays. Breaking the polling loop.");
+                                    break;
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The input monitor is either not connected or is not a DP or HDMI panel. NvAPI_DISP_EnumCustomDisplay() returned error code {NVStatus}");
+                                    break;
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_DISP_EnumCustomDisplay() returned error code {NVStatus}");
+                                    break;
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_DISP_EnumCustomDisplay() returned error code {NVStatus}");
+                                    break;
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The supplied struct is incompatible. NvAPI_DISP_EnumCustomDisplay() returned error code {NVStatus}");
+                                    break;
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_DISP_EnumCustomDisplay() returned error code {NVStatus}.");
+                                    break;
+                                }
+                                else
+                                {
+                                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while enumerating the custom displays! NvAPI_DISP_EnumCustomDisplay() returned error code {NVStatus}.");
+                                    break;
+                                }
+                            }
+                            
+
                         }
 
                         // Store the HDR information
