@@ -113,6 +113,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NVIDIA_HDR_CONFIG HdrConfig;
         public NVIDIA_COLOR_CONFIG ColorConfig;
         public Dictionary<UInt32, NVIDIA_CUSTOM_DISPLAY_CONFIG> CustomDisplays;
+        public List<NV_DISPLAYCONFIG_PATH_INFO_V2> DisplayConfigs;
         // Note: We purposely have left out the DisplayNames from the Equals as it's order keeps changing after each reboot and after each profile swap
         // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
         // generating the profile icon.
@@ -275,6 +276,7 @@ namespace DisplayMagicianShared.NVIDIA
             myDefaultConfig.HdrConfig.HdrColorData = new Dictionary<uint, NV_HDR_COLOR_DATA_V2>();
             myDefaultConfig.ColorConfig.ColorData = new Dictionary<uint, NV_COLOR_DATA_V5>();
             myDefaultConfig.CustomDisplays = new Dictionary<uint, NVIDIA_CUSTOM_DISPLAY_CONFIG>();
+            myDefaultConfig.DisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
             myDefaultConfig.DisplayNames = new Dictionary<uint, string>();
             myDefaultConfig.DisplayIdentifiers = new List<string>();
 
@@ -948,6 +950,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                             // Now we get the Custom Display settings of the display (if there are any)
                             NVIDIA_CUSTOM_DISPLAY_CONFIG customDisplayConfig = new NVIDIA_CUSTOM_DISPLAY_CONFIG();
+                            customDisplayConfig.CustomDisplay = new List<NV_CUSTOM_DISPLAY_V1>();
                             for (UInt32 d = 0; d < UInt32.MaxValue; d++)
                             {
                                 NV_CUSTOM_DISPLAY_V1 customDisplay = new NV_CUSTOM_DISPLAY_V1();
