@@ -88,7 +88,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator !=(NVIDIA_COLOR_CONFIG lhs, NVIDIA_COLOR_CONFIG rhs) => !(lhs == rhs);
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    /*[StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_CUSTOM_DISPLAY_CONFIG : IEquatable<NVIDIA_CUSTOM_DISPLAY_CONFIG>
     {
         public List<NV_CUSTOM_DISPLAY_V1> CustomDisplay;
@@ -104,7 +104,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NVIDIA_CUSTOM_DISPLAY_CONFIG lhs, NVIDIA_CUSTOM_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NVIDIA_CUSTOM_DISPLAY_CONFIG lhs, NVIDIA_CUSTOM_DISPLAY_CONFIG rhs) => !(lhs == rhs);
-    }
+    }*/
 
     [StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_DISPLAY_CONFIG : IEquatable<NVIDIA_DISPLAY_CONFIG>
@@ -112,7 +112,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NVIDIA_MOSAIC_CONFIG MosaicConfig;
         public NVIDIA_HDR_CONFIG HdrConfig;
         public NVIDIA_COLOR_CONFIG ColorConfig;
-        public Dictionary<UInt32, NVIDIA_CUSTOM_DISPLAY_CONFIG> CustomDisplays;
+        public Dictionary<UInt32, List<NV_CUSTOM_DISPLAY_V1>> CustomDisplays;
         public List<NV_DISPLAYCONFIG_PATH_INFO_V2> DisplayConfigs;
         // Note: We purposely have left out the DisplayNames from the Equals as it's order keeps changing after each reboot and after each profile swap
         // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
@@ -127,11 +127,12 @@ namespace DisplayMagicianShared.NVIDIA
            HdrConfig.Equals(other.HdrConfig) &&
            ColorConfig.Equals(other.ColorConfig) &&
            CustomDisplays.SequenceEqual(other.CustomDisplays) &&
+           DisplayConfigs.SequenceEqual(other.DisplayConfigs) &&
            DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers);
 
         public override int GetHashCode()
         {
-            return (MosaicConfig, HdrConfig, CustomDisplays, DisplayIdentifiers, DisplayNames).GetHashCode();
+            return (MosaicConfig, HdrConfig, CustomDisplays, DisplayConfigs, DisplayIdentifiers, DisplayNames).GetHashCode();
         }
         public static bool operator ==(NVIDIA_DISPLAY_CONFIG lhs, NVIDIA_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
 
@@ -275,7 +276,7 @@ namespace DisplayMagicianShared.NVIDIA
             myDefaultConfig.HdrConfig.HdrCapabilities = new Dictionary<uint, NV_HDR_CAPABILITIES_V2>();
             myDefaultConfig.HdrConfig.HdrColorData = new Dictionary<uint, NV_HDR_COLOR_DATA_V2>();
             myDefaultConfig.ColorConfig.ColorData = new Dictionary<uint, NV_COLOR_DATA_V5>();
-            myDefaultConfig.CustomDisplays = new Dictionary<uint, NVIDIA_CUSTOM_DISPLAY_CONFIG>();
+            myDefaultConfig.CustomDisplays = new Dictionary<uint, List<NV_CUSTOM_DISPLAY_V1>>();
             myDefaultConfig.DisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
             myDefaultConfig.DisplayNames = new Dictionary<uint, string>();
             myDefaultConfig.DisplayIdentifiers = new List<string>();
@@ -558,7 +559,8 @@ namespace DisplayMagicianShared.NVIDIA
                 //!             Third  Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect
                 //!                               to number of targetInfoCount(from Second Pass).
                 //! SUPPORTED OS:  Windows 7 and higher
-                // First pass: Figure out how many pathInfo objects there are                    
+                // First pass: Figure out how many pathInfo objects there are
+                List<NV_DISPLAYCONFIG_PATH_INFO_V2> allDisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
                 uint pathInfoCount = 0;
                 NVStatus = NVImport.NvAPI_DISP_GetDisplayConfig(ref pathInfoCount);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
@@ -768,7 +770,7 @@ namespace DisplayMagicianShared.NVIDIA
                         Dictionary<UInt32, NV_HDR_CAPABILITIES_V2> allHdrCapabilities = new Dictionary<UInt32, NV_HDR_CAPABILITIES_V2>();
                         Dictionary<UInt32, NV_HDR_COLOR_DATA_V2> allHdrColorData = new Dictionary<UInt32, NV_HDR_COLOR_DATA_V2>();
                         Dictionary<UInt32, NV_COLOR_DATA_V5> allColorData = new Dictionary<UInt32, NV_COLOR_DATA_V5>();
-                        Dictionary<UInt32, NVIDIA_CUSTOM_DISPLAY_CONFIG> allCustomDisplays = new Dictionary<UInt32, NVIDIA_CUSTOM_DISPLAY_CONFIG>();
+                        Dictionary<UInt32, List<NV_CUSTOM_DISPLAY_V1>> allCustomDisplays = new Dictionary<UInt32, List<NV_CUSTOM_DISPLAY_V1>>();
                         for (int displayIndex = 0; displayIndex < displayCount; displayIndex++)
                         {
                             if (allDisplays)
@@ -948,9 +950,12 @@ namespace DisplayMagicianShared.NVIDIA
                                 SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting HDR color settings! NvAPI_Disp_HdrColorControl() returned error code {NVStatus}. It's most likely that your monitor {displayIds[displayIndex].DisplayId} doesn't support HDR.");
                             }
 
-                            // Now we get the Custom Display settings of the display (if there are any)
-                            NVIDIA_CUSTOM_DISPLAY_CONFIG customDisplayConfig = new NVIDIA_CUSTOM_DISPLAY_CONFIG();
-                            customDisplayConfig.CustomDisplay = new List<NV_CUSTOM_DISPLAY_V1>();
+
+                            // TEMPORARILY DISABLING THE CUSTOM DISPLAY CODE FOR NOW, AS NOT SURE WHAT NVIDIA SETTINGS IT TRACKS
+                            // KEEPING IT IN CASE I NEED IT FOR LATER. I ORIGINALLY THOUGHT THAT IS WHERE INTEGER SCALING SETTINGS LIVED< BUT WAS WRONG
+                            /*// Now we get the Custom Display settings of the display (if there are any)
+                            //NVIDIA_CUSTOM_DISPLAY_CONFIG customDisplayConfig = new NVIDIA_CUSTOM_DISPLAY_CONFIG();
+                            List<NV_CUSTOM_DISPLAY_V1> customDisplayConfig = new List<NV_CUSTOM_DISPLAY_V1>();
                             for (UInt32 d = 0; d < UInt32.MaxValue; d++)
                             {
                                 NV_CUSTOM_DISPLAY_V1 customDisplay = new NV_CUSTOM_DISPLAY_V1();
@@ -958,13 +963,11 @@ namespace DisplayMagicianShared.NVIDIA
                                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                                 {
                                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_EnumCustomDisplay returned OK. Custom Display settings retrieved.");
-                                    //allHdrColorData.Add(displayIds[displayIndex].DisplayId, hdrColorData);
-                                    customDisplayConfig.CustomDisplay.Add(customDisplay);
+                                    customDisplayConfig.Add(customDisplay);
                                 }
                                 else if (NVStatus == NVAPI_STATUS.NVAPI_END_ENUMERATION)
                                 {
                                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: We've reached the end of the list of Custom Displays. Breaking the polling loop.");
-                                    customDisplayConfig.CustomDisplay.Add(customDisplay);
                                     break;
                                 }
                                 else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
@@ -999,8 +1002,10 @@ namespace DisplayMagicianShared.NVIDIA
                                 }
 
                             }
-                            allCustomDisplays.Add(displayIds[displayIndex].DisplayId, customDisplayConfig);
-
+                            if (customDisplayConfig.Count > 0)
+                            {
+                                allCustomDisplays.Add(displayIds[displayIndex].DisplayId, customDisplayConfig);
+                            }*/                           
                         }
 
                         // Store the HDR information
@@ -1009,6 +1014,7 @@ namespace DisplayMagicianShared.NVIDIA
                         myDisplayConfig.HdrConfig.HdrColorData = allHdrColorData;
                         myDisplayConfig.ColorConfig.ColorData = allColorData;
                         myDisplayConfig.CustomDisplays = allCustomDisplays;
+                        myDisplayConfig.DisplayConfigs = allDisplayConfigs;
                     }
 
                 }

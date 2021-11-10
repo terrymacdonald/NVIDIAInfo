@@ -888,7 +888,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
 
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
     public struct NV_TIMING_EXTRA : IEquatable<NV_TIMING_EXTRA>
     {
         public UInt32 Flags;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
@@ -898,6 +898,7 @@ namespace DisplayMagicianShared.NVIDIA
         public ushort HorizontalAspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
         public ushort HorizontalPixelRepetition;           //!< Bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
         public UInt32 TimingStandard;        //!< Timing standard
+        //[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
         public string Name;      //!< Timing name
 
@@ -944,7 +945,7 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 Pclk;             //!< pixel clock in 10 kHz
 
         //other timing related extras
-        NV_TIMING_EXTRA Extra;
+        public NV_TIMING_EXTRA Extra;
 
         public override bool Equals(object obj) => obj is NV_TIMING other && this.Equals(other);
 

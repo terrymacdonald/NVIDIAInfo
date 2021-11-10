@@ -318,6 +318,7 @@ namespace NVIDIAInfo
                 {
                     Console.WriteLine($"NVIDIAInfo/loadFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/loadFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    return;
                 }
 
                 // Get references to the libraries used
@@ -425,6 +426,7 @@ namespace NVIDIAInfo
                 {
                     Console.WriteLine($"NVIDIAInfo/possibleFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/possibleFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    return;
                 }
 
                 if (nvidiaLibrary.IsPossibleConfig(myDisplayConfig.NVIDIAConfig) && winLibrary.IsPossibleConfig(myDisplayConfig.WindowsConfig))
@@ -495,6 +497,7 @@ namespace NVIDIAInfo
                 {
                     Console.WriteLine($"NVIDIAInfo/equalFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    return;
                 }
                 try
                 {
@@ -513,6 +516,7 @@ namespace NVIDIAInfo
                 {
                     Console.WriteLine($"NVIDIAInfo/equalFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    return;
                 }
 
                 if (displayConfig.WindowsConfig.Equals(otherDisplayConfig.WindowsConfig) && displayConfig.NVIDIAConfig.Equals(otherDisplayConfig.NVIDIAConfig))
@@ -569,9 +573,10 @@ namespace NVIDIAInfo
                 {
                     Console.WriteLine($"NVIDIAInfo/equalFromFile: ERROR - Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
+                    return;
                 }
                 if (displayConfig.WindowsConfig.Equals(WinLibrary.GetLibrary().GetActiveConfig()) && displayConfig.NVIDIAConfig.Equals(NVIDIALibrary.GetLibrary().GetActiveConfig()))
-                {
+                { 
                     SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: The NVIDIA display settings in {filename} and the currently active display configuration are equal.");
                     Console.WriteLine($"The NVIDIA display settings in {filename} and the currently active display configuration are equal.");
                 }
