@@ -560,10 +560,10 @@ namespace DisplayMagicianShared.NVIDIA
                 //!                               to number of targetInfoCount(from Second Pass).
                 //! SUPPORTED OS:  Windows 7 and higher
                 // First pass: Figure out how many pathInfo objects there are
-                List<NV_DISPLAYCONFIG_PATH_INFO_V2> allDisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
+                /*List<NV_DISPLAYCONFIG_PATH_INFO_V2> allDisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
                 uint pathInfoCount = 0;
                 NVStatus = NVImport.NvAPI_DISP_GetDisplayConfig(ref pathInfoCount);
-                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK && pathInfoCount > 0)
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_GetDisplayConfig returned OK on first pass. We know we have {pathInfoCount} pathInfo objects to get");
                     // Second pass: Now get the number of targetInfoCount for each returned pathInfoCount object
@@ -637,9 +637,13 @@ namespace DisplayMagicianShared.NVIDIA
                     }                    
 
                 }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_OK && pathInfoCount == 0)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The call was successful but no display paths were found. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on first pass");
+                }
                 else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
                 {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on first pass");
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more arguments passed in are invalid. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on first pass");
                 }
                 else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
                 {
@@ -660,7 +664,7 @@ namespace DisplayMagicianShared.NVIDIA
                 else
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting NVIDIA Display Config! NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on first pass");
-                }
+                }*/
 
                 // We want to get the primary monitor
                 NVStatus = NVImport.NvAPI_DISP_GetGDIPrimaryDisplayId(out UInt32 primaryDisplayId);

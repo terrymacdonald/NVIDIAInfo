@@ -1209,23 +1209,23 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator !=(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 rhs) => !(lhs == rhs);
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack =8)]
     public struct NV_DISPLAYCONFIG_PATH_INFO_V2 : IEquatable<NV_DISPLAYCONFIG_PATH_INFO_V2> // Version is 2
     {
         public UInt32 Version;
         public UInt32 SourceId;               //!< Identifies sourceId used by Windows CCD. This can be optionally set.
 
         public UInt32 TargetInfoCount;            //!< Number of elements in targetInfo array
-        [MarshalAs(UnmanagedType.ByValArray)]
-        public NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[] TargetInfo;
         //[MarshalAs(UnmanagedType.ByValArray)]
-        public NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 SourceModeInfo;             //!< May be NULL if mode info is not important
+        public IntPtr TargetInfo;
+        public IntPtr SourceModeInfo;             //!< May be NULL if mode info is not important
+        //public IntPtr SourceModeInfo;             //!< May be NULL if mode info is not important
         //public UInt32 IsNonNVIDIAAdapter : 1;     //!< True for non-NVIDIA adapter.
         //public UInt32 reserved : 31;              //!< Must be 0
         public UInt32 Flags;
         //!< Used by Non-NVIDIA adapter for pointer to OS Adapter of LUID
         //!< type, type casted to void *.
-        //public NV_LUID OSAdapterID;
+        public IntPtr OSAdapterID;
 
         public bool IsNonNVIDIAAdapter => Flags.GetBit(0); //!< if bit is set then this path uses a non-nvidia adapter
 
@@ -3447,18 +3447,29 @@ namespace DisplayMagicianShared.NVIDIA
                 // Prepare the struct for second pass duties
                 for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
                 {
+                    NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceMode = new NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1();
+                    IntPtr sourceModeBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)));
+                    Marshal.StructureToPtr(sourceMode, sourceModeBuffer, true);
                     PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_VER;
-                    PathInfos[x].SourceModeInfo = new NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1();
+                    PathInfos[x].SourceModeInfo = sourceModeBuffer;
+                    /*PathInfos[x].SourceModeInfo.Resolution = new NV_RESOLUTION();
+                    PathInfos[x].SourceModeInfo.Position = new NV_POSITION();
+                    //PathInfos[x].SourceModeInfo = null;
                     PathInfos[x].TargetInfoCount = 0;
-                    PathInfos[x].TargetInfo = null;
+                    PathInfos[x].TargetInfo = IntPtr.Zero;
                     //!< This field is reserved. There is ongoing debate if we need this field.
                     //!< Identifies sourceIds used by Windows. If all sourceIds are 0,
                     //!< these will be computed automatically.
                     PathInfos[x].SourceId = 0;
-                    //PathInfos[x].OSAdapterID = new NV_LUID();
+                    PathInfos[x].Flags = 0;
+                    PathInfos[x].OSAdapterID = new NV_LUID();
+                    //PathInfos[x].OSAdapterID = IntPtr.Zero;*/
                 }
                 // Initialize unmanged memory to hold the unmanaged array of structs
-                pathInfoBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2)) * (int)PathInfoCount);
+                int sizeOfOneStruct = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2));
+                int sizeOfAllStructs = sizeOfOneStruct * (int)PathInfoCount;
+                //int sizeOfOneStruct = Marshal.SizeOf(PathInfos);
+                pathInfoBuffer = Marshal.AllocCoTaskMem(sizeOfAllStructs);
                 // Also set another memory pointer to the same place so that we can do the memory copying item by item
                 // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
                 currentPathInfoBuffer = pathInfoBuffer;
