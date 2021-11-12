@@ -3479,7 +3479,7 @@ namespace DisplayMagicianShared.NVIDIA
                     // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
                     Marshal.StructureToPtr(PathInfos[x], currentPathInfoBuffer, true);
                     // advance the buffer forwards to the next object
-                    currentPathInfoBuffer = (IntPtr)((long)currentPathInfoBuffer + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)) );
+                    currentPathInfoBuffer = (IntPtr)((long)currentPathInfoBuffer.ToInt64() + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)) );
                 }
             }
 
