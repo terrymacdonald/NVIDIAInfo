@@ -1021,7 +1021,7 @@ namespace DisplayMagicianShared.Windows
             // Test whether a specified display configuration is supported on the computer                    
             uint myPathsCount = (uint)displayConfig.DisplayConfigPaths.Length;
             uint myModesCount = (uint)displayConfig.DisplayConfigModes.Length;
-            WIN32STATUS err = CCDImport.SetDisplayConfig(myPathsCount, displayConfig.DisplayConfigPaths, myModesCount, displayConfig.DisplayConfigModes, SDC.DISPLAYMAGICIAN_VALIDATE);
+            WIN32STATUS err = CCDImport.SetDisplayConfig(myPathsCount, displayConfig.DisplayConfigPaths, myModesCount, displayConfig.DisplayConfigModes, SDC.DISPLAYMAGICIAN_VALIDATE | SDC.SDC_FORCE_MODE_ENUMERATION);
             if (err == WIN32STATUS.ERROR_SUCCESS)
             {
                 SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Successfully validated that the display configuration supplied would work!");
