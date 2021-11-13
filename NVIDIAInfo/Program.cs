@@ -541,7 +541,6 @@ namespace NVIDIAInfo
         static void equalFromFiles(string filename)
         {
             string json = "";
-            string otherJson = "";
             NVIDIAINFO_DISPLAY_CONFIG displayConfig = new NVIDIAINFO_DISPLAY_CONFIG();
             SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Attempting to compare the display configuration from {filename} and the currently active display configuration to see if they are equal.");
             try

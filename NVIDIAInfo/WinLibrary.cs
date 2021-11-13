@@ -2,12 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Win32.SafeHandles;
-using DisplayMagicianShared;
-using System.ComponentModel;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 
 namespace DisplayMagicianShared.Windows
 {
@@ -644,8 +640,8 @@ namespace DisplayMagicianShared.Windows
 
             // Now cycle through the paths and grab the HDR state information
             // and map the adapter name to adapter id
-            var hdrInfos = new ADVANCED_HDR_INFO_PER_PATH[pathCount];
-            int hdrInfoCount = 0;
+            //var hdrInfos = new ADVANCED_HDR_INFO_PER_PATH[pathCount];
+            //int hdrInfoCount = 0;
             foreach (var path in paths)
             {
                 // get display source name
@@ -704,9 +700,6 @@ namespace DisplayMagicianShared.Windows
             stringToReturn += $"\n";
 
             // Get the size of the largest Active Paths and Modes arrays
-            int pathCount = 0;
-            int modeCount = 0;
-
             foreach (var path in displayConfig.DisplayConfigPaths)
             {
                 stringToReturn += $"----++++==== Path ====++++----\n";
