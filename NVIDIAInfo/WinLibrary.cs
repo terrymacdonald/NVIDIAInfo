@@ -1021,8 +1021,43 @@ namespace DisplayMagicianShared.Windows
             }
             else if (err == WIN32STATUS.ERROR_INVALID_PARAMETER)
             {
-                SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: The combination of parameters and flags specified is invalid. Display configuration not applied.");
-                return false;
+                SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: The combination of parameters and flags specified is invalid. Display configuration not applied. So trying again as that works on some computers.");
+                // Try it again, because in some systems it doesn't work at the first try
+                err = CCDImport.SetDisplayConfig(myPathsCount, displayConfig.DisplayConfigPaths, myModesCount, displayConfig.DisplayConfigModes, SDC.DISPLAYMAGICIAN_SET);
+                if (err == WIN32STATUS.ERROR_SUCCESS)
+                {
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Retry. Successfully set the display configuration to the settings supplied!");
+                }
+                else if (err == WIN32STATUS.ERROR_INVALID_PARAMETER)
+                {
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Retry. The combination of parameters and flags specified is invalid. Display configuration not applied.");
+                    return false;
+                }
+                else if (err == WIN32STATUS.ERROR_NOT_SUPPORTED)
+                {
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Retry. The system is not running a graphics driver that was written according to the Windows Display Driver Model (WDDM). The function is only supported on a system with a WDDM driver running. Display configuration not applied.");
+                    return false;
+                }
+                else if (err == WIN32STATUS.ERROR_ACCESS_DENIED)
+                {
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Retry. The caller does not have access to the console session. This error occurs if the calling process does not have access to the current desktop or is running on a remote session. Display configuration not applied.");
+                    return false;
+                }
+                else if (err == WIN32STATUS.ERROR_GEN_FAILURE)
+                {
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Retry. An unspecified error occurred. Display configuration not applied.");
+                    return false;
+                }
+                else if (err == WIN32STATUS.ERROR_BAD_CONFIGURATION)
+                {
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Retry. The function could not find a workable solution for the source and target modes that the caller did not specify. Display configuration not applied.");
+                    return false;
+                }
+                else
+                {
+                    SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: Retry. SetDisplayConfig couldn't set the display configuration using the settings supplied. Display configuration not applied.");
+                    return false;
+                }
             }
             else if (err == WIN32STATUS.ERROR_NOT_SUPPORTED)
             {
