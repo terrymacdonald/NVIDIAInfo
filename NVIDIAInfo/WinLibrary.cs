@@ -524,7 +524,7 @@ namespace DisplayMagicianShared.Windows
                     // Patch the cloned ids with a real working one!
                     modes[i].Id = targetIdMap[modes[i].Id];
                 }
-            }
+            }        
 
             // Store the active paths and modes in our display config object
             windowsDisplayConfig.DisplayConfigPaths = paths;

@@ -971,6 +971,19 @@ namespace DisplayMagicianShared.Windows
         public int Right;
         public int Bottom;
 
+        public RECTL(int left, int top, int right, int bottom)
+        {
+            this.Left = left;
+            this.Top = top;
+            this.Right = right;
+            this.Bottom = bottom;
+        }
+
+        public static RECTL FromXYWH(int x, int y, int width, int height)
+        {
+            return new RECTL(x, y, x + width, y + height);
+        }
+
         public override bool Equals(object obj) => obj is RECTL other && this.Equals(other);
         public bool Equals(RECTL other)
             => Left == other.Left &&
