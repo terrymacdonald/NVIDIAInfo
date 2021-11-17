@@ -164,6 +164,7 @@ namespace DisplayMagicianShared.Windows
         SDC_FORCE_MODE_ENUMERATION = 0x00001000,
         SDC_ALLOW_PATH_ORDER_CHANGES = 0x00002000,
         SDC_VIRTUAL_MODE_AWARE = 0x00008000,
+        SDC_VIRTUAL_REFRESH_RATE_AWARE = 0x00020000,
 
         // Special common combinations (only set in this library)
         TEST_IF_VALID_DISPLAYCONFIG = (SDC_VALIDATE | SDC_USE_SUPPLIED_DISPLAY_CONFIG),

@@ -1486,7 +1486,8 @@ namespace DisplayMagicianShared.NVIDIA
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_Mosaic_SetDisplayGrids returned OK.");
-                            //Task.Delay(500);
+                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 1 second to let the Mosaic display change take place before continuing");
+                            System.Threading.Thread.Sleep(1000);
                         }
                         else if (NVStatus == NVAPI_STATUS.NVAPI_NO_ACTIVE_SLI_TOPOLOGY)
                         {
@@ -1541,7 +1542,8 @@ namespace DisplayMagicianShared.NVIDIA
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_Mosaic_EnableCurrentTopo returned OK. Previously set Mosiac config re-enabled.");
-                        //Task.Delay(500);
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 1 second to let the Mosaic display change take place before continuing");
+                        System.Threading.Thread.Sleep(1000);
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
                     {
