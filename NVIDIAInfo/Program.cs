@@ -53,11 +53,11 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.2.5e");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.3.0");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v1.2.5e");
-            Console.WriteLine($"==================");
+            Console.WriteLine($"\nNVIDIAInfo v1.3.0");
+            Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald 2021\n");
 
             // First check that we have an NVIDIA Video Card in this PC
