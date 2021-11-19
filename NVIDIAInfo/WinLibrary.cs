@@ -1141,7 +1141,7 @@ namespace DisplayMagicianShared.Windows
                 {
                     SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Advanced Color Info gathered from Display {myHDRstate.Id}");
 
-                    if (myHDRstate.AdvancedColorInfo.AdvancedColorEnabled)
+                    if (myHDRstate.AdvancedColorInfo.AdvancedColorEnabled != colorInfo.AdvancedColorEnabled)
                     {
                         SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: HDR is available for use on Display {myHDRstate.Id}, and we want it set to {myHDRstate.AdvancedColorInfo.BitsPerColorChannel} but is currently {colorInfo.AdvancedColorEnabled}.");
 
