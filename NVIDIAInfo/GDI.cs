@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace DisplayMagicianShared.Windows
 {
@@ -443,7 +438,7 @@ namespace DisplayMagicianShared.Windows
                 DeviceString == other.DeviceString &&
                 //StateFlags == other.StateFlags &&
                 DeviceId == other.DeviceId;
-                //DeviceKey == other.DeviceKey;
+        //DeviceKey == other.DeviceKey;
 
         public override int GetHashCode()
         {
@@ -744,7 +739,7 @@ namespace DisplayMagicianShared.Windows
 
             // Query the system for an approved size and position.
             SHAppBarMessage(ABM_MESSAGE.ABM_GETTASKBARPOS, ref abd);
-            
+
             return abd;
         }
 
