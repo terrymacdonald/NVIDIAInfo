@@ -53,10 +53,10 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.3.1");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.3.2");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v1.3.1");
+            Console.WriteLine($"\nNVIDIAInfo v1.3.2");
             Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald 2021\n");
 
@@ -336,6 +336,10 @@ namespace NVIDIAInfo
                         if (itWorkedforNVIDIA) 
                         {
                             SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: The NVIDIA display settings within {filename} were successfully applied.");
+                            // Lets update the screens so Windows knows whats happening
+                            // NVIDIA makes such large changes to the available screens in windows, we need to do this.
+                            winLibrary.UpdateActiveConfig();
+
                             // Then let's try to also apply the windows changes
                             // Note: we are unable to check if the Windows CCD display config is possible, as it won't match if either the current display config is a Mosaic config,
                             // or if the display config we want to change to is a Mosaic config. So we just have to assume that it will work!
