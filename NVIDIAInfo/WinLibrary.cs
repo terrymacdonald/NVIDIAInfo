@@ -1642,7 +1642,7 @@ namespace DisplayMagicianShared.Windows
             // Get the size of the largest Active Paths and Modes arrays
             int pathCount = 0;
             int modeCount = 0;
-            WIN32STATUS err = CCDImport.GetDisplayConfigBufferSizes(QDC.QDC_ONLY_ACTIVE_PATHS | QDC.QDC_INCLUDE_HMD, out pathCount, out modeCount);
+            WIN32STATUS err = CCDImport.GetDisplayConfigBufferSizes(QDC.QDC_ALL_PATHS | QDC.QDC_INCLUDE_HMD, out pathCount, out modeCount);
             if (err != WIN32STATUS.ERROR_SUCCESS)
             {
                 SharedLogger.logger.Error($"WinLibrary/GetCurrentPCIVideoCardVendors: ERROR - GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes");
@@ -1652,14 +1652,14 @@ namespace DisplayMagicianShared.Windows
             SharedLogger.logger.Trace($"WinLibrary/GetSomeDisplayIdentifiers: Getting the current Display Config path and mode arrays");
             var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
             var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
-            err = CCDImport.QueryDisplayConfig(QDC.QDC_ONLY_ACTIVE_PATHS | QDC.QDC_INCLUDE_HMD, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+            err = CCDImport.QueryDisplayConfig(QDC.QDC_ALL_PATHS | QDC.QDC_INCLUDE_HMD, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
             if (err == WIN32STATUS.ERROR_INSUFFICIENT_BUFFER)
             {
                 SharedLogger.logger.Warn($"WinLibrary/GetCurrentPCIVideoCardVendors: The displays were modified between GetDisplayConfigBufferSizes and QueryDisplayConfig so we need to get the buffer sizes again.");
                 SharedLogger.logger.Trace($"WinLibrary/GetCurrentPCIVideoCardVendors: Getting the size of the largest Active Paths and Modes arrays");
                 // Screen changed in between GetDisplayConfigBufferSizes and QueryDisplayConfig, so we need to get buffer sizes again
                 // as per https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-querydisplayconfig 
-                err = CCDImport.GetDisplayConfigBufferSizes(QDC.QDC_ONLY_ACTIVE_PATHS, out pathCount, out modeCount);
+                err = CCDImport.GetDisplayConfigBufferSizes(QDC.QDC_ALL_PATHS, out pathCount, out modeCount);
                 if (err != WIN32STATUS.ERROR_SUCCESS)
                 {
                     SharedLogger.logger.Error($"WinLibrary/GetCurrentPCIVideoCardVendors: ERROR - GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes again");
@@ -1668,7 +1668,7 @@ namespace DisplayMagicianShared.Windows
                 SharedLogger.logger.Trace($"WinLibrary/GetSomeDisplayIdentifiers: Getting the current Display Config path and mode arrays");
                 paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
                 modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
-                err = CCDImport.QueryDisplayConfig(QDC.QDC_ONLY_ACTIVE_PATHS | QDC.QDC_INCLUDE_HMD, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+                err = CCDImport.QueryDisplayConfig(QDC.QDC_ALL_PATHS | QDC.QDC_INCLUDE_HMD, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
                 if (err == WIN32STATUS.ERROR_INSUFFICIENT_BUFFER)
                 {
                     SharedLogger.logger.Error($"WinLibrary/GetCurrentPCIVideoCardVendors: ERROR - The displays were still modified between GetDisplayConfigBufferSizes and QueryDisplayConfig, even though we tried twice. Something is wrong.");
@@ -1688,12 +1688,12 @@ namespace DisplayMagicianShared.Windows
 
             foreach (var path in paths)
             {
-                if (path.TargetInfo.TargetAvailable == false)
+                /*if (path.TargetInfo.TargetAvailable == false)
                 {
                     // We want to skip this one cause it's not valid
                     SharedLogger.logger.Trace($"WinLibrary/GetCurrentPCIVideoCardVendors: Skipping path due to TargetAvailable not existing in display #{path.TargetInfo.Id}");
                     continue;
-                }
+                }*/
 
                 // get display adapter name
                 var adapterInfo = new DISPLAYCONFIG_ADAPTER_NAME();
