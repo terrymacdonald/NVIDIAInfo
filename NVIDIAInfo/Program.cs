@@ -234,6 +234,10 @@ namespace NVIDIAInfo
             Console.WriteLine($"\t'NVIDIAInfo save myfilename.cfg' will save your current display setting to the myfilename.cfg file.");
             Console.WriteLine($"\t'NVIDIAInfo load myfilename.cfg' will load and apply the display setting in the myfilename.cfg file.");
             Console.WriteLine($"\t'NVIDIAInfo possible myfilename.cfg' will test the display setting in the myfilename.cfg file to see\n\t\tif it is possible to use that display profile now.");
+            Console.WriteLine($"\t'NVIDIAInfo equal myfilename.cfg' will test if the display setting in the myfilename.cfg is equal to\n\t\tthe one in use.");
+            Console.WriteLine($"\t'NVIDIAInfo equal myfilename.cfg myother.cfg' will test if the display setting in the myfilename.cfg\n\t\tis equal to the one in myother.cfg.");
+            Console.WriteLine($"\t'NVIDIAInfo currentids' will display the display identifiers for all active displays.");
+            Console.WriteLine($"\t'NVIDIAInfo allids' will display the display identifiers for all displays that are active or can be \n\t\tmade active.");
             Console.WriteLine($"\nUse DisplayMagician to store display settings for each game you have. https://github.com/terrymacdonald/DisplayMagician\n");
         }
 
