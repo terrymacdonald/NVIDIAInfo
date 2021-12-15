@@ -1737,8 +1737,8 @@ namespace DisplayMagicianShared.Windows
                     {
                         SharedLogger.logger.Trace($"WinLibrary/GetCurrentPCIVideoCardVendors: The device is not a USB or PCI card, sp trying to see if it is a SuperDisplay device.");
                         string pattern2 = @"SuperDisplay#";
-                        Match match2 = Regex.Match(adapterInfo.AdapterDevicePath, pattern);
-                        if (match.Success)
+                        Match match2 = Regex.Match(adapterInfo.AdapterDevicePath, pattern2);
+                        if (match2.Success)
                         {
                             string pciType = "SuperDisplay";
                             string vendorId = "SuperDisplay";
