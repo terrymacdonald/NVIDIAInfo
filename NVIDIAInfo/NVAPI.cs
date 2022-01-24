@@ -412,7 +412,7 @@ namespace DisplayMagicianShared.NVIDIA
         Default = Positive
     }
 
-    public enum TIMING_HORIZONTAL_SYNC_POLARITY: byte
+    public enum TIMING_HORIZONTAL_SYNC_POLARITY : byte
     {
         /// <summary>
         ///     Positive horizontal synchronized polarity
@@ -1129,7 +1129,7 @@ namespace DisplayMagicianShared.NVIDIA
                                                 //public UInt32 isPreferredUnscaledTarget:1;
                                                 //public UInt32 reserved:27;
         public UInt32 Flags;
-                                      // TV format information
+        // TV format information
         public NV_GPU_CONNECTOR_TYPE ConnectorType;      //!< Specify connector type. For TV only, ignored if tvFormat == NV_DISPLAY_TV_FORMAT_NONE
         public NV_DISPLAY_TV_FORMAT TvFormat;       //!< (IN) to choose the last TV format set this value to NV_DISPLAY_TV_FORMAT_NONE
                                                     //!< In case of NvAPI_DISP_GetDisplayConfig(), this field will indicate the currently applied TV format;
@@ -1209,7 +1209,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator !=(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 rhs) => !(lhs == rhs);
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack =8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_INFO_V2 : IEquatable<NV_DISPLAYCONFIG_PATH_INFO_V2> // Version is 2
     {
         public UInt32 Version;
@@ -2187,7 +2187,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V1>(1);
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2>(2);
         public static UInt32 NV_CUSTOM_DISPLAY_V1_VER = MAKE_NVAPI_VERSION<NV_CUSTOM_DISPLAY_V1>(1);
-        
+
 
         #region Internal Constant
         [DllImport("nvapi64.dll", EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
@@ -3405,17 +3405,17 @@ namespace DisplayMagicianShared.NVIDIA
                 // Copy the supplied object for the third pass (when we have the pathInfoCount and the targetInfoCount for each pathInfo, but we want the details)
                 // Third Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect
                 //!                               to number of targetInfoCount(from Second Pass).
-                NV_DISPLAYCONFIG_PATH_INFO_V2[] passedPathInfo = PathInfos;                
+                NV_DISPLAYCONFIG_PATH_INFO_V2[] passedPathInfo = PathInfos;
                 PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2[PathInfoCount];
                 // Go through the array and create the structure 
                 int overallTargetCount = 0;
                 for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
                 {
                     // Copy the information passed in, into the buffer we want to pass
-                            
+
                     PathInfos[x].SourceId = passedPathInfo[x].SourceId;
                     PathInfos[x].TargetInfoCount = passedPathInfo[x].TargetInfoCount;
-                    PathInfos[x].TargetInfo = passedPathInfo[x].TargetInfo;                   
+                    PathInfos[x].TargetInfo = passedPathInfo[x].TargetInfo;
                     PathInfos[x].SourceModeInfo = passedPathInfo[x].SourceModeInfo;
                     overallTargetCount += (int)PathInfos[x].TargetInfoCount;
                     PathInfos[x].Version = MAKE_NVAPI_VERSION(Marshal.SizeOf(passedPathInfo[x]), 1);
@@ -3479,7 +3479,7 @@ namespace DisplayMagicianShared.NVIDIA
                     // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
                     Marshal.StructureToPtr(PathInfos[x], currentPathInfoBuffer, true);
                     // advance the buffer forwards to the next object
-                    currentPathInfoBuffer = (IntPtr)((long)currentPathInfoBuffer.ToInt64() + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)) );
+                    currentPathInfoBuffer = (IntPtr)((long)currentPathInfoBuffer.ToInt64() + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)));
                 }
             }
 
@@ -4321,7 +4321,7 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
             pCustDisp.Version = NVImport.NV_CUSTOM_DISPLAY_V1_VER;
-            pCustDisp.SourcePartition = new NV_VIEWPORTF(0,0,1,1);
+            pCustDisp.SourcePartition = new NV_VIEWPORTF(0, 0, 1, 1);
             if (Disp_EnumCustomDisplayInternal != null) { status = Disp_EnumCustomDisplayInternal(displayId, index, ref pCustDisp); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 

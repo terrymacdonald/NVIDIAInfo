@@ -258,7 +258,7 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 return new List<string>() { "10DE" };
             }
-        }      
+        }
 
         public static NVIDIALibrary GetLibrary()
         {
@@ -562,7 +562,7 @@ namespace DisplayMagicianShared.NVIDIA
                 //! SUPPORTED OS:  Windows 7 and higher
                 // First pass: Figure out how many pathInfo objects there are
                 List<NV_DISPLAYCONFIG_PATH_INFO_V2> allDisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
-                
+
                 /*uint pathInfoCount = 0;
                 NVStatus = NVImport.NvAPI_DISP_GetDisplayConfig(ref pathInfoCount);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK && pathInfoCount > 0)
@@ -1011,7 +1011,7 @@ namespace DisplayMagicianShared.NVIDIA
                             if (customDisplayConfig.Count > 0)
                             {
                                 allCustomDisplays.Add(displayIds[displayIndex].DisplayId, customDisplayConfig);
-                            }*/                           
+                            }*/
                         }
 
                         // Store the HDR information
@@ -1292,7 +1292,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                 NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
 
-                /*// Remove any custom NVIDIA Colour settings
+                // Remove any custom NVIDIA Colour settings
                 SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to turn off colour if it's default set colour.");
                 // Now we try to set each display color
                 foreach (var colorDataDict in displayConfig.ColorConfig.ColorData)
@@ -1310,7 +1310,7 @@ namespace DisplayMagicianShared.NVIDIA
                         }
 
                         // If the setting for this display is not the same as we want, then we set it to NV_COLOR_SELECTION_POLICY_BEST_QUALITY
-                        if (ActiveDisplayConfig.ColorConfig.ColorData[displayId].ColorSelectionPolicy != colorData.ColorSelectionPolicy)
+                        if (ActiveDisplayConfig.ColorConfig.ColorData[displayId].ColorSelectionPolicy != NV_COLOR_SELECTION_POLICY.NV_COLOR_SELECTION_POLICY_BEST_QUALITY)
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to turn off NVIDIA customer colour settings for display {displayId}.");
 
@@ -1379,7 +1379,7 @@ namespace DisplayMagicianShared.NVIDIA
                         }
                         else
                         {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We only want to turn off custom NVIDIA colour settings if needed for display {displayId}, and that currently isn't required. Skipping changing NVIDIA colour mode.");
+                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want only want to turn off custom NVIDIA colour settings if needed for display {displayId}, and that currently isn't required. Skipping changing NVIDIA colour mode.");
                         }
                     }
                     catch (Exception ex)
@@ -1408,7 +1408,7 @@ namespace DisplayMagicianShared.NVIDIA
                         }
 
                         // if it's not the same HDR we want, then we turn off HDR (and will apply it if needed later on in SetActiveOverride)
-                        if (ActiveDisplayConfig.HdrConfig.HdrColorData[displayId].HdrMode != hdrColorData.HdrMode)
+                        if (ActiveDisplayConfig.HdrConfig.HdrColorData[displayId].HdrMode != NV_HDR_MODE.OFF)
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to turn on custom HDR mode for display {displayId}.");
 
@@ -1463,7 +1463,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfig: Exception caused while turning off prior NVIDIA HDR colour settings for display {displayId}.");
                     }
 
-                }*/
+                }
 
                 // Now we've set the color the way we want it, lets do the thing
                 // We want to check the NVIDIA Surround (Mosaic) config is valid
@@ -1478,7 +1478,7 @@ namespace DisplayMagicianShared.NVIDIA
                     else
                     {
                         // We need to change to a Mosaic profile, so we need to apply the new Mosaic Topology
-                        NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE; 
+                        NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
 
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Mosaic current config is different as the one we want, so applying the Mosaic config now");
                         // If we get here then the display is valid, so now we actually apply the new Mosaic Topology
@@ -1536,92 +1536,52 @@ namespace DisplayMagicianShared.NVIDIA
                     // We are on a Mosaic profile now, and we need to change to a non-Mosaic profile
                     // We need to disable the Mosaic Topology
 
-                    // First check if the Mosaic is on
-                    NV_MOSAIC_TOPO_BRIEF mosaicTopoBrief = new NV_MOSAIC_TOPO_BRIEF();
-                    NV_MOSAIC_DISPLAY_SETTING_V2 mosaicDisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2();
-                    int mosaicOverlapX = 0;
-                    int mosaicOverlapY = 0;
-                    NVStatus = NVImport.NvAPI_Mosaic_GetCurrentTopo(ref mosaicTopoBrief, ref mosaicDisplaySettings, out mosaicOverlapX, out mosaicOverlapY);
+                    // Turn off Mosaic
+                    uint enable = 0;
+                    NVStatus = NVImport.NvAPI_Mosaic_EnableCurrentTopo(enable);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_Mosaic_EnableCurrentTopo returned OK. Previously set Mosiac config re-enabled.");
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 0.5 second to let the Mosaic display change take place before continuing");
+                        System.Threading.Thread.Sleep(500);
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
                     {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_TOPO_NOT_POSSIBLE)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The topology passed in is not currently possible. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
+                        return false;
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
                     {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
                     {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
                     {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: There was an error disabling the display mode. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
+                        return false;
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
                     {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: A miscellaneous error occurred. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
                     }
                     else
                     {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-                    }
-
-                    // Check if there is a topology and Mosaic is enabled for that topology
-                    if (mosaicTopoBrief.Topo != NV_MOSAIC_TOPO.TOPO_NONE && mosaicTopoBrief.Enabled == 1)
-                    {
-                        // Mosaic is enabled!
-                        // Turn off Mosaic
-                        uint enable = 0;
-                        NVStatus = NVImport.NvAPI_Mosaic_EnableCurrentTopo(enable);
-                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_Mosaic_EnableCurrentTopo returned OK. Previously set Mosiac config re-enabled.");
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 0.5 second to let the Mosaic display change take place before continuing");
-                            System.Threading.Thread.Sleep(500);
-                        }
-                        else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                        }
-                        else if (NVStatus == NVAPI_STATUS.NVAPI_TOPO_NOT_POSSIBLE)
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The topology passed in is not currently possible. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                            return false;
-                        }
-                        else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                        }
-                        else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                        }
-                        else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                        }
-                        else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                        }
-                        else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: There was an error disabling the display mode. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                            return false;
-                        }
-                        else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
-                        {
-                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: A miscellaneous error occurred. NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                        }
-                        else
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
-                        }
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
                     }
                 }
                 else if (!displayConfig.MosaicConfig.IsMosaicEnabled && !ActiveDisplayConfig.MosaicConfig.IsMosaicEnabled)
@@ -1643,7 +1603,7 @@ namespace DisplayMagicianShared.NVIDIA
                 // Force another scan of what the display config is so that the following logic works
                 UpdateActiveConfig();
 
-                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;                
+                NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
 
                 SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: We want to turn on colour if it's user set colour.");
                 // Now we try to set each display color
@@ -1736,8 +1696,8 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfigOverride: Exception caused while turning on NVIDIA custom colour settings for display {displayId}.");
                     }
                 }
-                
-                
+
+
                 SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: We want to turn on NVIDIA HDR colour if it's user wants to use NVIDIA HDR colour.");
                 // Now we try to set each display color
                 foreach (var hdrColorDataDict in displayConfig.HdrConfig.HdrColorData)
@@ -1745,8 +1705,8 @@ namespace DisplayMagicianShared.NVIDIA
                     NV_HDR_COLOR_DATA_V2 hdrColorData = hdrColorDataDict.Value;
                     string displayId = hdrColorDataDict.Key;
 
-                    try 
-                    { 
+                    try
+                    {
                         UInt32 displayIdAsUInt32 = UInt32.Parse(displayId);
 
                         if (!ActiveDisplayConfig.HdrConfig.HdrColorData.ContainsKey(displayId))
@@ -1808,7 +1768,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfigOverride: Exception caused while turning on custom NVIDIA HDR colour settings for display {displayId}.");
                     }
                 }
-                
+
 
             }
             else

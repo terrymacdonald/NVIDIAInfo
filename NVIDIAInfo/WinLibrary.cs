@@ -4,6 +4,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using System.Text.RegularExpressions;
+using DisplayMagicianShared;
+using System.IO;
+using System.ComponentModel;
 
 namespace DisplayMagicianShared.Windows
 {
@@ -39,6 +42,8 @@ namespace DisplayMagicianShared.Windows
         public DISPLAYCONFIG_MODE_INFO[] DisplayConfigModes;
         public List<ADVANCED_HDR_INFO_PER_PATH> DisplayHDRStates;
         public Dictionary<string, GDI_DISPLAY_SETTING> GdiDisplaySettings;
+        public List<TaskBarStuckRectangle> TaskBarLayout;
+        public TaskBarSettings TaskBarSettings;
         public bool IsCloned;
         // Note: We purposely have left out the DisplaySources from the Equals as it's order keeps changing after each reboot and after each profile swap
         // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
@@ -56,12 +61,13 @@ namespace DisplayMagicianShared.Windows
            // Additionally, we had to disable the DEviceKey from the equality testing within the GDI library itself as that waould also change after changing back from NVIDIA surround
            // This still allows us to detect when refresh rates change, which will allow DisplayMagician to detect profile differences.
            GdiDisplaySettings.Values.SequenceEqual(other.GdiDisplaySettings.Values) &&
-           DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers);
+           DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers) &&
+           TaskBarLayout.SequenceEqual(other.TaskBarLayout) &&
+           TaskBarSettings.Equals(other.TaskBarSettings);
 
         public override int GetHashCode()
         {
-            //return (DisplayConfigPaths, DisplayConfigModes, DisplayHDRStates, GdiDisplaySettings.Values, IsCloned, DisplayIdentifiers).GetHashCode();
-            return (DisplayConfigPaths, DisplayConfigModes, DisplayHDRStates, IsCloned, DisplayIdentifiers).GetHashCode();
+            return (DisplayConfigPaths, DisplayConfigModes, DisplayHDRStates, IsCloned, DisplayIdentifiers, TaskBarLayout, TaskBarSettings).GetHashCode();
         }
         public static bool operator ==(WINDOWS_DISPLAY_CONFIG lhs, WINDOWS_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
 
@@ -162,8 +168,10 @@ namespace DisplayMagicianShared.Windows
             myDefaultConfig.DisplayHDRStates = new List<ADVANCED_HDR_INFO_PER_PATH>();
             myDefaultConfig.DisplayIdentifiers = new List<string>();
             myDefaultConfig.DisplaySources = new Dictionary<string, List<uint>>();
-            myDefaultConfig.IsCloned = false;
             myDefaultConfig.GdiDisplaySettings = new Dictionary<string, GDI_DISPLAY_SETTING>();
+            myDefaultConfig.TaskBarLayout = new List<TaskBarStuckRectangle>();
+            myDefaultConfig.TaskBarSettings = new TaskBarSettings();
+            myDefaultConfig.IsCloned = false;
 
             return myDefaultConfig;
         }
@@ -379,8 +387,8 @@ namespace DisplayMagicianShared.Windows
             bool isClonedProfile = false;
             for (int i = 0; i < paths.Length; i++)
             {
-                bool gotSourceDeviceName = false;
-                bool gotAdapterName = false;
+                //bool gotSourceDeviceName = false;
+                //bool gotAdapterName = false;
                 bool gotAdvancedColorInfo = false;
                 bool gotSdrWhiteLevel = false;
 
@@ -406,7 +414,7 @@ namespace DisplayMagicianShared.Windows
                 err = CCDImport.DisplayConfigGetDeviceInfo(ref sourceInfo);
                 if (err == WIN32STATUS.ERROR_SUCCESS)
                 {
-                    gotSourceDeviceName = true;
+                    //gotSourceDeviceName = true;
                     // Store it for later
                     if (windowsDisplayConfig.DisplaySources.ContainsKey(sourceInfo.ViewGdiDeviceName))
                     {
@@ -454,7 +462,7 @@ namespace DisplayMagicianShared.Windows
                     err = CCDImport.DisplayConfigGetDeviceInfo(ref adapterInfo);
                     if (err == WIN32STATUS.ERROR_SUCCESS)
                     {
-                        gotAdapterName = true;
+                        //gotAdapterName = true;
                         // Store it for later
                         windowsDisplayConfig.DisplayAdapters.Add(paths[i].TargetInfo.AdapterId.Value, adapterInfo.AdapterDevicePath);
                         SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found adapter name {adapterInfo.AdapterDevicePath} for adapter {paths[i].TargetInfo.AdapterId.Value}.");
@@ -468,7 +476,7 @@ namespace DisplayMagicianShared.Windows
                 {
                     // We already have the adapter name
                     SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: We already have the adapter name {windowsDisplayConfig.DisplayAdapters[paths[i].TargetInfo.AdapterId.Value]} for adapter {paths[i].TargetInfo.AdapterId.Value} so skipping storing it.");
-                    gotAdapterName = true;
+                    //gotAdapterName = true;
                 }
 
                 // Get advanced color info
@@ -536,7 +544,7 @@ namespace DisplayMagicianShared.Windows
                     }
                     windowsDisplayConfig.DisplayHDRStates.Add(hdrInfo);
                 }
-                
+
             }
 
 
@@ -590,46 +598,22 @@ namespace DisplayMagicianShared.Windows
                     }
                 }
             }
-            
 
-            /*if (hdrInfos.Length > 0)
-            {
-                // If the screen
-                foreach (var hdrInfo in hdrInfos)
-                {
-                    targetIdMap[hdrInfo.Id] = hdrInfo.SDRWhiteLevel.Header.Id;
-                }
+            // Now attempt to get the windows taskbar location for each display
+            // We use the information we already got from the display identifiers
+            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar layout.");
+            List<TaskBarStuckRectangle> taskBarStuckRectangles = TaskBarStuckRectangle.GetCurrent(windowsDisplayConfig.DisplayIdentifiers);
 
-                // Now we need to go through the list of paths again and patch the 'cloned' displays with a real display ID so the config works
-                for (int i = 0; i < paths.Length; i++)
-                {
-                    if (targetIdsToChange.Contains(paths[i].TargetInfo.Id))
-                    {
-                        // Patch the cloned ids with a real working one!
-                        paths[i].TargetInfo.Id = targetIdMap[paths[i].TargetInfo.Id];
-                    }
-                }
-
-                // And then we need to go through the list of modes again and patch the 'cloned' displays with a real display ID so the display layout is right in cloned displays
-                for (int i = 0; i < modes.Length; i++)
-                {
-                    // We only change the ids that match in InfoType for target displays
-                    if (modes[i].InfoType == DISPLAYCONFIG_MODE_INFO_TYPE.DISPLAYCONFIG_MODE_INFO_TYPE_TARGET && targetIdsToChange.Contains(modes[i].Id))
-                    {
-                        // Patch the cloned ids with a real working one!
-                        modes[i].Id = targetIdMap[modes[i].Id];
-                    }
-                }
-            }
-            else
-            {
-                SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - There weren't any HDR Info objects created, so we have none to parse!");
-            }*/
+            // Now we try to get the taskbar settings too
+            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar settings.");
+            TaskBarSettings taskBarSettings = TaskBarSettings.GetCurrent();
 
             // Store the active paths and modes in our display config object
             windowsDisplayConfig.DisplayConfigPaths = paths;
             windowsDisplayConfig.DisplayConfigModes = modes;
             windowsDisplayConfig.GdiDisplaySettings = GetGdiDisplaySettings();
+            windowsDisplayConfig.TaskBarLayout = taskBarStuckRectangles;
+            windowsDisplayConfig.TaskBarSettings = taskBarSettings;
 
             return windowsDisplayConfig;
         }
@@ -645,18 +629,18 @@ namespace DisplayMagicianShared.Windows
             while (GDIImport.EnumDisplayDevices(null, displayDeviceNum, ref displayDevice, 0))
             {
                 // Now we try and grab the GDI Device Settings for each display device
-                SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the current Display Settings for {displayDevice.DeviceName}");
+                SharedLogger.logger.Trace($"WinLibrary/GetGdiDisplaySettings: Getting the current Display Settings for {displayDevice.DeviceName}");
                 if (displayDevice.StateFlags.HasFlag(DISPLAY_DEVICE_STATE_FLAGS.AttachedToDesktop) || displayDevice.StateFlags.HasFlag(DISPLAY_DEVICE_STATE_FLAGS.MultiDriver))
                 {
                     // If the display device is attached to the Desktop, or a type of display that is represented by a psudeo mirroring application, then skip this display
                     // e.g. some sort of software interfaced display that doesn't have a physical plug, or maybe uses USB for communication
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the current Display Settings for {displayDevice.DeviceName}");
+                    SharedLogger.logger.Trace($"WinLibrary/GetGdiDisplaySettings: Getting the current Display Settings for {displayDevice.DeviceName}");
                     DEVICE_MODE currentMode = new DEVICE_MODE();
                     currentMode.Size = (UInt16)Marshal.SizeOf<DEVICE_MODE>();
                     bool gdiWorked = GDIImport.EnumDisplaySettings(displayDevice.DeviceName, DISPLAY_SETTINGS_MODE.CurrentSettings, ref currentMode);
                     if (gdiWorked)
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Got the current Display Settings from display {displayDevice.DeviceName}.");
+                        SharedLogger.logger.Trace($"WinLibrary/GetGdiDisplaySettings: Got the current Display Settings from display {displayDevice.DeviceName}.");
                         GDI_DISPLAY_SETTING myDisplaySetting = new GDI_DISPLAY_SETTING();
                         myDisplaySetting.IsEnabled = true; // Always true if we get here
                         myDisplaySetting.Device = displayDevice;
@@ -671,12 +655,12 @@ namespace DisplayMagicianShared.Windows
                     }
                     else
                     {
-                        SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - Unabled to get current display mode settings from display {displayDevice.DeviceName}.");
+                        SharedLogger.logger.Warn($"WinLibrary/GetGdiDisplaySettings: WARNING - Unabled to get current display mode settings from display {displayDevice.DeviceName}.");
                     }
                 }
                 else
                 {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: The display {displayDevice.DeviceName} is either not attached to the desktop, or is not a mirroring driver. Skipping this display device as we cannot use it.");
+                    SharedLogger.logger.Trace($"WinLibrary/GetGdiDisplaySettings: The display {displayDevice.DeviceName} is either not attached to the desktop, or is not a mirroring driver. Skipping this display device as we cannot use it.");
                 }
 
                 displayDeviceNum++;
@@ -687,50 +671,50 @@ namespace DisplayMagicianShared.Windows
         public static Dictionary<string, List<uint>> GetDisplaySourceNames()
         {
             // Get the size of the largest Active Paths and Modes arrays
-            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the size of the largest Active Paths and Modes arrays");
+            SharedLogger.logger.Trace($"WinLibrary/GetDisplaySourceNames: Getting the size of the largest Active Paths and Modes arrays");
             int pathCount = 0;
             int modeCount = 0;
             WIN32STATUS err = CCDImport.GetDisplayConfigBufferSizes(QDC.QDC_ONLY_ACTIVE_PATHS, out pathCount, out modeCount);
             if (err != WIN32STATUS.ERROR_SUCCESS)
             {
-                SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: ERROR - GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes");
+                SharedLogger.logger.Error($"WinLibrary/GetDisplaySourceNames: ERROR - GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes");
                 throw new WinLibraryException($"GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes");
             }
 
-            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the current Display Config path and mode arrays");
+            SharedLogger.logger.Trace($"WinLibrary/GetDisplaySourceNames: Getting the current Display Config path and mode arrays");
             var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
             var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
             err = CCDImport.QueryDisplayConfig(QDC.QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
             if (err == WIN32STATUS.ERROR_INSUFFICIENT_BUFFER)
             {
-                SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: The displays were modified between GetDisplayConfigBufferSizes and QueryDisplayConfig so we need to get the buffer sizes again.");
-                SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the size of the largest Active Paths and Modes arrays");
+                SharedLogger.logger.Warn($"WinLibrary/GetDisplaySourceNames: The displays were modified between GetDisplayConfigBufferSizes and QueryDisplayConfig so we need to get the buffer sizes again.");
+                SharedLogger.logger.Trace($"WinLibrary/GetDisplaySourceNames: Getting the size of the largest Active Paths and Modes arrays");
                 // Screen changed in between GetDisplayConfigBufferSizes and QueryDisplayConfig, so we need to get buffer sizes again
                 // as per https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-querydisplayconfig 
                 err = CCDImport.GetDisplayConfigBufferSizes(QDC.QDC_ONLY_ACTIVE_PATHS, out pathCount, out modeCount);
                 if (err != WIN32STATUS.ERROR_SUCCESS)
                 {
-                    SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: ERROR - GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes again");
+                    SharedLogger.logger.Error($"WinLibrary/GetDisplaySourceNames: ERROR - GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes again");
                     throw new WinLibraryException($"GetDisplayConfigBufferSizes returned WIN32STATUS {err} when trying to get the maximum path and mode sizes again");
                 }
-                SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the current Display Config path and mode arrays");
+                SharedLogger.logger.Trace($"WinLibrary/GetDisplaySourceNames: Getting the current Display Config path and mode arrays");
                 paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
                 modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
                 err = CCDImport.QueryDisplayConfig(QDC.QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
                 if (err == WIN32STATUS.ERROR_INSUFFICIENT_BUFFER)
                 {
-                    SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: ERROR - The displays were still modified between GetDisplayConfigBufferSizes and QueryDisplayConfig, even though we tried twice. Something is wrong.");
+                    SharedLogger.logger.Error($"WinLibrary/GetDisplaySourceNames: ERROR - The displays were still modified between GetDisplayConfigBufferSizes and QueryDisplayConfig, even though we tried twice. Something is wrong.");
                     throw new WinLibraryException($"The displays were still modified between GetDisplayConfigBufferSizes and QueryDisplayConfig, even though we tried twice. Something is wrong.");
                 }
                 else if (err != WIN32STATUS.ERROR_SUCCESS)
                 {
-                    SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: ERROR - QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays again");
+                    SharedLogger.logger.Error($"WinLibrary/GetDisplaySourceNames: ERROR - QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays again");
                     throw new WinLibraryException($"QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays again.");
                 }
             }
             else if (err != WIN32STATUS.ERROR_SUCCESS)
             {
-                SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: ERROR - QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays");
+                SharedLogger.logger.Error($"WinLibrary/GetDisplaySourceNames: ERROR - QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays");
                 throw new WinLibraryException($"QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays.");
             }
 
@@ -765,11 +749,11 @@ namespace DisplayMagicianShared.Windows
                         DisplaySources.Add(sourceInfo.ViewGdiDeviceName, new List<uint> { path.SourceInfo.Id });
                     }
 
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Display Source {sourceInfo.ViewGdiDeviceName} for source {path.SourceInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/GetDisplaySourceNames: Found Display Source {sourceInfo.ViewGdiDeviceName} for source {path.SourceInfo.Id}.");
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the source info for source adapter #{path.SourceInfo.AdapterId}");
+                    SharedLogger.logger.Warn($"WinLibrary/GetDisplaySourceNames: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the source info for source adapter #{path.SourceInfo.AdapterId}");
                 }
 
             }
@@ -886,7 +870,7 @@ namespace DisplayMagicianShared.Windows
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the adapter device path for target #{path.TargetInfo.AdapterId}");
+                    SharedLogger.logger.Warn($"WinLibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the adapter device path for target #{path.TargetInfo.AdapterId}");
                 }
 
                 // show the 
@@ -900,15 +884,15 @@ namespace DisplayMagicianShared.Windows
                 err = CCDImport.DisplayConfigGetDeviceInfo(ref targetPreferredInfo);
                 if (err == WIN32STATUS.ERROR_SUCCESS)
                 {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Preferred Width {targetPreferredInfo.Width} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Preferred Height {targetPreferredInfo.Height} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Active Size: ({targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ActiveSize.Cx}x{targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ActiveSize.Cy} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Total Size: ({targetPreferredInfo.TargetMode.TargetVideoSignalInfo.TotalSize.Cx}x{targetPreferredInfo.TargetMode.TargetVideoSignalInfo.TotalSize.Cy} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Video Signal Info HSync Frequency: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.HSyncFreq} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Video Signal Info VSync Frequency: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.VSyncFreq} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Pixel Rate: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.PixelRate} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Scan Line Ordering: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ScanLineOrdering} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Target Video Signal Info Video Standard: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.VideoStandard} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Preferred Width {targetPreferredInfo.Width} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Preferred Height {targetPreferredInfo.Height} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Video Signal Info Active Size: ({targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ActiveSize.Cx}x{targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ActiveSize.Cy} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Video Signal Info Total Size: ({targetPreferredInfo.TargetMode.TargetVideoSignalInfo.TotalSize.Cx}x{targetPreferredInfo.TargetMode.TargetVideoSignalInfo.TotalSize.Cy} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Video Signal Info HSync Frequency: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.HSyncFreq} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Video Signal Info VSync Frequency: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.VSyncFreq} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Video Signal Info Pixel Rate: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.PixelRate} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Video Signal Info Scan Line Ordering: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.ScanLineOrdering} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Target Video Signal Info Video Standard: {targetPreferredInfo.TargetMode.TargetVideoSignalInfo.VideoStandard} for target {path.TargetInfo.Id}.");
 
                     stringToReturn += $"****** Interrogating Target Preferred Mode for Display {path.TargetInfo.Id} *******\n";
                     stringToReturn += $" Target Preferred Width {targetPreferredInfo.Width} for target {path.TargetInfo.Id}\n";
@@ -924,7 +908,7 @@ namespace DisplayMagicianShared.Windows
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the preferred target name for display #{path.TargetInfo.Id}");
+                    SharedLogger.logger.Warn($"WinLibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the preferred target name for display #{path.TargetInfo.Id}");
                 }
 
                 // get display target base type
@@ -936,7 +920,7 @@ namespace DisplayMagicianShared.Windows
                 err = CCDImport.DisplayConfigGetDeviceInfo(ref targetBaseTypeInfo);
                 if (err == WIN32STATUS.ERROR_SUCCESS)
                 {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Virtual Resolution is Disabled: {targetBaseTypeInfo.BaseOutputTechnology} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Virtual Resolution is Disabled: {targetBaseTypeInfo.BaseOutputTechnology} for target {path.TargetInfo.Id}.");
 
                     stringToReturn += $"****** Interrogating Target Base Type for Display {path.TargetInfo.Id} *******\n";
                     stringToReturn += $" Base Output Technology: {targetBaseTypeInfo.BaseOutputTechnology}\n";
@@ -944,7 +928,7 @@ namespace DisplayMagicianShared.Windows
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the target base type for display #{path.TargetInfo.Id}");
+                    SharedLogger.logger.Warn($"WinLibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the target base type for display #{path.TargetInfo.Id}");
                 }
 
                 // get display support virtual resolution
@@ -956,14 +940,14 @@ namespace DisplayMagicianShared.Windows
                 err = CCDImport.DisplayConfigGetDeviceInfo(ref supportVirtResInfo);
                 if (err == WIN32STATUS.ERROR_SUCCESS)
                 {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Base Output Technology: {supportVirtResInfo.IsMonitorVirtualResolutionDisabled} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Base Output Technology: {supportVirtResInfo.IsMonitorVirtualResolutionDisabled} for target {path.TargetInfo.Id}.");
                     stringToReturn += $"****** Interrogating Target Supporting virtual resolution for Display {path.TargetInfo.Id} *******\n";
                     stringToReturn += $" Virtual Resolution is Disabled: {supportVirtResInfo.IsMonitorVirtualResolutionDisabled}\n";
                     stringToReturn += $"\n";
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the virtual resolution support for display #{path.TargetInfo.Id}");
+                    SharedLogger.logger.Warn($"WinLibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the virtual resolution support for display #{path.TargetInfo.Id}");
                 }
 
                 //get advanced color info
@@ -975,12 +959,12 @@ namespace DisplayMagicianShared.Windows
                 err = CCDImport.DisplayConfigGetDeviceInfo(ref colorInfo);
                 if (err == WIN32STATUS.ERROR_SUCCESS)
                 {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Advanced Color Supported: {colorInfo.AdvancedColorSupported} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Advanced Color Enabled: {colorInfo.AdvancedColorEnabled} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Advanced Color Force Disabled: {colorInfo.AdvancedColorForceDisabled} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Bits per Color Channel: {colorInfo.BitsPerColorChannel} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Color Encoding: {colorInfo.ColorEncoding} for target {path.TargetInfo.Id}.");
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Wide Color Enforced: {colorInfo.WideColorEnforced} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Advanced Color Supported: {colorInfo.AdvancedColorSupported} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Advanced Color Enabled: {colorInfo.AdvancedColorEnabled} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Advanced Color Force Disabled: {colorInfo.AdvancedColorForceDisabled} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Bits per Color Channel: {colorInfo.BitsPerColorChannel} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Color Encoding: {colorInfo.ColorEncoding} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found Wide Color Enforced: {colorInfo.WideColorEnforced} for target {path.TargetInfo.Id}.");
 
                     stringToReturn += $"****** Interrogating Advanced Color Info for Display {path.TargetInfo.Id} *******\n";
                     stringToReturn += $" Advanced Color Supported: {colorInfo.AdvancedColorSupported}\n";
@@ -993,7 +977,7 @@ namespace DisplayMagicianShared.Windows
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the virtual resolution support for display #{path.TargetInfo.Id}");
+                    SharedLogger.logger.Warn($"WinLibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the virtual resolution support for display #{path.TargetInfo.Id}");
                 }
 
                 // get SDR white levels
@@ -1005,7 +989,7 @@ namespace DisplayMagicianShared.Windows
                 err = CCDImport.DisplayConfigGetDeviceInfo(ref whiteLevelInfo);
                 if (err == WIN32STATUS.ERROR_SUCCESS)
                 {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found SDR White Level: {whiteLevelInfo.SDRWhiteLevel} for target {path.TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Found SDR White Level: {whiteLevelInfo.SDRWhiteLevel} for target {path.TargetInfo.Id}.");
 
                     stringToReturn += $"****** Interrogating SDR White Level for Display {path.TargetInfo.Id} *******\n";
                     stringToReturn += $" SDR White Level: {whiteLevelInfo.SDRWhiteLevel}\n";
@@ -1013,7 +997,7 @@ namespace DisplayMagicianShared.Windows
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the SDL white level for display #{path.TargetInfo.Id}");
+                    SharedLogger.logger.Warn($"WinLibrary/PrintActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out the SDL white level for display #{path.TargetInfo.Id}");
                 }
             }
 
@@ -1043,19 +1027,19 @@ namespace DisplayMagicianShared.Windows
                 stringToReturn += $"\n";
 
 
-                SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the current Display Settings for {displayDevice.DeviceName}");
+                SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Getting the current Display Settings for {displayDevice.DeviceName}");
                 if (displayDevice.StateFlags.HasFlag(DISPLAY_DEVICE_STATE_FLAGS.AttachedToDesktop) || displayDevice.StateFlags.HasFlag(DISPLAY_DEVICE_STATE_FLAGS.MultiDriver))
                 {
                     // If the display device is attached to the Desktop, or a type of display that is represented by a psudeo mirroring application, then skip this display
                     // e.g. some sort of software interfaced display that doesn't have a physical plug, or maybe uses USB for communication
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the current Display Settings for {displayDevice.DeviceName}");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Getting the current Display Settings for {displayDevice.DeviceName}");
                     stringToReturn += $" Display Device Settings for attached Display {displayDevice.DeviceName} :\n";
                     DEVICE_MODE currentMode = new DEVICE_MODE();
                     currentMode.Size = (UInt16)Marshal.SizeOf<DEVICE_MODE>();
                     bool gdiWorked = GDIImport.EnumDisplaySettings(displayDevice.DeviceName, DISPLAY_SETTINGS_MODE.CurrentSettings, ref currentMode);
                     if (gdiWorked)
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Got the current Display Settings from display {displayDevice.DeviceName}.");
+                        SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: Got the current Display Settings from display {displayDevice.DeviceName}.");
                         // Now we try and grab the GDI Device Settings for each display device
                         stringToReturn += $" Bits Per Pixel: {currentMode.BitsPerPixel}\n";
                         stringToReturn += $" Device Name: {currentMode.DeviceName}\n";
@@ -1074,13 +1058,13 @@ namespace DisplayMagicianShared.Windows
                     }
                     else
                     {
-                        SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - Unabled to get current display mode settings from display {displayDevice.DeviceName}.");
+                        SharedLogger.logger.Warn($"WinLibrary/PrintActiveConfig: WARNING - Unabled to get current display mode settings from display {displayDevice.DeviceName}.");
                         stringToReturn += $" No display settings found.\n\n";
                     }
                 }
                 else
                 {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: The display {displayDevice.DeviceName} is either not attached to the desktop, or is not a mirroring driver. Skipping this display device as we cannot use it.");
+                    SharedLogger.logger.Trace($"WinLibrary/PrintActiveConfig: The display {displayDevice.DeviceName} is either not attached to the desktop, or is not a mirroring driver. Skipping this display device as we cannot use it.");
                 }
 
                 displayDeviceNum++;
@@ -1091,6 +1075,8 @@ namespace DisplayMagicianShared.Windows
 
         public bool SetActiveConfig(WINDOWS_DISPLAY_CONFIG displayConfig)
         {
+            //bool needToRestartExplorer = false;
+
             // Get the all possible windows display configs
             SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Generating a list of all the current display configs");
             WINDOWS_DISPLAY_CONFIG allWindowsDisplayConfig = GetWindowsDisplayConfig(QDC.QDC_ALL_PATHS | QDC.QDC_INCLUDE_HMD);
@@ -1263,12 +1249,12 @@ namespace DisplayMagicianShared.Windows
                     }
                     else
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Skipping setting HDR on Display {myHDRstate.Id} as it does not support HDR");
+                        SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Skipping setting HDR on Display {myHDRstate.Id} as it is already in the correct HDR mode: {colorInfo.AdvancedColorEnabled}");
                     }
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out if HDR is supported for display #{myHDRstate.Id}");
+                    SharedLogger.logger.Warn($"WinLibrary/SetActiveConfig: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to find out if HDR is supported for display #{myHDRstate.Id}");
                 }
 
             }
@@ -1301,54 +1287,105 @@ namespace DisplayMagicianShared.Windows
                     CHANGE_DISPLAY_RESULTS result = GDIImport.ChangeDisplaySettingsEx(currentDeviceSetting.Device.DeviceName, ref currentDeviceSetting.DeviceMode, IntPtr.Zero, CHANGE_DISPLAY_SETTINGS_FLAGS.CDS_UPDATEREGISTRY, IntPtr.Zero);
                     if (result == CHANGE_DISPLAY_RESULTS.Successful)
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Successfully changed display {displayDeviceKey} to use the new mode!");
+                        SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Successfully changed display {displayDeviceKey} to use the new mode!");
                     }
                     else if (result == CHANGE_DISPLAY_RESULTS.BadDualView)
                     {
-                        SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: The settings change was unsuccessful because the system is DualView capable. Display {displayDeviceKey} not updated to new mode.");
+                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: The settings change was unsuccessful because the system is DualView capable. Display {displayDeviceKey} not updated to new mode.");
                         return false;
                     }
                     else if (result == CHANGE_DISPLAY_RESULTS.BadFlags)
                     {
-                        SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: An invalid set of flags was passed in. Display {displayDeviceKey} not updated to use the new mode.");
+                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: An invalid set of flags was passed in. Display {displayDeviceKey} not updated to use the new mode.");
                         return false;
                     }
                     else if (result == CHANGE_DISPLAY_RESULTS.BadMode)
                     {
-                        SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: The graphics mode is not supported. Display {displayDeviceKey} not updated to use the new mode.");
+                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: The graphics mode is not supported. Display {displayDeviceKey} not updated to use the new mode.");
                         return false;
                     }
                     else if (result == CHANGE_DISPLAY_RESULTS.BadParam)
                     {
-                        SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: An invalid parameter was passed in. This can include an invalid flag or combination of flags. Display {displayDeviceKey} not updated to use the new mode.");
+                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: An invalid parameter was passed in. This can include an invalid flag or combination of flags. Display {displayDeviceKey} not updated to use the new mode.");
                         return false;
                     }
                     else if (result == CHANGE_DISPLAY_RESULTS.Failed)
                     {
-                        SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: The display driver failed to apply the specified graphics mode. Display {displayDeviceKey} not updated to use the new mode.");
+                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: The display driver failed to apply the specified graphics mode. Display {displayDeviceKey} not updated to use the new mode.");
                         return false;
                     }
                     else if (result == CHANGE_DISPLAY_RESULTS.NotUpdated)
                     {
-                        SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: Unable to write new settings to the registry. Display {displayDeviceKey} not updated to use the new mode.");
+                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: Unable to write new settings to the registry. Display {displayDeviceKey} not updated to use the new mode.");
                         return false;
                     }
                     else if (result == CHANGE_DISPLAY_RESULTS.Restart)
                     {
-                        SharedLogger.logger.Error($"WinLibrary/GetWindowsDisplayConfig: The computer must be restarted for the graphics mode to work. Display {displayDeviceKey} not updated to use the new mode.");
+                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: The computer must be restarted for the graphics mode to work. Display {displayDeviceKey} not updated to use the new mode.");
                         return false;
                     }
                     else
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Display {displayDeviceKey} not updated to use the new mode.");
+                        SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Display {displayDeviceKey} not updated to use the new mode.");
                     }
                 }
                 else
                 {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Display {displayDeviceKey} is not currently in use, so cannot set it!");
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Display {displayDeviceKey} is not currently in use, so cannot set it!");
                 }
+
             }
 
+
+            // Now set the taskbar position for each screen
+            if (displayConfig.TaskBarLayout.Count > 0)
+            {
+                SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Setting the taskbar layout.");
+                if (TaskBarStuckRectangle.Apply(displayConfig.TaskBarLayout))
+                {
+                    // TODO - We need to detect if it is Windows 11, as we need to restart explorer.exe for the settings to take
+                    //        No need to do it in Windows 10, as explorere auto-detects the registry key change, and moves the taskbar
+                    //        (In fact, if you try to restart explorer.exe on Win10 it actually stops the taskbar move from working!)
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Set the taskbar layout successfully.");
+                }
+                else
+                {
+                    SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: Unable to set the taskbar layout.");
+                }
+            }
+            else
+            {
+                SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: No taskbar layout in display profile so skipping setting it!");
+            }
+
+            // Now set the taskbar settings
+            TaskBarSettings currentTaskBarSettings = TaskBarSettings.GetCurrent();
+            if (!displayConfig.TaskBarSettings.Equals(currentTaskBarSettings))
+            {
+                // The settings are different, so we should apply them
+                SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Setting the taskbar settings .");
+                if (displayConfig.TaskBarSettings.Apply())
+                {
+                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Set the taskbar settings successfully!");
+                    //needToRestartExplorer = true;
+                }
+                else
+                {
+                    SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: Unable to set the taskbar settings.");
+                }
+            }
+            else
+            {
+                // The settings are the same, so we should skip applying them
+                SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: The current taskbar settings are the same as the one's we want, so skipping setting them!");
+            }
+
+            // Restart Windows Explorer if we are in Win11 and if we need to make any TaskBar changes
+            // If we get here, then we need to restart Windows Explorer for the taskbar registry changes to take effect!
+            /*if (needToRestartExplorer && Utils.IsWindows11())
+            {
+                RestartExplorer();
+            }*/
 
             return true;
         }
@@ -1869,7 +1906,7 @@ namespace DisplayMagicianShared.Windows
             {
                 return false;
             }
-        }
+        }        
 
     }
 

@@ -87,6 +87,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SharedLogger.cs" />
+    <Compile Include="TaskBarSettings.cs" />
+    <Compile Include="TaskBarStuckRectangle.cs" />
     <Compile Include="WinLibrary.cs" />
   </ItemGroup>
   <ItemGroup>
