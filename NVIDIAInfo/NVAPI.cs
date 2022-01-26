@@ -2146,6 +2146,7 @@ namespace DisplayMagicianShared.NVIDIA
         public const UInt32 NV_MOSAIC_TOPO_MAX = (UInt32)NV_MOSAIC_TOPO.TOPO_MAX;
         public const UInt32 NVAPI_MAX_MOSAIC_DISPLAY_ROWS = 8;
         public const UInt32 NVAPI_MAX_MOSAIC_DISPLAY_COLUMNS = 8;
+        public const UInt32 NVAPI_MAX_MOSAIC_TOPOS = 16;
         public const UInt32 NVAPI_GENERIC_STRING_MAX = 4096;
         public const UInt32 NVAPI_LONG_STRING_MAX = 256;
         public const UInt32 NVAPI_SHORT_STRING_MAX = 64;
@@ -3635,7 +3636,7 @@ namespace DisplayMagicianShared.NVIDIA
         //                                                        __inout NvU32 * 	pDisplayCount )	
         // NvAPIMosaic_EnumDisplayModes
         private delegate NVAPI_STATUS Mosaic_EnumDisplayModesDelegate(
-            [In][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NV_MOSAIC_DISPLAY_SETTINGS_MAX)] ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies,
+            [In] NV_MOSAIC_GRID_TOPO_V2 gridTopology,
             [In][Out] IntPtr displaySettingsBuffer,
             [In][Out] ref UInt32 displayCount);
         private static readonly Mosaic_EnumDisplayModesDelegate Mosaic_EnumDisplayModesInternal;
@@ -3645,11 +3646,11 @@ namespace DisplayMagicianShared.NVIDIA
         /// If displaySettings is NULL, then displayCount will receive the total number of modes that are available.
         /// If displaySettings is not NULL, then displayCount should point to the number of elements in the pDisplaySettings array. On return, it will contain the number of modes that were actually returned
         /// </summary>
-        /// <param name="gridTopologiesBuffer"></param>
+        /// <param name="gridTopology"></param>
         /// <param name="displaySettingsBuffer"></param>
         /// <param name="displayCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayModes(ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies, ref NV_MOSAIC_DISPLAY_SETTING_V2[] displaySettings, ref UInt32 displayCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayModes(NV_MOSAIC_GRID_TOPO_V2 gridTopology, ref NV_MOSAIC_DISPLAY_SETTING_V2[] displaySettings, ref UInt32 displayCount)
         {
             NVAPI_STATUS status;
             
@@ -3676,7 +3677,7 @@ namespace DisplayMagicianShared.NVIDIA
             if (Mosaic_EnumDisplayModesInternal != null)
             {
                 // Use the unmanaged buffer in the unmanaged C call
-                status = Mosaic_EnumDisplayModesInternal(ref gridTopologies,  displaySettingsBuffer, ref displayCount);
+                status = Mosaic_EnumDisplayModesInternal(gridTopology,  displaySettingsBuffer, ref displayCount);
 
                 if (status == NVAPI_STATUS.NVAPI_OK)
                 {
@@ -3690,9 +3691,9 @@ namespace DisplayMagicianShared.NVIDIA
                     for (int i = 0; i < displayCount; i++)
                     {
                         // build a structure in the array slot
-                        gridTopologies[i] = new NV_MOSAIC_GRID_TOPO_V2();
+                        displaySettings[i] = new NV_MOSAIC_DISPLAY_SETTING_V2();
                         // fill the array slot structure NV_MOSAIC_DISPLAY_SETTING_V2 the data from the buffer
-                        gridTopologies[i] = (NV_MOSAIC_GRID_TOPO_V2)Marshal.PtrToStructure(currentDisplaySettingsBuffer, typeof(NV_MOSAIC_DISPLAY_SETTING_V2));
+                        displaySettings[i] = (NV_MOSAIC_DISPLAY_SETTING_V2)Marshal.PtrToStructure(currentDisplaySettingsBuffer, typeof(NV_MOSAIC_DISPLAY_SETTING_V2));
                         // destroy the bit of memory we no longer need
                         Marshal.DestroyStructure(currentDisplaySettingsBuffer, typeof(NV_MOSAIC_DISPLAY_SETTING_V2));
                         // advance the buffer forwards to the next object
@@ -3713,7 +3714,7 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayModes(__inout_ecount_part_opt*,* pGridCount NV_MOSAIC_GRID_TOPO* pGridTopologies,__inout NvU32 * 	pGridCount)
         // NvAPIMosaic_EnumDisplayModes
         private delegate NVAPI_STATUS Mosaic_EnumDisplayModesDelegateNull(
-            [In][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NV_MOSAIC_DISPLAY_SETTINGS_MAX)] ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies,
+            [In] NV_MOSAIC_GRID_TOPO_V2 gridTopology,
             [In][Out] IntPtr displaySettingsBuffer,
             [In][Out] ref UInt32 displayCount);
         private static readonly Mosaic_EnumDisplayModesDelegateNull Mosaic_EnumDisplayModesInternalNull;
@@ -3727,12 +3728,12 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="displaySettingsBuffer"></param>
         /// <param name="displayCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayModes(ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies, ref UInt32 displayCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayModes(NV_MOSAIC_GRID_TOPO_V2 gridTopology, ref UInt32 displayCount)
         {
             NVAPI_STATUS status;
             IntPtr displaySettings = IntPtr.Zero;
 
-            if (Mosaic_EnumDisplayModesInternalNull != null) { status = Mosaic_EnumDisplayModesInternalNull(ref gridTopologies, displaySettings, ref displayCount); }
+            if (Mosaic_EnumDisplayModesInternalNull != null) { status = Mosaic_EnumDisplayModesInternalNull(gridTopology, displaySettings, ref displayCount); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;
@@ -4117,8 +4118,8 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_Mosaic_SetCurrentTopo ( NV_MOSAIC_TOPO_BRIEF * pTopoBrief, NV_MOSAIC_DISPLAY_SETTING* pDisplaySetting, NvS32 overlapX, NvS32 overlapY, NvU32 enable)	
         // NvAPI_Mosaic_SetCurrentTopo
         private delegate NVAPI_STATUS Mosaic_SetCurrentTopoDelegate(
-            [In] ref NV_MOSAIC_TOPO_BRIEF topoBrief,
-            [In] ref NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting,
+            [In] NV_MOSAIC_TOPO_BRIEF topoBrief,
+            [In] NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting,
             [In] Int32 overlapX,
             [In] Int32 overlapY,
             [In] UInt32 enable);
@@ -4134,15 +4135,15 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="overlapY"></param>
         /// <param name="enable"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_SetCurrentTopo(ref NV_MOSAIC_TOPO_BRIEF topoBrief, ref NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting, Int32 overlapX, Int32 overlapY, UInt32 enable)
+        public static NVAPI_STATUS NvAPI_Mosaic_SetCurrentTopo(NV_MOSAIC_TOPO_BRIEF topoBrief, NV_MOSAIC_DISPLAY_SETTING_V2 displaySetting, Int32 overlapX, Int32 overlapY, UInt32 enable)
         {
             NVAPI_STATUS status;
-            topoBrief.Version = NVImport.NV_MOSAIC_TOPO_BRIEF_VER;
-            displaySetting.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V2_VER;
+            //topoBrief.Version = NVImport.NV_MOSAIC_TOPO_BRIEF_VER;
+            //displaySetting.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V2_VER;
             // Set enable to false within the version as we want to enable it now
             // This is needed as the saved display topology object was made when the topology was enabled :)
             //topoBrief.Enabled = 0;
-            if (Mosaic_SetCurrentTopoInternal != null) { status = Mosaic_SetCurrentTopoInternal(ref topoBrief, ref displaySetting, overlapX, overlapY, enable); }
+            if (Mosaic_SetCurrentTopoInternal != null) { status = Mosaic_SetCurrentTopoInternal(topoBrief, displaySetting, overlapX, overlapY, enable); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
             return status;

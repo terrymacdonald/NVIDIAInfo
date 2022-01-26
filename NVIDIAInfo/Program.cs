@@ -166,7 +166,7 @@ namespace NVIDIAInfo
                     {
                         Console.WriteLine($"ERROR - You need to provide two filenames in order for us to see if they are equal.");
                         Console.WriteLine($"        Equal means they are exactly the same.");
-                        SharedLogger.logger.Error($"CCDInfo/Main: ERROR - You need to provide two filenames in order for us to see if they are equal.");
+                        SharedLogger.logger.Error($"NVIDIAInfo/Main: ERROR - You need to provide two filenames in order for us to see if they are equal.");
                         Environment.Exit(1);
                     }
                 }
