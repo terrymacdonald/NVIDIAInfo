@@ -2343,6 +2343,8 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_Mosaic_GetCurrentTopo, out Mosaic_GetCurrentTopoInternal);
                 GetDelegate(NvId_Mosaic_GetTopoGroup, out Mosaic_GetTopoGroupInternal);
                 GetDelegate(NvId_Mosaic_GetSupportedTopoInfo, out Mosaic_GetSupportedTopoInfoInternal);
+                GetDelegate(NvId_Mosaic_EnumDisplayModes, out Mosaic_EnumDisplayModesInternal);
+                GetDelegate(NvId_Mosaic_EnumDisplayModes, out Mosaic_EnumDisplayModesInternalNull); // The null version of the submission
                 GetDelegate(NvId_Mosaic_EnumDisplayGrids, out Mosaic_EnumDisplayGridsInternal);
                 GetDelegate(NvId_Mosaic_EnumDisplayGrids, out Mosaic_EnumDisplayGridsInternalNull); // The null version of the submission
                 GetDelegate(NvId_Mosaic_SetDisplayGrids, out Mosaic_SetDisplayGridsInternal);
@@ -3626,6 +3628,113 @@ namespace DisplayMagicianShared.NVIDIA
             if (GetQuadroStatusInternal != null) { status = GetQuadroStatusInternal(NvGPUHandle, out retStatus); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
             pStatus = retStatus;
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayModes	(	__in NV_MOSAIC_GRID_TOPO * 	pGridTopology, __inout_ecount_part_opt*,*pDisplayCount NV_MOSAIC_DISPLAY_SETTING * 	pDisplaySettings,
+        //                                                        __inout NvU32 * 	pDisplayCount )	
+        // NvAPIMosaic_EnumDisplayModes
+        private delegate NVAPI_STATUS Mosaic_EnumDisplayModesDelegate(
+            [In][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NV_MOSAIC_DISPLAY_SETTINGS_MAX)] ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies,
+            [In][Out] IntPtr displaySettingsBuffer,
+            [In][Out] ref UInt32 displayCount);
+        private static readonly Mosaic_EnumDisplayModesDelegate Mosaic_EnumDisplayModesInternal;
+
+        /// <summary>
+        /// Determines the set of available display modes for a given grid topology.
+        /// If displaySettings is NULL, then displayCount will receive the total number of modes that are available.
+        /// If displaySettings is not NULL, then displayCount should point to the number of elements in the pDisplaySettings array. On return, it will contain the number of modes that were actually returned
+        /// </summary>
+        /// <param name="gridTopologiesBuffer"></param>
+        /// <param name="displaySettingsBuffer"></param>
+        /// <param name="displayCount"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayModes(ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies, ref NV_MOSAIC_DISPLAY_SETTING_V2[] displaySettings, ref UInt32 displayCount)
+        {
+            NVAPI_STATUS status;
+            
+            // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
+            displaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2[displayCount];
+            // Initialize unmanged memory to hold the unmanaged array of structs
+            IntPtr displaySettingsBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_SETTING_V2)) * (int)displayCount);
+            // Also set another memory pointer to the same place so that we can do the memory copying item by item
+            // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
+            IntPtr currentDisplaySettingsBuffer = displaySettingsBuffer;
+            // Go through the array and copy things from managed code to unmanaged code
+            for (Int32 x = 0; x < (Int32)displayCount; x++)
+            {
+                // Set up the basic structure
+                displaySettings[x].Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V2_VER;
+
+                // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                Marshal.StructureToPtr(displaySettings[x], currentDisplaySettingsBuffer, false);
+                // advance the buffer forwards to the next object
+                currentDisplaySettingsBuffer = (IntPtr)((long)currentDisplaySettingsBuffer + Marshal.SizeOf(displaySettings[x]));
+            }
+
+           
+            if (Mosaic_EnumDisplayModesInternal != null)
+            {
+                // Use the unmanaged buffer in the unmanaged C call
+                status = Mosaic_EnumDisplayModesInternal(ref gridTopologies,  displaySettingsBuffer, ref displayCount);
+
+                if (status == NVAPI_STATUS.NVAPI_OK)
+                {
+                    // If everything worked, then copy the data back from the unmanaged array into the managed array
+                    // So that we can use it in C# land
+                    // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
+                    currentDisplaySettingsBuffer = displaySettingsBuffer;
+                    // Create a managed array to store the received information within
+                    displaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2[displayCount];
+                    // Go through the memory buffer item by item and copy the items into the managed array
+                    for (int i = 0; i < displayCount; i++)
+                    {
+                        // build a structure in the array slot
+                        gridTopologies[i] = new NV_MOSAIC_GRID_TOPO_V2();
+                        // fill the array slot structure NV_MOSAIC_DISPLAY_SETTING_V2 the data from the buffer
+                        gridTopologies[i] = (NV_MOSAIC_GRID_TOPO_V2)Marshal.PtrToStructure(currentDisplaySettingsBuffer, typeof(NV_MOSAIC_DISPLAY_SETTING_V2));
+                        // destroy the bit of memory we no longer need
+                        Marshal.DestroyStructure(currentDisplaySettingsBuffer, typeof(NV_MOSAIC_DISPLAY_SETTING_V2));
+                        // advance the buffer forwards to the next object
+                        currentDisplaySettingsBuffer = (IntPtr)((long)currentDisplaySettingsBuffer + Marshal.SizeOf(displaySettings[i]));
+                    }
+                }
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
+
+            Marshal.FreeCoTaskMem(displaySettingsBuffer);
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_Mosaic_EnumDisplayModes(__inout_ecount_part_opt*,* pGridCount NV_MOSAIC_GRID_TOPO* pGridTopologies,__inout NvU32 * 	pGridCount)
+        // NvAPIMosaic_EnumDisplayModes
+        private delegate NVAPI_STATUS Mosaic_EnumDisplayModesDelegateNull(
+            [In][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NV_MOSAIC_DISPLAY_SETTINGS_MAX)] ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies,
+            [In][Out] IntPtr displaySettingsBuffer,
+            [In][Out] ref UInt32 displayCount);
+        private static readonly Mosaic_EnumDisplayModesDelegateNull Mosaic_EnumDisplayModesInternalNull;
+
+        /// <summary>
+        /// Determines the set of available display modes for a given grid topology.
+        /// If displaySettings is NULL, then displayCount will receive the total number of modes that are available.
+        /// If displaySettings is not NULL, then displayCount should point to the number of elements in the pDisplaySettings array. On return, it will contain the number of modes that were actually returned
+        /// </summary>
+        /// <param name="gridTopologiesBuffer"></param>
+        /// <param name="displaySettingsBuffer"></param>
+        /// <param name="displayCount"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayModes(ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies, ref UInt32 displayCount)
+        {
+            NVAPI_STATUS status;
+            IntPtr displaySettings = IntPtr.Zero;
+
+            if (Mosaic_EnumDisplayModesInternalNull != null) { status = Mosaic_EnumDisplayModesInternalNull(ref gridTopologies, displaySettings, ref displayCount); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
             return status;
         }
 
