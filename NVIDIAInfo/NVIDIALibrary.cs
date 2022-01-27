@@ -1768,7 +1768,7 @@ namespace DisplayMagicianShared.NVIDIA
                     NV_MOSAIC_GRID_TOPO_V2[] oneScreenTopology = CreateSingleScreenMosaicTopology();
                     // If we get here then the display is valid, so now we actually apply the new Mosaic Topology
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Trying to set a 1x1 DisplayGrid for the NvAPI_Mosaic_SetDisplayGrids mosaic layout.");
-                    NVStatus = NVImport.NvAPI_Mosaic_SetDisplayGrids(oneScreenTopology, 1, setTopoFlags);
+                    NVStatus = NVImport.NvAPI_Mosaic_SetDisplayGrids(oneScreenTopology, (UInt32)oneScreenTopology.Length, setTopoFlags);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_Mosaic_SetDisplayGrids returned OK.");
@@ -1788,11 +1788,12 @@ namespace DisplayMagicianShared.NVIDIA
                     else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
                     {
                         SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The Display ID of the first display is not currently possible to use. NvAPI_Mosaic_SetDisplayGrids() returned error code {NVStatus}. Trying again with the next display.");
-                        // We only try if we have more than one display available in the grid topology
-                        if (ActiveDisplayConfig.MosaicConfig.MosaicGridTopos[0].DisplayCount > 1)
+                        return false;
+                        /*// We only try if we have more than one display available in the grid topology
+                        if (ActiveDisplayConfig.MosaicConfig.MosaicGridCount.DisplayCount > 1)
                         {
                             // So we try the second display in the list of displays
-                            oneScreenTopology = CreateSingleScreenMosaicTopology(1);
+                            oneScreenTopology = CreateSingleScreenMosaicTopology();
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Trying to set a 1x1 DisplayGrid for the NvAPI_Mosaic_SetDisplayGrids mosaic layout for a second time.");
                             NVStatus = NVImport.NvAPI_Mosaic_SetDisplayGrids(oneScreenTopology, 1, setTopoFlags);
                             if (NVStatus == NVAPI_STATUS.NVAPI_OK)
@@ -1855,7 +1856,7 @@ namespace DisplayMagicianShared.NVIDIA
                         else
                         {
                             SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: Unable to retry NvAPI_Mosaic_SetDisplayGrids() for a 2nd try as we only have one display currently in use.");
-                        }
+                        }*/
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
                     {
@@ -2811,9 +2812,9 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
 
-        public static NV_MOSAIC_GRID_TOPO_V2[] CreateSingleScreenMosaicTopology(int displayIndexToUse = 0)
+        public static NV_MOSAIC_GRID_TOPO_V2[] CreateSingleScreenMosaicTopology()
         {
-            // Get current Mosaic Topology settings in brief (check whether Mosaic is on)
+            /*// Get current Mosaic Topology settings in brief (check whether Mosaic is on)
             NV_MOSAIC_TOPO_BRIEF mosaicTopoBrief = new NV_MOSAIC_TOPO_BRIEF();
             NV_MOSAIC_DISPLAY_SETTING_V2 mosaicDisplaySetting = new NV_MOSAIC_DISPLAY_SETTING_V2();
             int mosaicOverlapX = 0;
@@ -2846,11 +2847,11 @@ namespace DisplayMagicianShared.NVIDIA
             else
             {
                 SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_GetCurrentTopo() returned error code {NVStatus}");
-            }
+            }*/
 
             // Figure out how many Mosaic Grid topoligies there are                    
             uint mosaicGridCount = 0;
-            NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridCount);
+            NVAPI_STATUS NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayGrids(ref mosaicGridCount);
             if (NVStatus == NVAPI_STATUS.NVAPI_OK)
             {
                 SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_GetCurrentTopo returned OK.");
@@ -2888,23 +2889,91 @@ namespace DisplayMagicianShared.NVIDIA
                 SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_EnumDisplayGrids() returned error code {NVStatus}");
             }
 
+            // Sum up all the screens we have
+            //int totalScreenCount = mosaicGridTopos.Select(tp => tp.Displays).Sum(d => d.Count());
+            List<NV_MOSAIC_GRID_TOPO_V2> screensToReturn = new List<NV_MOSAIC_GRID_TOPO_V2>();
 
-            NV_MOSAIC_GRID_TOPO_V2[] singleMosaicTopology = new NV_MOSAIC_GRID_TOPO_V2[1];
-            singleMosaicTopology[0].Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
-            singleMosaicTopology[0].Rows = 1;
-            singleMosaicTopology[0].Columns = 1;
-            singleMosaicTopology[0].DisplayCount = 1;
-            singleMosaicTopology[0].Flags = mosaicGridTopos[0].Flags;
-            singleMosaicTopology[0].Displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V2[NVImport.NV_MOSAIC_MAX_DISPLAYS];
-            singleMosaicTopology[0].Displays[0].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER;
-            singleMosaicTopology[0].Displays[0].DisplayId = mosaicGridTopos[0].Displays[displayIndexToUse].DisplayId;
-            singleMosaicTopology[0].DisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V1();
-            singleMosaicTopology[0].DisplaySettings.Version = mosaicDisplaySetting.Version;
-            singleMosaicTopology[0].DisplaySettings.Bpp = mosaicDisplaySetting.Bpp;
-            singleMosaicTopology[0].DisplaySettings.Freq = mosaicDisplaySetting.Freq;
-            singleMosaicTopology[0].DisplaySettings.Height = mosaicDisplaySetting.Height;
-            singleMosaicTopology[0].DisplaySettings.Width = mosaicDisplaySetting.Width;
-            return singleMosaicTopology;
+            foreach (NV_MOSAIC_GRID_TOPO_V2 gridTopo in mosaicGridTopos)
+            {
+                // Figure out how many Mosaic Display topologies there are                    
+                UInt32 mosaicDisplayModesCount = 0;
+                NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayModes(gridTopo, ref mosaicDisplayModesCount);
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_EnumDisplayModes returned OK.");
+                }
+
+                // Get Current Mosaic Display Topology settings using the Grid topologies numbers we got before
+                //NV_MOSAIC_TOPO myGridTopo = gridTopo;
+                NV_MOSAIC_DISPLAY_SETTING_V2[] mosaicDisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2[mosaicDisplayModesCount];
+                NVStatus = NVImport.NvAPI_Mosaic_EnumDisplayModes(gridTopo, ref mosaicDisplaySettings, ref mosaicDisplayModesCount);
+                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_Mosaic_EnumDisplayModes returned OK.");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: Mosaic is not supported with the existing hardware. NvAPI_Mosaic_EnumDisplayModes() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more argumentss passed in are invalid. NvAPI_Mosaic_EnumDisplayModes() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_EnumDisplayModes() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_EnumDisplayModes() returned error code {NVStatus}");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                {
+                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Mosaic_EnumDisplayModes() returned error code {NVStatus}");
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology Display Settings! NvAPI_Mosaic_EnumDisplayModes() returned error code {NVStatus}");
+                }
+
+                for (int displayIndexToUse = 0; displayIndexToUse < gridTopo.DisplayCount; displayIndexToUse++)
+                {
+                    NV_MOSAIC_GRID_TOPO_V2 thisScreen = new NV_MOSAIC_GRID_TOPO_V2();
+                    thisScreen.Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
+                    thisScreen.Rows = 1;
+                    thisScreen.Columns = 1;
+                    thisScreen.DisplayCount = 1;
+                    thisScreen.Flags = gridTopo.Flags;
+                    thisScreen.Displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V2[NVImport.NV_MOSAIC_MAX_DISPLAYS];
+                    thisScreen.Displays[0].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER;
+                    thisScreen.Displays[0].DisplayId = gridTopo.Displays[displayIndexToUse].DisplayId;
+                    thisScreen.Displays[0].CloneGroup = gridTopo.Displays[displayIndexToUse].CloneGroup;
+                    thisScreen.Displays[0].OverlapX = gridTopo.Displays[displayIndexToUse].OverlapX;
+                    thisScreen.Displays[0].OverlapY = gridTopo.Displays[displayIndexToUse].OverlapY;
+                    thisScreen.Displays[0].PixelShiftType = gridTopo.Displays[displayIndexToUse].PixelShiftType;
+                    thisScreen.Displays[0].Rotation = gridTopo.Displays[displayIndexToUse].Rotation;
+                    thisScreen.DisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V1();
+                    thisScreen.DisplaySettings.Version = gridTopo.DisplaySettings.Version;
+                    thisScreen.DisplaySettings.Bpp = gridTopo.DisplaySettings.Bpp;
+                    thisScreen.DisplaySettings.Freq = gridTopo.DisplaySettings.Freq;
+                    thisScreen.DisplaySettings.Height = gridTopo.DisplaySettings.Height;
+                    thisScreen.DisplaySettings.Width = gridTopo.DisplaySettings.Width;
+                    screensToReturn.Add(thisScreen);
+                }                                
+
+            }
+/*
+
+
+            // Selected the best display settings to use
+            NV_MOSAIC_DISPLAY_SETTING_V2 bestSetting = mosaicDisplaySettings.OrderByDescending(
+                            settings => (long)settings.Width *
+                                        settings.Height *
+                                        settings.Bpp *
+                                        settings.Freq).First();
+*/
+            
+            return screensToReturn.ToArray();
         }
 
         public static bool ListOfArraysEqual(List<NV_RECT[]> a1, List<NV_RECT[]> a2)
