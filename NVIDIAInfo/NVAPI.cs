@@ -3862,8 +3862,9 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="topoStatuses"></param>
         /// <param name="gridCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, ref NV_MOSAIC_GRID_TOPO_V2[] gridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] topoStatuses, UInt32 gridCount)
+        public static NVAPI_STATUS NvAPI_Mosaic_ValidateDisplayGrids(NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags, NV_MOSAIC_GRID_TOPO_V2[] gridTopologies, ref NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[] topoStatuses, UInt32 gridCount)
         {
+            // Warning! - This function still has some errors with it. It errors with an NVAPI_INCOMPATIBLE_STRUCT_VERSION error. Still needs troubleshooting.
             NVAPI_STATUS status;
             // Initialize unmanged memory to hold the unmanaged array of structs
             IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)gridCount);
@@ -3873,13 +3874,6 @@ namespace DisplayMagicianShared.NVIDIA
             // Go through the array and copy things from managed code to unmanaged code
             for (Int32 x = 0; x < (Int32)gridCount; x++)
             {
-                for (Int32 y = 0; y < gridTopologies[x].DisplayCount; y++)
-                {
-                    gridTopologies[x].Displays[y].Version = NVImport.NV_MOSAIC_GRID_TOPO_DISPLAY_V2_VER;
-                }
-                gridTopologies[x].DisplaySettings.Version = NVImport.NV_MOSAIC_DISPLAY_SETTING_V1_VER;
-                gridTopologies[x].Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
-
                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
                 Marshal.StructureToPtr(gridTopologies[x], currentGridTopologiesBuffer, false);
                 // advance the buffer forwards to the next object
@@ -3942,7 +3936,7 @@ namespace DisplayMagicianShared.NVIDIA
             return status;
         }
 
-
+        
         // NVAPI_INTERFACE NvAPI_Mosaic_SetDisplayGrids	(	__in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __in NvU32  gridCount, __in NvU32  setTopoFlags )	
         private delegate NVAPI_STATUS Mosaic_SetDisplayGridsDelegate(
             [In] IntPtr GridTopologies,
