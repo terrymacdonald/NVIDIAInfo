@@ -3653,7 +3653,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static NVAPI_STATUS NvAPI_Mosaic_EnumDisplayModes(NV_MOSAIC_GRID_TOPO_V2 gridTopology, ref NV_MOSAIC_DISPLAY_SETTING_V2[] displaySettings, ref UInt32 displayCount)
         {
             NVAPI_STATUS status;
-            
+
             // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
             displaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2[displayCount];
             // Initialize unmanged memory to hold the unmanaged array of structs
@@ -3673,11 +3673,11 @@ namespace DisplayMagicianShared.NVIDIA
                 currentDisplaySettingsBuffer = (IntPtr)((long)currentDisplaySettingsBuffer + Marshal.SizeOf(displaySettings[x]));
             }
 
-           
+
             if (Mosaic_EnumDisplayModesInternal != null)
             {
                 // Use the unmanaged buffer in the unmanaged C call
-                status = Mosaic_EnumDisplayModesInternal(gridTopology,  displaySettingsBuffer, ref displayCount);
+                status = Mosaic_EnumDisplayModesInternal(gridTopology, displaySettingsBuffer, ref displayCount);
 
                 if (status == NVAPI_STATUS.NVAPI_OK)
                 {
@@ -3936,7 +3936,7 @@ namespace DisplayMagicianShared.NVIDIA
             return status;
         }
 
-        
+
         // NVAPI_INTERFACE NvAPI_Mosaic_SetDisplayGrids	(	__in_ecount(gridCount) NV_MOSAIC_GRID_TOPO * 	pGridTopologies, __in NvU32  gridCount, __in NvU32  setTopoFlags )	
         private delegate NVAPI_STATUS Mosaic_SetDisplayGridsDelegate(
             [In] IntPtr GridTopologies,

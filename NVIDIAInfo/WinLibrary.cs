@@ -7,9 +7,13 @@ using System.Text.RegularExpressions;
 using DisplayMagicianShared;
 using System.IO;
 using System.ComponentModel;
+using Microsoft.Win32;
+using System.Threading.Tasks;
+using static DisplayMagicianShared.Windows.TaskBarStuckRectangle;
 
 namespace DisplayMagicianShared.Windows
 {
+
     [StructLayout(LayoutKind.Sequential)]
     public struct ADVANCED_HDR_INFO_PER_PATH : IEquatable<ADVANCED_HDR_INFO_PER_PATH>
     {
@@ -42,7 +46,7 @@ namespace DisplayMagicianShared.Windows
         public DISPLAYCONFIG_MODE_INFO[] DisplayConfigModes;
         public List<ADVANCED_HDR_INFO_PER_PATH> DisplayHDRStates;
         public Dictionary<string, GDI_DISPLAY_SETTING> GdiDisplaySettings;
-        public List<TaskBarStuckRectangle> TaskBarLayout;
+        public Dictionary<string,TaskBarStuckRectangle> TaskBarLayout;
         public TaskBarSettings TaskBarSettings;
         public bool IsCloned;
         // Note: We purposely have left out the DisplaySources from the Equals as it's order keeps changing after each reboot and after each profile swap
@@ -84,6 +88,7 @@ namespace DisplayMagicianShared.Windows
 
         private bool _initialised = false;
         private WINDOWS_DISPLAY_CONFIG _activeDisplayConfig;
+        public List<DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY> SkippedColorConnectionTypes;
 
         // To detect redundant calls
         private bool _disposed = false;
@@ -94,6 +99,15 @@ namespace DisplayMagicianShared.Windows
         static WinLibrary() { }
         public WinLibrary()
         {
+            // Populate the list of ConnectionTypes we want to skip as they don't support querying
+            SkippedColorConnectionTypes = new List<DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY> {
+                DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY.DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15,
+                DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY.DISPLAYCONFIG_OUTPUT_TECHNOLOGY_COMPONENT_VIDEO,
+                DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY.DISPLAYCONFIG_OUTPUT_TECHNOLOGY_COMPOSITE_VIDEO,
+                DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY.DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI,
+                DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY.DISPLAYCONFIG_OUTPUT_TECHNOLOGY_SVIDEO
+            };
+
             SharedLogger.logger.Trace("WinLibrary/WinLibrary: Intialising Windows CCD library interface");
             _initialised = true;
             _activeDisplayConfig = GetActiveConfig();
@@ -169,7 +183,7 @@ namespace DisplayMagicianShared.Windows
             myDefaultConfig.DisplayIdentifiers = new List<string>();
             myDefaultConfig.DisplaySources = new Dictionary<string, List<uint>>();
             myDefaultConfig.GdiDisplaySettings = new Dictionary<string, GDI_DISPLAY_SETTING>();
-            myDefaultConfig.TaskBarLayout = new List<TaskBarStuckRectangle>();
+            myDefaultConfig.TaskBarLayout = new Dictionary<string, TaskBarStuckRectangle>();
             myDefaultConfig.TaskBarSettings = new TaskBarSettings();
             myDefaultConfig.IsCloned = false;
 
@@ -307,6 +321,10 @@ namespace DisplayMagicianShared.Windows
 
         private WINDOWS_DISPLAY_CONFIG GetWindowsDisplayConfig(QDC selector = QDC.QDC_ONLY_ACTIVE_PATHS | QDC.QDC_INCLUDE_HMD)
         {
+
+            // Prepare the empty windows display config
+            WINDOWS_DISPLAY_CONFIG windowsDisplayConfig = CreateDefaultConfig();
+
             // Get the size of the largest Active Paths and Modes arrays
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Getting the size of the largest Active Paths and Modes arrays");
             int pathCount = 0;
@@ -355,12 +373,6 @@ namespace DisplayMagicianShared.Windows
                 throw new WinLibraryException($"QueryDisplayConfig returned WIN32STATUS {err} when trying to query all available displays.");
             }
 
-            // Prepare the empty windows display config
-            WINDOWS_DISPLAY_CONFIG windowsDisplayConfig = new WINDOWS_DISPLAY_CONFIG();
-            windowsDisplayConfig.DisplayAdapters = new Dictionary<ulong, string>();
-            windowsDisplayConfig.DisplayHDRStates = new List<ADVANCED_HDR_INFO_PER_PATH>();
-            windowsDisplayConfig.DisplaySources = new Dictionary<string, List<uint>>();
-            windowsDisplayConfig.IsCloned = false;
 
             // First of all generate the current displayIdentifiers
             windowsDisplayConfig.DisplayIdentifiers = GetCurrentDisplayIdentifiers();
@@ -481,70 +493,78 @@ namespace DisplayMagicianShared.Windows
 
                 // Get advanced color info
                 SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get advanced color info for display {paths[i].TargetInfo.Id}.");
-                var colorInfo = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
-                colorInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
-                colorInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
-                colorInfo.Header.AdapterId = paths[i].TargetInfo.AdapterId;
-                colorInfo.Header.Id = paths[i].TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref colorInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
+
+                // We need to skip recording anything from a connection that doesn't support color communication
+                if (!SkippedColorConnectionTypes.Contains(paths[i].TargetInfo.OutputTechnology))
                 {
-                    gotAdvancedColorInfo = true;
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found color info for display {paths[i].TargetInfo.Id}.");
-                    if (colorInfo.AdvancedColorSupported)
+                    var colorInfo = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
+                    colorInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
+                    colorInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
+                    colorInfo.Header.AdapterId = paths[i].TargetInfo.AdapterId;
+                    colorInfo.Header.Id = paths[i].TargetInfo.Id;
+                    err = CCDImport.DisplayConfigGetDeviceInfo(ref colorInfo);
+                    if (err == WIN32STATUS.ERROR_SUCCESS)
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: HDR is supported for display {paths[i].TargetInfo.Id}.");
+                        gotAdvancedColorInfo = true;
+                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found color info for display {paths[i].TargetInfo.Id}.");
+                        if (colorInfo.AdvancedColorSupported)
+                        {
+                            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: HDR is supported for display {paths[i].TargetInfo.Id}.");
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: HDR is NOT supported for display {paths[i].TargetInfo.Id}.");
+                        }
+                        if (colorInfo.AdvancedColorEnabled)
+                        {
+                            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: HDR is enabled for display {paths[i].TargetInfo.Id}.");
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: HDR is NOT enabled for display {paths[i].TargetInfo.Id}.");
+                        }
                     }
                     else
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: HDR is NOT supported for display {paths[i].TargetInfo.Id}.");
+                        SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - Unabled to get advanced color settings for display {paths[i].TargetInfo.Id}.");
                     }
-                    if (colorInfo.AdvancedColorEnabled)
+
+                    // get SDR white levels
+                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get SDR white levels for display {paths[i].TargetInfo.Id}.");
+                    var whiteLevelInfo = new DISPLAYCONFIG_SDR_WHITE_LEVEL();
+                    whiteLevelInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
+                    whiteLevelInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SDR_WHITE_LEVEL>();
+                    whiteLevelInfo.Header.AdapterId = paths[i].TargetInfo.AdapterId;
+                    whiteLevelInfo.Header.Id = paths[i].TargetInfo.Id;
+                    err = CCDImport.DisplayConfigGetDeviceInfo(ref whiteLevelInfo);
+                    if (err == WIN32STATUS.ERROR_SUCCESS)
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: HDR is enabled for display {paths[i].TargetInfo.Id}.");
+                        gotSdrWhiteLevel = true;
+                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found SDR White levels for display {paths[i].TargetInfo.Id}.");
                     }
                     else
                     {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: HDR is NOT enabled for display {paths[i].TargetInfo.Id}.");
+                        SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - Unabled to get SDR White levels for display {paths[i].TargetInfo.Id}.");
+                    }
+
+                    // Only create and add the ADVANCED_HDR_INFO_PER_PATH if the info is there
+                    if (gotAdvancedColorInfo)
+                    {
+                        ADVANCED_HDR_INFO_PER_PATH hdrInfo = new ADVANCED_HDR_INFO_PER_PATH();
+                        hdrInfo.AdapterId = paths[i].TargetInfo.AdapterId;
+                        hdrInfo.Id = paths[i].TargetInfo.Id;
+                        hdrInfo.AdvancedColorInfo = colorInfo;
+                        if (gotSdrWhiteLevel)
+                        {
+                            hdrInfo.SDRWhiteLevel = whiteLevelInfo;
+                        }
+                        windowsDisplayConfig.DisplayHDRStates.Add(hdrInfo);
                     }
                 }
                 else
                 {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - Unabled to get advanced color settings for display {paths[i].TargetInfo.Id}.");
+                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Skipping getting HDR and SDR White levels information as display {paths[i].TargetInfo.Id} uses a {paths[i].TargetInfo.OutputTechnology} connector that doesn't support HDR.");
                 }
-
-                // get SDR white levels
-                SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get SDR white levels for display {paths[i].TargetInfo.Id}.");
-                var whiteLevelInfo = new DISPLAYCONFIG_SDR_WHITE_LEVEL();
-                whiteLevelInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
-                whiteLevelInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SDR_WHITE_LEVEL>();
-                whiteLevelInfo.Header.AdapterId = paths[i].TargetInfo.AdapterId;
-                whiteLevelInfo.Header.Id = paths[i].TargetInfo.Id;
-                err = CCDImport.DisplayConfigGetDeviceInfo(ref whiteLevelInfo);
-                if (err == WIN32STATUS.ERROR_SUCCESS)
-                {
-                    gotSdrWhiteLevel = true;
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found SDR White levels for display {paths[i].TargetInfo.Id}.");
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: WARNING - Unabled to get SDR White levels for display {paths[i].TargetInfo.Id}.");
-                }
-
-                // Only create and add the ADVANCED_HDR_INFO_PER_PATH if the info is there
-                if (gotAdvancedColorInfo)
-                {
-                    ADVANCED_HDR_INFO_PER_PATH hdrInfo = new ADVANCED_HDR_INFO_PER_PATH();
-                    hdrInfo.AdapterId = paths[i].TargetInfo.AdapterId;
-                    hdrInfo.Id = paths[i].TargetInfo.Id;
-                    hdrInfo.AdvancedColorInfo = colorInfo;
-                    if (gotSdrWhiteLevel)
-                    {
-                        hdrInfo.SDRWhiteLevel = whiteLevelInfo;
-                    }
-                    windowsDisplayConfig.DisplayHDRStates.Add(hdrInfo);
-                }
-
             }
 
 
@@ -602,7 +622,29 @@ namespace DisplayMagicianShared.Windows
             // Now attempt to get the windows taskbar location for each display
             // We use the information we already got from the display identifiers
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar layout.");
-            List<TaskBarStuckRectangle> taskBarStuckRectangles = TaskBarStuckRectangle.GetCurrent(windowsDisplayConfig.DisplayIdentifiers);
+            Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
+            foreach (var displayId in windowsDisplayConfig.DisplayIdentifiers)
+            {
+                // e.g. "WINAPI|\\\\?\\PCI#VEN_10DE&DEV_2482&SUBSYS_408E1458&REV_A1#4&2283f625&0&0019#{5b45201d-f2f2-4f3b-85bb-30ff1f953599}|DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI|54074|4318|\\\\?\\DISPLAY#NVS10DE#5&2b46c695&0&UID185344#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}|NV Surround"
+                string[] winapiLine = displayId.Split('|');
+                string pattern = @"DISPLAY\#(.*)\#\{";
+                Match match = Regex.Match(winapiLine[5], pattern);
+                if (match.Success)
+                {
+                    string devicePath = match.Groups[1].Value;
+                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found devicePath {devicePath} from the display identifier {displayId}.");
+                    TaskBarStuckRectangle taskBarStuckRectangle = new TaskBarStuckRectangle(devicePath);
+                    taskBarStuckRectangles.Add(devicePath,taskBarStuckRectangle);
+                }
+                else
+                {
+                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: We were unable to figure out the DevicePath for the '{displayId}' display identifier.");
+                }
+
+            }
+            // And we get the Main Screen taskbar too
+            TaskBarStuckRectangle mainTaskBarStuckRectangle = new TaskBarStuckRectangle("Settings");
+            taskBarStuckRectangles.Add("Settings", mainTaskBarStuckRectangle);
 
             // Now we try to get the taskbar settings too
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar settings.");
@@ -613,6 +655,7 @@ namespace DisplayMagicianShared.Windows
             windowsDisplayConfig.DisplayConfigModes = modes;
             windowsDisplayConfig.GdiDisplaySettings = GetGdiDisplaySettings();
             windowsDisplayConfig.TaskBarLayout = taskBarStuckRectangles;
+            //windowsDisplayConfig.OriginalTaskBarLayout = new List<TaskBarStuckRectangle>(taskBarStuckRectangles);
             windowsDisplayConfig.TaskBarSettings = taskBarSettings;
 
             return windowsDisplayConfig;
@@ -1340,18 +1383,47 @@ namespace DisplayMagicianShared.Windows
             // Now set the taskbar position for each screen
             if (displayConfig.TaskBarLayout.Count > 0)
             {
+
+                if (displayConfig.TaskBarLayout.ContainsKey("Settings"))
+                {
+                    TaskBarStuckRectangle tbsr = displayConfig.TaskBarLayout["Settings"];
+                    if (tbsr.Version >= 2 && tbsr.Version <= 3)
+                    {
+                        // Write the settings to registry
+                        tbsr.WriteToRegistry();
+
+                    }
+                    RepositionMainTaskBar(tbsr.Edge);
+                }
+
                 SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Setting the taskbar layout.");
-                if (TaskBarStuckRectangle.Apply(displayConfig.TaskBarLayout))
+                foreach (KeyValuePair<string, TaskBarStuckRectangle> kvp in displayConfig.TaskBarLayout)
                 {
-                    // TODO - We need to detect if it is Windows 11, as we need to restart explorer.exe for the settings to take
-                    //        No need to do it in Windows 10, as explorere auto-detects the registry key change, and moves the taskbar
-                    //        (In fact, if you try to restart explorer.exe on Win10 it actually stops the taskbar move from working!)
-                    SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Set the taskbar layout successfully.");
+                    if (displayConfig.TaskBarLayout.ContainsKey("Settings"))
+                    {
+                        continue;
+                    }
+
+                    TaskBarStuckRectangle tbsr = kvp.Value;
+                    if (tbsr.Version >= 2 && tbsr.Version <= 3)
+                    {
+                        // Write the settings to registry
+                        tbsr.WriteToRegistry();
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: Unable to set the {tbsr.DevicePath} TaskBarStuckRectangle registry settings as the version isn't v2 or v3!");
+                    }
                 }
-                else
+
+
+                // Tell Windows to refresh the Other Windows Taskbars if needed
+                IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
+                if (displayConfig.TaskBarLayout.Count > 1)
                 {
-                    SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: Unable to set the taskbar layout.");
+                    RepositionSecondaryTaskBars();
                 }
+
             }
             else
             {
@@ -1379,13 +1451,6 @@ namespace DisplayMagicianShared.Windows
                 // The settings are the same, so we should skip applying them
                 SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: The current taskbar settings are the same as the one's we want, so skipping setting them!");
             }
-
-            // Restart Windows Explorer if we are in Win11 and if we need to make any TaskBar changes
-            // If we get here, then we need to restart Windows Explorer for the taskbar registry changes to take effect!
-            /*if (needToRestartExplorer && Utils.IsWindows11())
-            {
-                RestartExplorer();
-            }*/
 
             return true;
         }
@@ -1906,7 +1971,144 @@ namespace DisplayMagicianShared.Windows
             {
                 return false;
             }
-        }        
+        }
+
+        public static bool RepositionMainTaskBar(TaskBarEdge edge)
+        {
+            // Tell Windows to refresh the Main Screen Windows Taskbar
+            // Find the "Shell_TrayWnd" window 
+            IntPtr systemTrayContainerHandle = Utils.FindWindow("Shell_TrayWnd", null);
+            IntPtr startButtonHandle = Utils.FindWindowEx(systemTrayContainerHandle, IntPtr.Zero, "Start", null);
+            IntPtr systemTrayHandle = Utils.FindWindowEx(systemTrayContainerHandle, IntPtr.Zero, "TrayNotifyWnd", null);
+            IntPtr rebarWindowHandle = Utils.FindWindowEx(systemTrayContainerHandle, IntPtr.Zero, "ReBarWindow32", null);
+            IntPtr taskBarPositionBuffer = new IntPtr((Int32)edge);
+            IntPtr trayDesktopShowButtonHandle = Utils.FindWindowEx(systemTrayHandle, IntPtr.Zero, "TrayShowDesktopButtonWClass", null);
+            IntPtr trayInputIndicatorHandle = Utils.FindWindowEx(systemTrayHandle, IntPtr.Zero, "TrayInputIndicatorWClass", null);
+
+            // Send messages
+            // Send the "TrayNotifyWnd" window a WM_USER+13 (0x040D) message with a wParameter of 0x0 and a lParameter of the position (e.g. 0x0000 for left, 0x0001 for top, 0x0002 for right and 0x0003 for bottom)
+            Utils.SendMessage(systemTrayHandle, Utils.WM_USER_13, IntPtr.Zero, taskBarPositionBuffer);
+            Utils.SendMessage(systemTrayHandle, Utils.WM_USER_100, (IntPtr)0x3e, (IntPtr)0x21c);
+            Utils.SendMessage(systemTrayHandle, Utils.WM_THEMECHANGED, (IntPtr)0xffffffffffffffff, (IntPtr)0x000000008000001);
+            // Next, send the "TrayShowDesktopButtonWClass" window a WM_USER+13 (0x040D) message with a wParameter of 0x0 and a lParameter of the position (e.g. 0x0000 for left, 0x0001 for top, 0x0002 for right and 0x0003 for bottom)
+            Utils.SendMessage(trayDesktopShowButtonHandle, Utils.WM_USER_13, IntPtr.Zero, taskBarPositionBuffer);
+            Utils.SendMessage(startButtonHandle, Utils.WM_USER_440, (IntPtr)0x0, (IntPtr)0x0);
+            Utils.SendMessage(systemTrayHandle, Utils.WM_USER_1, (IntPtr)0x0, (IntPtr)0x0);
+            Utils.SendMessage(systemTrayContainerHandle, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+            Utils.PostMessage(systemTrayHandle, Utils.WM_SETTINGCHANGE, Utils.SPI_SETWORKAREA, Utils.NULL);
+            Utils.SendMessage(systemTrayContainerHandle, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+            Utils.SendMessage(rebarWindowHandle, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+            //Utils.SendMessage(trayInputIndicatorHandle, Utils.WM_USER_100, (IntPtr)0x3e, (IntPtr)0x21c);
+            //Utils.SendMessage(systemTrayHandle, Utils.WM_USER_1, (IntPtr)0x0, (IntPtr)0x0);
+            // Move all the taskbars to this location
+            //Utils.SendMessage(systemTrayContainerHandle, Utils.WM_USER_REFRESHTASKBAR, (IntPtr)Utils.wParam_SHELLTRAY, taskBarPositionBuffer);
+            //Utils.SendMessage(systemTrayContainerHandle, Utils.WM_USER_REFRESHTASKBAR, (IntPtr)Utils.wParam_SHELLTRAY, taskBarPositionBuffer);
+            return true;
+        }
+
+        public static bool RepositionAllTaskBars(TaskBarEdge edge)
+        {
+            // Tell Windows to refresh the Main Screen Windows Taskbar
+            // Find the "Shell_TrayWnd" window 
+            IntPtr mainToolBarHWnd = Utils.FindWindow("Shell_TrayWnd", null);
+            // Send the "Shell_TrayWnd" window a WM_USER_REFRESHTASKBAR with a wParameter of 0006 and a lParameter of the position (e.g. 0000 for left, 0001 for top, 0002 for right and 0003 for bottom)
+            IntPtr taskBarPositionBuffer = new IntPtr((Int32)edge);
+            Utils.SendMessage(mainToolBarHWnd, Utils.WM_USER_REFRESHTASKBAR, (IntPtr)Utils.wParam_SHELLTRAY, taskBarPositionBuffer);
+            return true;
+        }
+
+        public static bool RepositionSecondaryTaskBars()
+        {
+            // Tell Windows to refresh the Other Windows Taskbars if needed
+            IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
+            for (int i = 0; i < 100; i++)
+            {
+                // Find the next "Shell_SecondaryTrayWnd" window 
+                IntPtr nextTaskBarWindowHwnd = Utils.FindWindowEx((IntPtr)Utils.NULL, lastTaskBarWindowHwnd, "Shell_SecondaryTrayWnd", null);
+                if (nextTaskBarWindowHwnd == (IntPtr)Utils.NULL)
+                {
+                    // No more windows taskbars to notify
+                    break;
+                }
+                // Send the "Shell_TrayWnd" window a WM_SETTINGCHANGE with a wParameter of SPI_SETWORKAREA
+                Utils.SendMessage(lastTaskBarWindowHwnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+                lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
+            }
+            return true;
+        }
+
+        public static bool RefreshTaskBars()
+        {
+            // Tell Windows to refresh the Main Screen Windows Taskbar registry settings by telling Explorer to update.
+            // Find the "Shell_TrayWnd" window 
+            IntPtr mainToolBarHWnd = Utils.FindWindow("Shell_TrayWnd", null);
+            Utils.SendMessage(mainToolBarHWnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+            // Tell Windows to refresh the Other Windows Taskbars if needed
+            IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
+            for (int i = 0; i < 100; i++)
+            {
+                // Find the next "Shell_SecondaryTrayWnd" window 
+                IntPtr nextTaskBarWindowHwnd = Utils.FindWindowEx((IntPtr)Utils.NULL, lastTaskBarWindowHwnd, "Shell_SecondaryTrayWnd", null);
+                if (nextTaskBarWindowHwnd == (IntPtr)Utils.NULL)
+                {
+                    // No more windows taskbars to notify
+                    break;
+                }
+                // Send the "Shell_TrayWnd" window a WM_SETTINGCHANGE with a wParameter of SPI_SETWORKAREA
+                Utils.SendMessage(lastTaskBarWindowHwnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+                lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
+            }
+
+            //IntPtr explorerToolBarHWnd = Utils.FindWindow("Shell_TrayWnd", null);
+            //Utils.PostMessage((IntPtr)Utils.HWND_BROADCAST, Utils.SHELLHOOK, 0x13, (int) mainToolBarHWnd);
+            //Utils.PostMessage((IntPtr)Utils.HWND_BROADCAST, Utils.WM_SETTINGCHANGE, (int)Utils.SPI_SETWORKAREA, (int)Utils.NULL);
+            /*IntPtr result;
+            Utils.SendMessageTimeout((IntPtr)Utils.HWND_BROADCAST, Utils.WM_USER_1, (IntPtr)Utils.NULL, (IntPtr)Utils.NULL, Utils.SendMessageTimeoutFlag.SMTO_ABORTIFHUNG, 15, out result);*/
+            return true;
+        }
+
+        public static void RefreshTrayArea()
+        {
+            // Finds the Shell_TrayWnd -> TrayNotifyWnd -> SysPager -> "Notification Area" containing the visible notification area icons (windows 7 version)
+            IntPtr systemTrayContainerHandle = Utils.FindWindow("Shell_TrayWnd", null);
+            IntPtr systemTrayHandle = Utils.FindWindowEx(systemTrayContainerHandle, IntPtr.Zero, "TrayNotifyWnd", null);
+            IntPtr sysPagerHandle = Utils.FindWindowEx(systemTrayHandle, IntPtr.Zero, "SysPager", null);
+            IntPtr notificationAreaHandle = Utils.FindWindowEx(sysPagerHandle, IntPtr.Zero, "ToolbarWindow32", "Notification Area");
+            // If the visible notification area icons (Windows 7 aren't found, then we're on a later version of windows, and we need to look for different window names
+            if (notificationAreaHandle == IntPtr.Zero)
+            {
+                // Finds the Shell_TrayWnd -> TrayNotifyWnd -> SysPager -> "User Promoted Notification Area" containing the visible notification area icons (windows 10+ version)
+                notificationAreaHandle = Utils.FindWindowEx(sysPagerHandle, IntPtr.Zero, "ToolbarWindow32", "User Promoted Notification Area");
+                // Also attempt to find the NotifyIconOverflowWindow -> "Overflow Notification Area' window which is the hidden windoww that notification icons live when they are 
+                // too numberous or are hidden by the user.
+                IntPtr notifyIconOverflowWindowHandle = Utils.FindWindow("NotifyIconOverflowWindow", null);
+                IntPtr overflowNotificationAreaHandle = Utils.FindWindowEx(notifyIconOverflowWindowHandle, IntPtr.Zero, "ToolbarWindow32", "Overflow Notification Area");
+                // Fool the "Overflow Notification Area' window into thinking the mouse is moving over it
+                // which will force windows to refresh the "Overflow Notification Area' window and remove old icons.
+                RefreshTrayArea(overflowNotificationAreaHandle);
+                notifyIconOverflowWindowHandle = IntPtr.Zero;
+                overflowNotificationAreaHandle = IntPtr.Zero;
+            }
+            // Fool the "Notification Area" or "User Promoted Notification Area" window (depends on the version of windows) into thinking the mouse is moving over it
+            // which will force windows to refresh the "Notification Area" or "User Promoted Notification Area" window and remove old icons.
+            RefreshTrayArea(notificationAreaHandle);
+            systemTrayContainerHandle = IntPtr.Zero;
+            systemTrayHandle = IntPtr.Zero;
+            sysPagerHandle = IntPtr.Zero;
+            notificationAreaHandle = IntPtr.Zero;
+
+        }
+
+
+        private static void RefreshTrayArea(IntPtr windowHandle)
+        {
+            // Moves the mouse around within the window area of the supplied window
+            Utils.RECT rect;
+            Utils.GetClientRect(windowHandle, out rect);
+            for (var x = 0; x < rect.right; x += 5)
+                for (var y = 0; y < rect.bottom; y += 5)
+                    Utils.SendMessage(windowHandle, Utils.WM_MOUSEMOVE, 0, (y << 16) + x);
+        }
 
     }
 

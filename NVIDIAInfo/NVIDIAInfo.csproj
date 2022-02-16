@@ -89,6 +89,7 @@
     <Compile Include="SharedLogger.cs" />
     <Compile Include="TaskBarSettings.cs" />
     <Compile Include="TaskBarStuckRectangle.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="WinLibrary.cs" />
   </ItemGroup>
   <ItemGroup>
