@@ -619,10 +619,16 @@ namespace DisplayMagicianShared.Windows
                 }
             }
 
+            Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
+
             // Now attempt to get the windows taskbar location for each display
+            taskBarStuckRectangles = GetAllCurrentTaskBarPositions();
+
+
+
             // We use the information we already got from the display identifiers
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar layout.");
-            Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
+            //Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
             foreach (var displayId in windowsDisplayConfig.DisplayIdentifiers)
             {
                 // e.g. "WINAPI|\\\\?\\PCI#VEN_10DE&DEV_2482&SUBSYS_408E1458&REV_A1#4&2283f625&0&0019#{5b45201d-f2f2-4f3b-85bb-30ff1f953599}|DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI|54074|4318|\\\\?\\DISPLAY#NVS10DE#5&2b46c695&0&UID185344#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}|NV Surround"
@@ -1973,6 +1979,92 @@ namespace DisplayMagicianShared.Windows
             }
         }
 
+        public static Dictionary<string, TaskBarStuckRectangle> GetAllCurrentTaskBarPositions()
+        {
+            Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
+
+            IntPtr hWndAppBar;
+            UInt32 uCallbackMessage;
+            ABEDGE uEdge;
+            RECT rc;
+            Int32 lParam;
+            int state;
+
+            APPBARDATA abd = new APPBARDATA();
+
+            // Firstly try to get the position of the main screen
+            try
+            {
+                abd.hWnd = Utils.FindWindow("Shell_TrayWnd", "");
+                abd.uEdge = ABEDGE.ABE_BOTTOM;
+                abd.lParam = 0x1;
+                abd.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
+
+
+                state = Utils.SHAppBarMessage(Utils.ABM_GETTASKBARPOS, ref abd);
+
+                if (state == 1)
+                {
+                    TaskBarStuckRectangle tbsr = new TaskBarStuckRectangle();
+                    tbsr.Edge = (TaskBarEdge)abd.uEdge;
+                    System.Drawing.Rectangle rect = new System.Drawing.Rectangle(abd.rc.left, abd.rc.top, Math.Abs(abd.rc.left - abd.rc.right), Math.Abs(abd.rc.top - abd.rc.bottom)); 
+                    tbsr.Location = rect;
+                    tbsr.DPI = 96;
+                    tbsr.MainScreen = true;
+
+                    taskBarStuckRectangles.Add("Settings",tbsr);
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            // Then go through the secondary windows and get the position of them
+            // Tell Windows to refresh the Other Windows Taskbars if needed
+            IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
+            for (int i = 0; i < 100; i++)
+            {
+                // Find the next "Shell_SecondaryTrayWnd" window 
+                IntPtr nextTaskBarWindowHwnd = Utils.FindWindowEx((IntPtr)Utils.NULL, lastTaskBarWindowHwnd, "Shell_SecondaryTrayWnd", null);
+                if (nextTaskBarWindowHwnd == (IntPtr)Utils.NULL)
+                {
+                    // No more windows taskbars to notify
+                    break;
+                }
+                abd.hWnd = nextTaskBarWindowHwnd;
+                abd.uEdge = ABEDGE.ABE_BOTTOM;
+                abd.lParam = 0x1;
+                abd.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
+
+
+                state = Utils.SHAppBarMessage(Utils.ABM_GETTASKBARPOS, ref abd);
+
+                if (state == 1)
+                {
+                    // Figure out which monitor this is on
+                    IntPtr thisMonitorHwnd = Utils.MonitorFromWindow(nextTaskBarWindowHwnd, Utils.MONITOR_DEFAULTTOPRIMARY);
+                    // Figure out the monitor coordinates
+                    MONITORINFOEX monitorInfo = new MONITORINFOEX();
+                    Utils.GetMonitorInfo(thisMonitorHwnd, ref monitorInfo);
+
+                    TaskBarStuckRectangle tbsr = new TaskBarStuckRectangle();
+                    tbsr.Edge = (TaskBarEdge)abd.uEdge;
+                    System.Drawing.Rectangle rect = new System.Drawing.Rectangle(abd.rc.left, abd.rc.top, Math.Abs(abd.rc.left - abd.rc.right), Math.Abs(abd.rc.top - abd.rc.bottom));
+                    tbsr.Location = rect;
+                    tbsr.DPI = 96;
+                    tbsr.MainScreen = false;
+
+                    taskBarStuckRectangles.Add($"Display #{i}", tbsr);
+                }                
+
+                // Prep the next taskbar window so we continue through them
+                lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
+            }
+
+            return taskBarStuckRectangles;
+        }
+
         public static bool RepositionMainTaskBar(TaskBarEdge edge)
         {
             // Tell Windows to refresh the Main Screen Windows Taskbar
@@ -2103,7 +2195,7 @@ namespace DisplayMagicianShared.Windows
         private static void RefreshTrayArea(IntPtr windowHandle)
         {
             // Moves the mouse around within the window area of the supplied window
-            Utils.RECT rect;
+            RECT rect;
             Utils.GetClientRect(windowHandle, out rect);
             for (var x = 0; x < rect.right; x += 5)
                 for (var y = 0; y < rect.bottom; y += 5)

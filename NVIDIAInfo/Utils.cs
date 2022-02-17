@@ -8,26 +8,145 @@ using System.Threading.Tasks;
 
 namespace DisplayMagicianShared
 {
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT
+    {
+        public int left;
+        public int top;
+        public int right;
+        public int bottom;
+    }
+
+
+    public struct APPBARDATA
+    {
+        public Int32 cbSize;
+        public IntPtr hWnd;
+        public UInt32 uCallbackMessage;
+        public ABEDGE uEdge;
+        public RECT rc;
+        public Int32 lParam;
+    }
+
+    
+    /// <summary>
+    /// The MONITORINFOEX structure contains information about a display monitor.
+    /// The GetMonitorInfo function stores information into a MONITORINFOEX structure or a MONITORINFO structure.
+    /// The MONITORINFOEX structure is a superset of the MONITORINFO structure. The MONITORINFOEX structure adds a string member to contain a name
+    /// for the display monitor.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    public struct MONITORINFOEX
+    {
+        /// <summary>
+        /// The size, in bytes, of the structure. Set this member to sizeof(MONITORINFOEX) (72) before calling the GetMonitorInfo function.
+        /// Doing so lets the function determine the type of structure you are passing to it.
+        /// </summary>
+        public int cbSize;
+
+        /// <summary>
+        /// A RECT structure that specifies the display monitor rectangle, expressed in virtual-screen coordinates.
+        /// Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
+        /// </summary>
+        public RECT Monitor;
+
+        /// <summary>
+        /// A RECT structure that specifies the work area rectangle of the display monitor that can be used by applications,
+        /// expressed in virtual-screen coordinates. Windows uses this rectangle to maximize an application on the monitor.
+        /// The rest of the area in rcMonitor contains system windows such as the task bar and side bars.
+        /// Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
+        /// </summary>
+        public RECT WorkArea;
+
+        /// <summary>
+        /// The attributes of the display monitor.
+        ///
+        /// This member can be the following value:
+        ///   1 : MONITORINFOF_PRIMARY
+        /// </summary>
+        public uint Flags;
+
+        /// <summary>
+        /// A string that specifies the device name of the monitor being used. Most applications have no use for a display monitor name,
+        /// and so can save some bytes by using a MONITORINFO structure.
+        /// </summary>
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = Utils.CCHDEVICENAME)]
+        public string DeviceName;
+
+        public void Init()
+        {
+            this.cbSize = 40 + 2 * Utils.CCHDEVICENAME;
+            this.DeviceName = string.Empty;
+        }
+    }
+
+
+    /// <summary>
+    /// The MONITORINFOEX structure contains information about a display monitor.
+    /// The GetMonitorInfo function stores information into a MONITORINFOEX structure or a MONITORINFO structure.
+    /// The MONITORINFOEX structure is a superset of the MONITORINFO structure. The MONITORINFOEX structure adds a string member to contain a name
+    /// for the display monitor.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    public struct MONITORINFO
+    {
+        /// <summary>
+        /// The size, in bytes, of the structure. Set this member to sizeof(MONITORINFOEX) (72) before calling the GetMonitorInfo function.
+        /// Doing so lets the function determine the type of structure you are passing to it.
+        /// </summary>
+        public int cbSize;
+
+        /// <summary>
+        /// A RECT structure that specifies the display monitor rectangle, expressed in virtual-screen coordinates.
+        /// Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
+        /// </summary>
+        public RECT Monitor;
+
+        /// <summary>
+        /// A RECT structure that specifies the work area rectangle of the display monitor that can be used by applications,
+        /// expressed in virtual-screen coordinates. Windows uses this rectangle to maximize an application on the monitor.
+        /// The rest of the area in rcMonitor contains system windows such as the task bar and side bars.
+        /// Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
+        /// </summary>
+        public RECT WorkArea;
+
+        /// <summary>
+        /// The attributes of the display monitor.
+        ///
+        /// This member can be the following value:
+        ///   1 : MONITORINFOF_PRIMARY
+        /// </summary>
+        public uint Flags;
+
+        public void Init()
+        {
+            this.cbSize = 40 + 2;
+        }
+    }
+
+    [Flags]
+    public enum SendMessageTimeoutFlag : uint
+    {
+        SMTO_NORMAL = 0x0,
+        SMTO_BLOCK = 0x1,
+        SMTO_ABORTIFHUNG = 0x2,
+        SMTO_NOTIMEOUTIFNOTHUNG = 0x8,
+        SMTO_ERRORONEXIT = 0x20
+    }
+
+    public enum ABEDGE : UInt32
+    {
+        ABE_LEFT = 0x0,
+        ABE_TOP = 0x1,
+        ABE_RIGHT = 0x2,
+        ABE_BOTTOM = 0x3,
+    }
+
+
     class Utils
     {
-        [StructLayout(LayoutKind.Sequential)]
-        public struct RECT
-        {
-            public int left;
-            public int top;
-            public int right;
-            public int bottom;
-        }
-
-        [Flags]
-        public enum SendMessageTimeoutFlag : uint
-        {
-            SMTO_NORMAL = 0x0,
-            SMTO_BLOCK = 0x1,
-            SMTO_ABORTIFHUNG = 0x2,
-            SMTO_NOTIMEOUTIFNOTHUNG = 0x8,
-            SMTO_ERRORONEXIT = 0x20
-        }
+        
 
         #region enum HChangeNotifyEventID
         /// <summary>
@@ -305,11 +424,26 @@ namespace DisplayMagicianShared
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
 
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, MonitorEnumProc lpfnEnum, IntPtr dwData);
+
         [DllImport("shell32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern void SHChangeNotify(HChangeNotifyEventID wEventId,
                                    HChangeNotifyFlags uFlags,
                                    IntPtr dwItem1,
                                    IntPtr dwItem2);
+
+        [DllImport("shell32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern int SHAppBarMessage(uint dwMessage, ref APPBARDATA pData);
 
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
@@ -331,6 +465,22 @@ namespace DisplayMagicianShared
         public static int MakeLParam(int p, int p_2)
         {
             return ((p_2 << 16) | (p & 0xFFFF));
+        }
+
+        internal delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData);
+
+        private void EnumMonitors()
+        {
+            EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, MonitorEnumCallBack, IntPtr.Zero);
+        }
+
+        private bool MonitorEnumCallBack(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData)
+        {
+            MONITORINFOEX mon_info = new MONITORINFOEX();
+            mon_info.cbSize = (int)Marshal.SizeOf(mon_info);
+            GetMonitorInfo(hMonitor, ref mon_info);
+            ///Monitor info is stored in 'mon_info'
+            return true;
         }
 
         /*public static bool RefreshNotificationTray()
@@ -362,6 +512,43 @@ namespace DisplayMagicianShared
         public const int WM_USER_100 = 0x0464;
         public const int WM_USER_13 = 0x040D;
         public const int wParam_SHELLTRAY = 0x00000006;
+
+        public const int ABM_NEW = 0x00000000;
+        public const int ABM_REMOVE = 0x00000001;
+        public const int ABM_QUERYPOS = 0x00000002;
+        public const int ABM_SETPOS = 0x00000003;
+        public const int ABM_GETSTATE = 0x00000004;
+        public const int ABM_GETTASKBARPOS = 0x00000005;
+        public const int ABM_ACTIVATE = 0x00000006; // lParam == TRUE/FALSE means activate/deactivate
+        public const int ABM_GETAUTOHIDEBAR = 0x00000007;
+        public const int ABM_SETAUTOHIDEBAR = 0x00000008; // this can fail at any time.  MUST check the result
+                                                          // lParam = TRUE/FALSE  Set/Unset
+                                                          // uEdge = what edge
+        public const int ABM_WINDOWPOSCHANGED = 0x0000009;
+        public const int ABM_SETSTATE = 0x0000000a;
+
+        // these are put in the wparam of callback messages
+        public const int ABN_STATECHANGE = 0x0000000;
+        public const int ABN_POSCHANGED = 0x0000001;
+        public const int ABN_FULLSCREENAPP = 0x0000002;
+        public const int ABN_WINDOWARRANGE = 0x0000003; // lParam == TRUE means hide
+
+        // flags for get state
+        public const int ABS_AUTOHIDE = 0x0000001;
+        public const int ABS_ALWAYSONTOP = 0x0000002;
+
+        public const int ABE_LEFT = 0;
+        public const int ABE_TOP = 1;
+        public const int ABE_RIGHT = 2;
+        public const int ABE_BOTTOM = 3;
+
+        public const int MONITOR_DEFAULTTONULL = 0;
+        public const int MONITOR_DEFAULTTOPRIMARY = 1;
+        public const int MONITOR_DEFAULTTONEAREST = 2;
+
+        // size of a device name string
+        public const int CCHDEVICENAME = 32;
+        public const uint MONITORINFOF_PRIMARY = 1;
     }
 
 
