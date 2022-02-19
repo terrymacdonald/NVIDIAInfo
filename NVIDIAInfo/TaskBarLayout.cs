@@ -202,7 +202,6 @@ namespace DisplayMagicianShared.Windows
         {
         }
 
-        [JsonIgnore]
         public byte[] Binary { get; set; }
         
         public string RegKeyValue { get; set; }
@@ -217,7 +216,7 @@ namespace DisplayMagicianShared.Windows
 
         public Rectangle MonitorRect { get; set; }
 
-        //public Size MinSize { get; set; }
+        public Size MinSize { get; set; }
 
         public TaskBarOptions Options { get; set; }
 
@@ -302,7 +301,7 @@ namespace DisplayMagicianShared.Windows
                 Location = Rectangle.FromLTRB(left, top, right, bottom);
             }
             // MinSize
-            /*if (Binary.Length < 24)
+            if (Binary.Length < 24)
             {
                 MinSize = Size.Empty;
             }
@@ -312,7 +311,7 @@ namespace DisplayMagicianShared.Windows
                 var height = BitConverter.ToInt32(Binary, 20);
 
                 MinSize = new Size(width, height);
-            }*/
+            }
             // Options
             if (Binary.Length < 12)
             {
@@ -393,7 +392,7 @@ namespace DisplayMagicianShared.Windows
                 Array.Copy(bytes, 0, Binary, 36, 4);
             }
             // MinSize
-            /*if (Binary.Length < 24)
+            if (Binary.Length < 24)
             {
                 var bytes = BitConverter.GetBytes(0);
                 Array.Copy(bytes, 0, Binary, 16, 4);
@@ -408,7 +407,7 @@ namespace DisplayMagicianShared.Windows
 
                 bytes = BitConverter.GetBytes(MinSize.Height);
                 Array.Copy(bytes, 0, Binary, 20, 4);
-            }*/
+            }
             // Options
             if (Binary.Length < 12)
             {
@@ -486,22 +485,6 @@ namespace DisplayMagicianShared.Windows
             return true;
         }
 
-
-
-        /*public void DoMouseLeftClick(IntPtr handle, Point x)
-        {
-            Utils.SendMessage(handle, (int)Utils.WM_MOUSEMOVE, 0, Utils.MakeLParam(x.X, x.Y));
-            //SendMessage(handle, (int)Utils.WM_LBUTTONUP, 0, Utils.MakeLParam(x.X, x.Y));
-
-            return;
-
-            //I have tried PostMessage, and SendMessage, and both of them at the same time, and neither works.
-
-            Utils.PostMessage(handle, Utils.WM_MOUSEMOVE, 0, Utils.MakeLParam(x.X, x.Y));
-            //PostMessage(handle, (uint)Utils.WM_LBUTTONUP, 0, Utils.MakeLParam(x.X, x.Y));
-        }*/
-
-
         public static Dictionary<string, TaskBarLayout> GetAllCurrentTaskBarLayouts(Dictionary<string,List<DISPLAY_SOURCE>> displaySources)
         {
             Dictionary<string, TaskBarLayout> taskBarStuckRectangles = new Dictionary<string, TaskBarLayout>();
@@ -538,6 +521,8 @@ namespace DisplayMagicianShared.Windows
                     int monHeight = Math.Abs(monitorInfo.rcMonitor.top - monitorInfo.rcMonitor.bottom);
 
                     TaskBarLayout tbsr = new TaskBarLayout();
+                    // Now we're at the point that we should be able to update the binary that we grabbed earlier when the object was created
+                    tbsr.ReadFromRegistry(GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath));
                     tbsr.Edge = (TaskBarEdge)abd.uEdge;
                     tbsr.MonitorRect = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
                     switch (tbsr.Edge)
@@ -559,13 +544,10 @@ namespace DisplayMagicianShared.Windows
                             tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
                             break;
                     }                    
-                    tbsr.DPI = 96;
                     tbsr.MainScreen = true;
-                    // Make the DevicePath reported the first device on the path returned (as it should be the source display being cloned, or the only display there if its a 1:1)
-                    tbsr.RegKeyValue = GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath);
 
-                    // Now we're at the point that we should be able to update the binary that we grabbed earlier when the object was created
-                    tbsr.Binary = new byte[0];
+                    // Now as a LAST step we update the Binary field just before we apply it to make sure that the correct binary settings are stored
+                    tbsr.PopulateBinaryFromFields();
 
                     taskBarStuckRectangles.Add(monitorInfo.szDevice,tbsr);
                 }
@@ -605,6 +587,8 @@ namespace DisplayMagicianShared.Windows
                 int tbHeight;
 
                 TaskBarLayout tbsr = new TaskBarLayout();
+                // Now we're at the point that we should be able to update the binary that we grabbed earlier when the object was created
+                tbsr.ReadFromRegistry(GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath));
                 if (monWidth == wrkWidth)
                 {
                     // Taskbar on top or bottom
@@ -663,12 +647,10 @@ namespace DisplayMagicianShared.Windows
                 }
 
                 tbsr.MonitorRect = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
-                tbsr.DPI = 96;
                 tbsr.MainScreen = false;
-                // Make the DevicePath reported the first device on the path returned (as it should be the source display being cloned, or the only display there if its a 1:1)
-                tbsr.RegKeyValue = GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath);
-                //tbsr.Binary = new byte[0];
-                //tbsr.OriginalBinary = new byte[0];
+
+                // Now as a LAST step we update the Binary field just before we apply it to make sure that the correct binary settings are stored
+                tbsr.PopulateBinaryFromFields();
 
                 taskBarStuckRectangles.Add(monitorInfo.szDevice, tbsr);
 
