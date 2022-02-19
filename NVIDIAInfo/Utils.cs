@@ -475,15 +475,28 @@ namespace DisplayMagicianShared
 
         internal delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData);
 
-        private void EnumMonitors()
+        public static List<MONITORINFOEX> EnumMonitors()
         {
-            EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, MonitorEnumCallBack, IntPtr.Zero);
+            List<MONITORINFOEX> monitors = new List<MONITORINFOEX>();
+            EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
+        delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData)
+        {
+            MONITORINFOEX mi = new MONITORINFOEX();
+            mi.cbSize = (uint)Marshal.SizeOf(mi);
+            bool success = GetMonitorInfo(hMonitor, ref mi);
+            if (success)
+            {
+                monitors.Add(mi);
+            }
+            return true;
+        }, IntPtr.Zero);
+            return monitors;
         }
 
-        private bool MonitorEnumCallBack(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData)
+        private static bool MonitorEnumCallBack(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData)
         {
             MONITORINFOEX mon_info = new MONITORINFOEX();
-            mon_info.cbSize = (UInt32)Marshal.SizeOf(mon_info);
+            mon_info.cbSize = (UInt32)Marshal.SizeOf(typeof(MONITORINFOEX));
             //mon_info.szDevice = new char[Utils.CCHDEVICENAME];
             GetMonitorInfo(hMonitor, ref mon_info);
             ///Monitor info is stored in 'mon_info'

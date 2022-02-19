@@ -58,7 +58,7 @@ namespace DisplayMagicianShared.Windows
             {3, new byte[] {0x30, 0x00, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 0xFF}}
         };
 */
-        public TaskBarLayout(string devicePath)
+        public bool ReadFromRegistry(string regKeyValue)
         {
             bool MMStuckRectVerFound = false;
             // Check if key exists
@@ -87,7 +87,6 @@ namespace DisplayMagicianShared.Windows
                 }
             }
 
-            bool foundDevicePath = false;
             if (MMStuckRectVerFound)
             {
                 // Check if value exists
@@ -97,28 +96,25 @@ namespace DisplayMagicianShared.Windows
                                 address,
                                 RegistryKeyPermissionCheck.ReadSubTree))
                     {
-                        var binary = key?.GetValue(devicePath) as byte[];
+                        var binary = key?.GetValue(regKeyValue) as byte[];
                         if (binary?.Length > 0)
                         {
-                            foundDevicePath = true;
                             MainScreen = false;
-                            DevicePath = devicePath;
+                            RegKeyValue = regKeyValue;
                             Binary = binary;
-                            OriginalBinary = new byte[binary.Length];
-                            binary.CopyTo(OriginalBinary, 0);
                             Version = version;
 
                             // Extract the values from the binary byte field
                             PopulateFieldsFromBinary();
 
-                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: The taskbar for {DevicePath} is against the {Edge} edge, is positioned at ({Location.X},{Location.Y}) and is {Location.Width}x{Location.Height} in size.");
+                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: The taskbar for {RegKeyValue} is against the {Edge} edge, is positioned at ({Location.X},{Location.Y}) and is {Location.Width}x{Location.Height} in size.");
 
                             // If we get here then we're done and don't need to continue with the rest of the code.
-                            return;
+                            return true;
                         }
                         else
                         {
-                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: Unable to get the TaskBarStuckRectangle binary settings from {devicePath} screen.");
+                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: Unable to get the TaskBarStuckRectangle binary settings from {regKeyValue} screen.");
                         }
                     }
                 }
@@ -132,95 +128,84 @@ namespace DisplayMagicianShared.Windows
                 SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: A MMStuckRect entry was NOT found. We will try to find the object in the StuckRect registry key instead");
             }
 
-            if (!foundDevicePath)
+            bool StuckRectVerFound = false;
+            // Check if string exists
+            version = 3;
+            address = string.Format(MainDisplayAddress, version);
+            if (Registry.CurrentUser.OpenSubKey(address) != null)
             {
-                bool StuckRectVerFound = false;
-                // Check if string exists
-                version = 3;
+                StuckRectVerFound = true;
+                SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: Found StuckRect3 single display registry key! {address}");
+            }
+            else
+            {
+                // If it's not version 3, then try version 2
+                version = 2;
                 address = string.Format(MainDisplayAddress, version);
                 if (Registry.CurrentUser.OpenSubKey(address) != null)
                 {
                     StuckRectVerFound = true;
-                    SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: Found StuckRect3 single display registry key! {address}");
+                    SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: Found StuckRect2 single display registry key! {address}");
                 }
                 else
                 {
-                    // If it's not version 3, then try version 2
-                    version = 2;
-                    address = string.Format(MainDisplayAddress, version);
-                    if (Registry.CurrentUser.OpenSubKey(address) != null)
-                    {
-                        StuckRectVerFound = true;
-                        SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: Found StuckRect2 single display registry key! {address}");
-                    }
-                    else
-                    {
-                        SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: Couldn't find an single display StuckRect2 or StuckRect3 registry key! So we have to just return after doing nothing as there is nothing we can do.");
-                        return;
-                    }
-                }
-
-                if (StuckRectVerFound)
-                {
-                    // Check if value exists
-                    if (version >= 2 && version <= 3)
-                    {
-                        using (var key = Registry.CurrentUser.OpenSubKey(
-                                    address,
-                                    RegistryKeyPermissionCheck.ReadSubTree))
-                        {
-                            var binary = key?.GetValue(devicePath) as byte[];
-                            if (binary?.Length > 0)
-                            {
-                                foundDevicePath = true;
-                                MainScreen = true;
-                                DevicePath = devicePath;
-                                Binary = binary;
-                                OriginalBinary = new byte[binary.Length];
-                                binary.CopyTo(OriginalBinary, 0);
-                                Version = version;
-
-                                // Extract the values from the binary byte field
-                                PopulateFieldsFromBinary();
-
-                                SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: The taskbar for {DevicePath} is against the {Edge} edge, is positioned at ({Location.X},{Location.Y}) and is {Location.Width}x{Location.Height} in size.");
-                            }
-                            else
-                            {
-                                SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: Unable to get the TaskBarStuckRectangle binary settings from {devicePath} screen.");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: A StuckRect entry was found, but the version of the field is wrong.");
-                    }
-                }
-                else
-                {
-                    SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: A StuckRect entry was NOT found. This means we're unable to get the taskbar location, an unable to return a sensible TaskBarStuckRectangle object.");
-                    throw new TaskBarStuckRectangleException("A StuckRect entry was NOT found. This means we're unable to get the taskbar location, an unable to return a sensible TaskBarStuckRectangle object.");
-                    //SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: A StuckRect entry was NOT found. This means we're unable to get the taskbar location, so we'll return a default object instead.");
-                    /*Version = 3;
-                    DPI = 0;
-                    Edge = TaskBarEdge.Bottom;
-                    Location = Rectangle.Empty;
-                    MinSize = new Size(48,48); 
-                    Options = 0; 
-                    Rows = 1;*/
+                    SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: Couldn't find an single display StuckRect2 or StuckRect3 registry key! So we have to just return after doing nothing as there is nothing we can do.");
+                    return false;
                 }
             }
+
+            if (StuckRectVerFound)
+            {
+                // Check if value exists
+                if (version >= 2 && version <= 3)
+                {
+                    using (var key = Registry.CurrentUser.OpenSubKey(
+                                address,
+                                RegistryKeyPermissionCheck.ReadSubTree))
+                    {
+                        var binary = key?.GetValue(regKeyValue) as byte[];
+                        if (binary?.Length > 0)
+                        {
+                            MainScreen = true;
+                            RegKeyValue = regKeyValue;
+                            Binary = binary;
+                            Version = version;
+
+                            // Extract the values from the binary byte field
+                            PopulateFieldsFromBinary();
+
+                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: The taskbar for {RegKeyValue} is against the {Edge} edge, is positioned at ({Location.X},{Location.Y}) and is {Location.Width}x{Location.Height} in size.");
+                            return true;
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: Unable to get the TaskBarStuckRectangle binary settings from {regKeyValue} screen.");
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: A StuckRect entry was found, but the version of the field is wrong.");
+                    return false;
+                }
+            }
+            else
+            {
+                SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: A StuckRect entry was NOT found. This means we're unable to get the taskbar location, an unable to return a sensible TaskBarStuckRectangle object.");
+                return false;
+            }
+            
         }
 
         public TaskBarLayout()
         {
         }
 
+        [JsonIgnore]
         public byte[] Binary { get; set; }
-
-        public byte[] OriginalBinary { get; set; }
-
-        public string DevicePath { get; set; }
+        
+        public string RegKeyValue { get; set; }
 
         public bool MainScreen { get; set; }
 
@@ -244,7 +229,7 @@ namespace DisplayMagicianShared.Windows
         public bool Equals(TaskBarLayout other)
         {
             return Version == other.Version &&
-                DevicePath == other.DevicePath &&
+                RegKeyValue == other.RegKeyValue &&
                 MainScreen == other.MainScreen &&
                 DPI == other.DPI &&
                 Edge == other.Edge &&
@@ -257,7 +242,7 @@ namespace DisplayMagicianShared.Windows
         public override int GetHashCode()
         {
             //return (Version, MainScreen, DevicePath, DPI, Edge, Location, MinSize, Options, Rows).GetHashCode();
-            return (Version, MainScreen, DevicePath, DPI, Edge, Location, Options, Rows).GetHashCode();
+            return (Version, MainScreen, RegKeyValue, DPI, Edge, Location, Options, Rows).GetHashCode();
         }
         public static bool operator ==(TaskBarLayout lhs, TaskBarLayout rhs) => lhs.Equals(rhs);
 
@@ -347,7 +332,7 @@ namespace DisplayMagicianShared.Windows
                 Rows = BitConverter.ToUInt32(Binary, 44);
             }
 
-            SharedLogger.logger.Trace($"TaskBarStuckRectangle/PopulateFieldsFromBinary: Grabbed the following settings for {DevicePath} from the registry: DPI = {DPI}, Edge = {Edge}, Location = ({Location.X},{Location.Y}), MinSize = {Location.Width}x{Location.Height}, Options = {Options}, Rows = {Rows}.");
+            SharedLogger.logger.Trace($"TaskBarStuckRectangle/PopulateFieldsFromBinary: Grabbed the following settings for {RegKeyValue} from the registry: DPI = {DPI}, Edge = {Edge}, Location = ({Location.X},{Location.Y}), MinSize = {Location.Width}x{Location.Height}, Options = {Options}, Rows = {Rows}.");
 
             return true;
         }
@@ -447,7 +432,7 @@ namespace DisplayMagicianShared.Windows
                 Array.Copy(bytes, 0, Binary, 44, 4);
             }
 
-            SharedLogger.logger.Trace($"TaskBarStuckRectangle/PopulateBinaryFromFields: Set the following settings for {DevicePath} into registry: DPI = {DPI}, Edge = {Edge}, Location = ({Location.X},{Location.Y}), MinSize = {Location.Width}x{Location.Height}, Options = {Options}, Rows = {Rows}.");
+            SharedLogger.logger.Trace($"TaskBarStuckRectangle/PopulateBinaryFromFields: Set the following settings for {RegKeyValue} into registry: DPI = {DPI}, Edge = {Edge}, Location = ({Location.X},{Location.Y}), MinSize = {Location.Width}x{Location.Height}, Options = {Options}, Rows = {Rows}.");
 
             return true;
         }
@@ -469,13 +454,13 @@ namespace DisplayMagicianShared.Windows
                         address,
                         RegistryKeyPermissionCheck.ReadWriteSubTree))
                     {
-                        key.SetValue(DevicePath, Binary);
-                        SharedLogger.logger.Trace($"TaskBarStuckRectangle/Apply: Successfully applied TaskBarStuckRectangle registry settings for the {DevicePath} Screen in {address}!");
+                        key.SetValue(RegKeyValue, Binary);
+                        SharedLogger.logger.Trace($"TaskBarStuckRectangle/Apply: Successfully applied TaskBarStuckRectangle registry settings for the {RegKeyValue} Screen in {address}!");
                     }
                 }
                 catch (Exception ex)
                 {
-                    SharedLogger.logger.Error(ex, $"TaskBarStuckRectangle/GetCurrent: Unable to set the {DevicePath} TaskBarStuckRectangle registry settings in {address} due to an exception!");
+                    SharedLogger.logger.Error(ex, $"TaskBarStuckRectangle/GetCurrent: Unable to set the {RegKeyValue} TaskBarStuckRectangle registry settings in {address} due to an exception!");
                 }
             }
             else
@@ -488,13 +473,13 @@ namespace DisplayMagicianShared.Windows
                         address,
                         RegistryKeyPermissionCheck.ReadWriteSubTree))
                     {
-                        key.SetValue(DevicePath, Binary);
-                        SharedLogger.logger.Trace($"TaskBarStuckRectangle/WriteToRegistry: Successfully applied TaskBarStuckRectangle registry settings for the {DevicePath} Screen in {address}!");
+                        key.SetValue(RegKeyValue, Binary);
+                        SharedLogger.logger.Trace($"TaskBarStuckRectangle/WriteToRegistry: Successfully applied TaskBarStuckRectangle registry settings for the {RegKeyValue} Screen in {address}!");
                     }
                 }
                 catch (Exception ex)
                 {
-                    SharedLogger.logger.Error(ex, $"TaskBarStuckRectangle/WriteToRegistry: Unable to set the {DevicePath} TaskBarStuckRectangle registry settings in {address} due to an exception!");
+                    SharedLogger.logger.Error(ex, $"TaskBarStuckRectangle/WriteToRegistry: Unable to set the {RegKeyValue} TaskBarStuckRectangle registry settings in {address} due to an exception!");
                 }
             }
 
@@ -517,15 +502,9 @@ namespace DisplayMagicianShared.Windows
         }*/
 
 
-        public static Dictionary<string, TaskBarLayout> GetAllCurrentTaskBarPositions()
+        public static Dictionary<string, TaskBarLayout> GetAllCurrentTaskBarLayouts(Dictionary<string,List<DISPLAY_SOURCE>> displaySources)
         {
             Dictionary<string, TaskBarLayout> taskBarStuckRectangles = new Dictionary<string, TaskBarLayout>();
-
-            IntPtr hWndAppBar;
-            UInt32 uCallbackMessage;
-            ABEDGE uEdge;
-            RECT rc;
-            Int32 lParam;
             int state;
 
             APPBARDATA abd = new APPBARDATA();
@@ -582,9 +561,11 @@ namespace DisplayMagicianShared.Windows
                     }                    
                     tbsr.DPI = 96;
                     tbsr.MainScreen = true;
-                    tbsr.DevicePath = "";
+                    // Make the DevicePath reported the first device on the path returned (as it should be the source display being cloned, or the only display there if its a 1:1)
+                    tbsr.RegKeyValue = GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath);
+
+                    // Now we're at the point that we should be able to update the binary that we grabbed earlier when the object was created
                     tbsr.Binary = new byte[0];
-                    tbsr.OriginalBinary = new byte[0];
 
                     taskBarStuckRectangles.Add(monitorInfo.szDevice,tbsr);
                 }
@@ -684,9 +665,10 @@ namespace DisplayMagicianShared.Windows
                 tbsr.MonitorRect = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
                 tbsr.DPI = 96;
                 tbsr.MainScreen = false;
-                tbsr.DevicePath = "";
-                tbsr.Binary = new byte[0];
-                tbsr.OriginalBinary = new byte[0];
+                // Make the DevicePath reported the first device on the path returned (as it should be the source display being cloned, or the only display there if its a 1:1)
+                tbsr.RegKeyValue = GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath);
+                //tbsr.Binary = new byte[0];
+                //tbsr.OriginalBinary = new byte[0];
 
                 taskBarStuckRectangles.Add(monitorInfo.szDevice, tbsr);
 
@@ -695,6 +677,24 @@ namespace DisplayMagicianShared.Windows
             }
 
             return taskBarStuckRectangles;
+        }
+
+        public static string GetRegKeyValueFromDevicePath (string devicePath)
+        {
+            string regKeyValue = "";
+            // e.g. "\\\\?\\DISPLAY#NVS10DE#5&2b46c695&0&UID185344#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}"
+            string pattern = @"DISPLAY\#(.*)\#\{";
+            Match match = Regex.Match(devicePath, pattern);
+            if (match.Success)
+            {
+                regKeyValue = match.Groups[1].Value;
+                SharedLogger.logger.Trace($"TaskBarLayout/GetRegKeyValueFromDevicePath: Found regKeyValue {regKeyValue } in the devicePath {devicePath }.");
+            }
+            else
+            {
+                SharedLogger.logger.Warn($"TaskBarLayout/GetRegKeyValueFromDevicePath: We were unable to figure out the regKeyValue {regKeyValue } in the devicePath {devicePath }..");
+            }
+            return regKeyValue;
         }
 
     }

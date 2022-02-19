@@ -42,7 +42,9 @@ namespace DisplayMagicianShared.Windows
     public struct DISPLAY_SOURCE : IEquatable<DISPLAY_SOURCE>
     {
         public LUID AdapterId;
-        public uint SourceId;
+        public UInt32 SourceId;
+        public UInt32 TargetId;
+        public string DevicePath;
 
         public override bool Equals(object obj) => obj is DISPLAY_SOURCE other && this.Equals(other);
         public bool Equals(DISPLAY_SOURCE other)
@@ -313,30 +315,32 @@ namespace DisplayMagicianShared.Windows
             }
 
             SharedLogger.logger.Trace($"WinLibrary/PatchAdapterIDs: Going through the display sources list info to update the adapter id");
-            // Update the DIsplaySources with the current adapter id
+            // Update the DisplaySources with the current adapter id
             for (int i = 0; i < savedDisplayConfig.DisplaySources.Count; i++)
             {
                 List<DISPLAY_SOURCE> dsList = savedDisplayConfig.DisplaySources.ElementAt(i).Value;
-                for (int j = 0; j < dsList.Count; j++)
+                if (dsList.Count > 0)
                 {
-                    DISPLAY_SOURCE ds = dsList[i];
-                    // Change the Display Source AdapterID
-                    if (adapterOldToNewMap.ContainsKey(ds.AdapterId.Value))
+                    for (int j = 0; j < dsList.Count; j++)
                     {
-                        // We get here if there is a matching adapter
-                        newAdapterValue = adapterOldToNewMap[ds.AdapterId.Value];
-                        ds.AdapterId = AdapterValueToLUID(newAdapterValue);
+                        DISPLAY_SOURCE ds = dsList[j];
+                        // Change the Display Source AdapterID
+                        if (adapterOldToNewMap.ContainsKey(ds.AdapterId.Value))
+                        {
+                            // We get here if there is a matching adapter
+                            newAdapterValue = adapterOldToNewMap[ds.AdapterId.Value];
+                            ds.AdapterId = AdapterValueToLUID(newAdapterValue);
+                        }
+                        else
+                        {
+                            // if there isn't a matching adapter, then we just pick the first current one and hope that works!
+                            // (it is highly likely to... its only if the user has multiple graphics cards with some weird config it may break)
+                            newAdapterValue = currentAdapterMap.First().Key;
+                            SharedLogger.logger.Warn($"WinLibrary/PatchAdapterIDs: Uh Oh. Adapter {savedDisplayConfig.DisplayHDRStates[i].AdapterId.Value} didn't have a current match in Display Sources! It's possible the adapter was swapped or disabled. Attempting to use adapter {newAdapterValue} instead.");
+                            ds.AdapterId = AdapterValueToLUID(newAdapterValue);
+                        }
                     }
-                    else
-                    {
-                        // if there isn't a matching adapter, then we just pick the first current one and hope that works!
-                        // (it is highly likely to... its only if the user has multiple graphics cards with some weird config it may break)
-                        newAdapterValue = currentAdapterMap.First().Key;
-                        SharedLogger.logger.Warn($"WinLibrary/PatchAdapterIDs: Uh Oh. Adapter {savedDisplayConfig.DisplayHDRStates[i].AdapterId.Value} didn't have a current match in Display Sources! It's possible the adapter was swapped or disabled. Attempting to use adapter {newAdapterValue} instead.");
-                        ds.AdapterId = AdapterValueToLUID(newAdapterValue);
-                    }
-                }
-                
+                }                              
             }
         }
 
@@ -437,6 +441,7 @@ namespace DisplayMagicianShared.Windows
 
             // Now cycle through the paths and grab the HDR state information
             // and map the adapter name to adapter id
+            // and populate the display source information
             List<uint> targetPathIdsToChange = new List<uint>();
             List<uint> targetModeIdsToChange = new List<uint>();
             List<uint> targetIdsFound = new List<uint>();
@@ -479,6 +484,7 @@ namespace DisplayMagicianShared.Windows
                     DISPLAY_SOURCE ds = new DISPLAY_SOURCE();
                     ds.AdapterId = paths[i].SourceInfo.AdapterId;
                     ds.SourceId = paths[i].SourceInfo.Id;
+                    ds.TargetId = paths[i].TargetInfo.Id;
                     windowsDisplayConfig.DisplaySources[sourceInfo.ViewGdiDeviceName].Add(ds);
                     isClonedPath = true;
                     isClonedProfile = true;
@@ -491,6 +497,7 @@ namespace DisplayMagicianShared.Windows
                     DISPLAY_SOURCE ds = new DISPLAY_SOURCE();
                     ds.AdapterId = paths[i].SourceInfo.AdapterId;
                     ds.SourceId = paths[i].SourceInfo.Id;
+                    ds.TargetId = paths[i].TargetInfo.Id;
                     sources.Add(ds);
                     windowsDisplayConfig.DisplaySources.Add(sourceInfo.ViewGdiDeviceName, sources);
                 }
@@ -668,12 +675,58 @@ namespace DisplayMagicianShared.Windows
                         modes[i].Id = targetIdMap[modes[i].Id];
                     }
                 }
+
+                // And then we need to go through the list of display sources and patch the 'cloned' displays with a real display ID so the display layout is right in cloned displays
+                for (int i = 0; i < windowsDisplayConfig.DisplaySources.Count; i++)
+                {
+                    string key = windowsDisplayConfig.DisplaySources.ElementAt(i).Key;
+                    DISPLAY_SOURCE[] dsList = windowsDisplayConfig.DisplaySources.ElementAt(i).Value.ToArray();
+                    for (int j = 0; j < dsList.Length; j++)
+                    {
+                        // We only change the ids that match in InfoType for target displays
+                        if (targetIdMap.ContainsKey(dsList[j].TargetId))
+                        {
+                            // Patch the cloned ids with a real working one!
+                            dsList[j].TargetId = targetIdMap[dsList[j].TargetId];
+
+                        }
+                    }
+                    windowsDisplayConfig.DisplaySources[key] = dsList.ToList();
+                }
             }
+
+            // Now we need to find the DevicePaths for the DisplaySources (as at this point the cloned display sources have been corrected)
+            for (int i = 0; i < windowsDisplayConfig.DisplaySources.Count; i++)
+            {
+                string key = windowsDisplayConfig.DisplaySources.ElementAt(i).Key;
+                DISPLAY_SOURCE[] dsList = windowsDisplayConfig.DisplaySources.ElementAt(i).Value.ToArray();
+                for (int j = 0; j < dsList.Length; j++)
+                {
+                    // get display target name
+                    var targetInfo = new DISPLAYCONFIG_TARGET_DEVICE_NAME();
+                    targetInfo.Header.Type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+                    targetInfo.Header.Size = (uint)Marshal.SizeOf<DISPLAYCONFIG_TARGET_DEVICE_NAME>();
+                    targetInfo.Header.AdapterId = dsList[j].AdapterId;
+                    targetInfo.Header.Id = dsList[j].TargetId;
+                    err = CCDImport.DisplayConfigGetDeviceInfo(ref targetInfo);
+                    if (err == WIN32STATUS.ERROR_SUCCESS)
+                    {
+                        SharedLogger.logger.Trace($"WinLibrary/GetSomeDisplayIdentifiers: Successfully got the target info from {dsList[j].TargetId}.");
+                        dsList[j].DevicePath = targetInfo.MonitorDevicePath;
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Warn($"WinLibrary/GetSomeDisplayIdentifiers: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the target info for display #{dsList[j].TargetId}");
+                    }
+                }
+                windowsDisplayConfig.DisplaySources[key] = dsList.ToList();                
+            }            
+
 
             Dictionary<string, TaskBarLayout> taskBarStuckRectangles = new Dictionary<string, TaskBarLayout>();
 
             // Now attempt to get the windows taskbar location for each display
-            taskBarStuckRectangles = TaskBarLayout.GetAllCurrentTaskBarPositions();
+            taskBarStuckRectangles = TaskBarLayout.GetAllCurrentTaskBarLayouts(windowsDisplayConfig.DisplaySources);
 
             /*// We use the information we already got from the display identifiers
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar layout.");
@@ -1440,19 +1493,22 @@ namespace DisplayMagicianShared.Windows
             {
 
                 // Enum all the monitors
+                List<MONITORINFOEX> currentMonitors = Utils.EnumMonitors();
                 // Go through each monitor
+                foreach (MONITORINFOEX mi in currentMonitors)
+                {
                     // Look up the monitor location of the current monitor and find the matching taskbar location in the taskbar settings
                     // check the current monitor taskbar location
                     // if the current monitor location is the same as the monitor we want to set then
-                        // if the current monitor taskbar location where we want it then
-                            // move the taskbar manually
-                            // Find the registry key for the monitor we are modifying
-                            // save the taskbar position for the monitor in registry
-                        // else
-                            // log the fact that the monitor is in the right place so skipping moving it
+                    // if the current monitor taskbar location where we want it then
+                    // move the taskbar manually
+                    // Find the registry key for the monitor we are modifying
+                    // save the taskbar position for the monitor in registry
+                    // else
+                    // log the fact that the monitor is in the right place so skipping moving it
                     // if we didn't find a taskbar location for this monitor
-                        // log the fact that the taskbar location wasnt foound for this monitor
-
+                    // log the fact that the taskbar location wasnt foound for this monitor
+                }
 
                 /*if (displayConfig.TaskBarLayout.ContainsKey("Settings"))
                 {
