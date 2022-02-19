@@ -8,14 +8,14 @@ using DisplayMagicianShared;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 
-// This file is taken from Soroush Falahati's amazing HeliosDisplayManagement software
+// This file is based on Soroush Falahati's amazing HeliosDisplayManagement software
 // available at https://github.com/falahati/HeliosDisplayManagement
 
 // Substantial modifications made by Terry MacDonald 2022 onwards
 
 namespace DisplayMagicianShared.Windows
 {
-    public class TaskBarStuckRectangle
+    public class TaskBarLayout
     {
 
         public enum TaskBarEdge : UInt32
@@ -58,7 +58,7 @@ namespace DisplayMagicianShared.Windows
             {3, new byte[] {0x30, 0x00, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 0xFF}}
         };
 */
-        public TaskBarStuckRectangle(string devicePath)
+        public TaskBarLayout(string devicePath)
         {
             bool MMStuckRectVerFound = false;
             // Check if key exists
@@ -212,7 +212,7 @@ namespace DisplayMagicianShared.Windows
             }
         }
 
-        public TaskBarStuckRectangle()
+        public TaskBarLayout()
         {
         }
 
@@ -230,7 +230,9 @@ namespace DisplayMagicianShared.Windows
 
         public Rectangle Location { get; set; }
 
-        public Size MinSize { get; set; }
+        public Rectangle MonitorRect { get; set; }
+
+        //public Size MinSize { get; set; }
 
         public TaskBarOptions Options { get; set; }
 
@@ -238,8 +240,8 @@ namespace DisplayMagicianShared.Windows
 
         public int Version { get; set; }
 
-        public override bool Equals(object obj) => obj is TaskBarStuckRectangle other && this.Equals(other);
-        public bool Equals(TaskBarStuckRectangle other)
+        public override bool Equals(object obj) => obj is TaskBarLayout other && this.Equals(other);
+        public bool Equals(TaskBarLayout other)
         {
             return Version == other.Version &&
                 DevicePath == other.DevicePath &&
@@ -247,18 +249,19 @@ namespace DisplayMagicianShared.Windows
                 DPI == other.DPI &&
                 Edge == other.Edge &&
                 Location == other.Location &&
-                MinSize == other.MinSize &&
+                //MinSize == other.MinSize &&
                 Options == other.Options &&
                 Rows == other.Rows;
         }
 
         public override int GetHashCode()
         {
-            return (Version, MainScreen, DevicePath, DPI, Edge, Location, MinSize, Options, Rows).GetHashCode();
+            //return (Version, MainScreen, DevicePath, DPI, Edge, Location, MinSize, Options, Rows).GetHashCode();
+            return (Version, MainScreen, DevicePath, DPI, Edge, Location, Options, Rows).GetHashCode();
         }
-        public static bool operator ==(TaskBarStuckRectangle lhs, TaskBarStuckRectangle rhs) => lhs.Equals(rhs);
+        public static bool operator ==(TaskBarLayout lhs, TaskBarLayout rhs) => lhs.Equals(rhs);
 
-        public static bool operator !=(TaskBarStuckRectangle lhs, TaskBarStuckRectangle rhs) => !(lhs == rhs);
+        public static bool operator !=(TaskBarLayout lhs, TaskBarLayout rhs) => !(lhs == rhs);
 
         static bool Xor(byte[] a, byte[] b)
 
@@ -314,7 +317,7 @@ namespace DisplayMagicianShared.Windows
                 Location = Rectangle.FromLTRB(left, top, right, bottom);
             }
             // MinSize
-            if (Binary.Length < 24)
+            /*if (Binary.Length < 24)
             {
                 MinSize = Size.Empty;
             }
@@ -324,7 +327,7 @@ namespace DisplayMagicianShared.Windows
                 var height = BitConverter.ToInt32(Binary, 20);
 
                 MinSize = new Size(width, height);
-            }
+            }*/
             // Options
             if (Binary.Length < 12)
             {
@@ -405,7 +408,7 @@ namespace DisplayMagicianShared.Windows
                 Array.Copy(bytes, 0, Binary, 36, 4);
             }
             // MinSize
-            if (Binary.Length < 24)
+            /*if (Binary.Length < 24)
             {
                 var bytes = BitConverter.GetBytes(0);
                 Array.Copy(bytes, 0, Binary, 16, 4);
@@ -420,7 +423,7 @@ namespace DisplayMagicianShared.Windows
 
                 bytes = BitConverter.GetBytes(MinSize.Height);
                 Array.Copy(bytes, 0, Binary, 20, 4);
-            }
+            }*/
             // Options
             if (Binary.Length < 12)
             {
@@ -511,8 +514,189 @@ namespace DisplayMagicianShared.Windows
 
             Utils.PostMessage(handle, Utils.WM_MOUSEMOVE, 0, Utils.MakeLParam(x.X, x.Y));
             //PostMessage(handle, (uint)Utils.WM_LBUTTONUP, 0, Utils.MakeLParam(x.X, x.Y));
+        }*/
+
+
+        public static Dictionary<string, TaskBarLayout> GetAllCurrentTaskBarPositions()
+        {
+            Dictionary<string, TaskBarLayout> taskBarStuckRectangles = new Dictionary<string, TaskBarLayout>();
+
+            IntPtr hWndAppBar;
+            UInt32 uCallbackMessage;
+            ABEDGE uEdge;
+            RECT rc;
+            Int32 lParam;
+            int state;
+
+            APPBARDATA abd = new APPBARDATA();
+
+            // Firstly try to get the position of the main screen
+            try
+            {
+                // Figure out which monitor this taskbar is on
+                IntPtr mainTaskbarHwnd = Utils.FindWindow("Shell_TrayWnd", "");
+                IntPtr mainMonitorHwnd = Utils.MonitorFromWindow(mainTaskbarHwnd, Utils.MONITOR_DEFAULTTOPRIMARY);
+
+                // Figure out the monitor coordinates
+                MONITORINFOEX monitorInfo = new MONITORINFOEX();
+                monitorInfo.cbSize = (UInt32)Marshal.SizeOf(typeof(MONITORINFOEX));
+                //monitorInfo.szDevice = new char[Utils.CCHDEVICENAME];
+                Utils.GetMonitorInfo(mainMonitorHwnd, ref monitorInfo);
+
+                abd.hWnd = mainMonitorHwnd;
+                abd.uEdge = ABEDGE.ABE_BOTTOM;
+                abd.lParam = 0x1;
+                abd.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
+
+
+                state = Utils.SHAppBarMessage(Utils.ABM_GETTASKBARPOS, ref abd);
+
+                if (state == 1)
+                {
+                    int tbWidth = Math.Abs(abd.rc.left - abd.rc.right);
+                    int tbHeight = Math.Abs(abd.rc.top - abd.rc.bottom);
+                    int monWidth = Math.Abs(monitorInfo.rcMonitor.left - monitorInfo.rcMonitor.right);
+                    int monHeight = Math.Abs(monitorInfo.rcMonitor.top - monitorInfo.rcMonitor.bottom);
+
+                    TaskBarLayout tbsr = new TaskBarLayout();
+                    tbsr.Edge = (TaskBarEdge)abd.uEdge;
+                    tbsr.MonitorRect = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
+                    switch (tbsr.Edge)
+                    {
+                        case TaskBarEdge.Left:
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                            break;
+                        case TaskBarEdge.Top:
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                            break;
+                        case TaskBarEdge.Right:
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.right, monitorInfo.rcWork.top, tbWidth, tbHeight);
+                            break;
+                        case TaskBarEdge.Bottom:
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
+                            break;
+                        default:
+                            // Default is bottom taskbar
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
+                            break;
+                    }                    
+                    tbsr.DPI = 96;
+                    tbsr.MainScreen = true;
+                    tbsr.DevicePath = "";
+                    tbsr.Binary = new byte[0];
+                    tbsr.OriginalBinary = new byte[0];
+
+                    taskBarStuckRectangles.Add(monitorInfo.szDevice,tbsr);
+                }
+            }
+            catch (Exception ex)
+            {
+                SharedLogger.logger.Error(ex, $"WinLibrary/GetAllCurrentTaskBarPositions: Exception while trying to get the maintaskbar position");
+            }
+
+            // Then go through the secondary windows and get the position of them
+            // Tell Windows to refresh the Other Windows Taskbars if needed
+            IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
+            for (int i = 0; i < 100; i++)
+            {
+                // Find the next "Shell_SecondaryTrayWnd" window 
+                IntPtr nextTaskBarWindowHwnd = Utils.FindWindowEx((IntPtr)Utils.NULL, lastTaskBarWindowHwnd, "Shell_SecondaryTrayWnd", null);
+                if (nextTaskBarWindowHwnd == (IntPtr)Utils.NULL)
+                {
+                    // No more windows taskbars to notify
+                    break;
+                }
+
+                IntPtr secMonitorHwnd = Utils.MonitorFromWindow(nextTaskBarWindowHwnd, Utils.MONITOR_DEFAULTTONEAREST);
+
+                // Figure out the monitor coordinates
+                MONITORINFOEX monitorInfo = new MONITORINFOEX();
+                monitorInfo.cbSize = (UInt32)Marshal.SizeOf(typeof(MONITORINFOEX));
+                //monitorInfo.szDevice = new char[Utils.CCHDEVICENAME];
+                Utils.GetMonitorInfo(secMonitorHwnd, ref monitorInfo);
+
+                // Figure out the position of the taskbar ourselves
+                int monWidth = Math.Abs(monitorInfo.rcMonitor.left - monitorInfo.rcMonitor.right);
+                int monHeight = Math.Abs(monitorInfo.rcMonitor.top - monitorInfo.rcMonitor.bottom);
+                int wrkWidth = Math.Abs(monitorInfo.rcWork.left - monitorInfo.rcWork.right);
+                int wrkHeight = Math.Abs(monitorInfo.rcWork.top - monitorInfo.rcWork.bottom);
+                int tbWidth;
+                int tbHeight;
+
+                TaskBarLayout tbsr = new TaskBarLayout();
+                if (monWidth == wrkWidth)
+                {
+                    // Taskbar on top or bottom
+                    if (monitorInfo.rcMonitor.left == monitorInfo.rcWork.left && monitorInfo.rcMonitor.top == monitorInfo.rcWork.top)
+                    {
+                        // Taskbar on bottom
+                        tbWidth = monWidth;
+                        tbHeight = monHeight - wrkHeight;
+                        tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
+                        tbsr.Edge = TaskBarEdge.Bottom;
+                    }
+                    else if (monitorInfo.rcMonitor.right == monitorInfo.rcWork.right && monitorInfo.rcMonitor.bottom == monitorInfo.rcWork.bottom) 
+                    {
+                        // Taskbar on top
+                        tbWidth = monWidth;
+                        tbHeight = monHeight - wrkHeight;
+                        tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                        tbsr.Edge = TaskBarEdge.Top;
+                    }
+                    else
+                    {
+                        // Invalid state
+                        SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Taskbar position was not on a horizontal edge of a monitor!");
+                    }
+
+                }
+                else if (monHeight == wrkHeight)
+                {
+                    // Taskbar on the sides
+                    if (monitorInfo.rcMonitor.right == monitorInfo.rcWork.right && monitorInfo.rcMonitor.bottom == monitorInfo.rcWork.bottom)
+                    {
+                        // Taskbar on left
+                        tbWidth = monWidth - wrkWidth;
+                        tbHeight = monHeight;
+                        tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                        tbsr.Edge = TaskBarEdge.Left;
+                    }
+                    else if (monitorInfo.rcMonitor.left == monitorInfo.rcWork.left && monitorInfo.rcMonitor.top == monitorInfo.rcWork.top)
+                    {
+                        // Taskbar on right
+                        tbWidth = monWidth - wrkWidth;
+                        tbHeight = monHeight; 
+                        tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.right, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                        tbsr.Edge = TaskBarEdge.Right;
+                    }
+                    else
+                    {
+                        // Invalid state
+                        SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Taskbar position was not on a vertical edge of a monitor!");
+                    }
+                }
+                else
+                {
+                    // Invalid state
+                    SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Taskbar position was not fully along one of the monitor edges!");
+                }
+
+                tbsr.MonitorRect = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
+                tbsr.DPI = 96;
+                tbsr.MainScreen = false;
+                tbsr.DevicePath = "";
+                tbsr.Binary = new byte[0];
+                tbsr.OriginalBinary = new byte[0];
+
+                taskBarStuckRectangles.Add(monitorInfo.szDevice, tbsr);
+
+                // Prep the next taskbar window so we continue through them
+                lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
+            }
+
+            return taskBarStuckRectangles;
         }
-*/
+
     }
 
     [global::System.Serializable]

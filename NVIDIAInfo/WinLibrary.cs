@@ -9,7 +9,7 @@ using System.IO;
 using System.ComponentModel;
 using Microsoft.Win32;
 using System.Threading.Tasks;
-using static DisplayMagicianShared.Windows.TaskBarStuckRectangle;
+using static DisplayMagicianShared.Windows.TaskBarLayout;
 
 namespace DisplayMagicianShared.Windows
 {
@@ -39,6 +39,25 @@ namespace DisplayMagicianShared.Windows
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct DISPLAY_SOURCE : IEquatable<DISPLAY_SOURCE>
+    {
+        public LUID AdapterId;
+        public uint SourceId;
+
+        public override bool Equals(object obj) => obj is DISPLAY_SOURCE other && this.Equals(other);
+        public bool Equals(DISPLAY_SOURCE other)
+        => true;
+        public override int GetHashCode()
+        {
+            return 300;
+        }
+
+        public static bool operator ==(DISPLAY_SOURCE lhs, DISPLAY_SOURCE rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(DISPLAY_SOURCE lhs, DISPLAY_SOURCE rhs) => !(lhs == rhs);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct WINDOWS_DISPLAY_CONFIG : IEquatable<WINDOWS_DISPLAY_CONFIG>
     {
         public Dictionary<ulong, string> DisplayAdapters;
@@ -46,13 +65,13 @@ namespace DisplayMagicianShared.Windows
         public DISPLAYCONFIG_MODE_INFO[] DisplayConfigModes;
         public List<ADVANCED_HDR_INFO_PER_PATH> DisplayHDRStates;
         public Dictionary<string, GDI_DISPLAY_SETTING> GdiDisplaySettings;
-        public Dictionary<string,TaskBarStuckRectangle> TaskBarLayout;
+        public Dictionary<string,TaskBarLayout> TaskBarLayout;
         public TaskBarSettings TaskBarSettings;
         public bool IsCloned;
         // Note: We purposely have left out the DisplaySources from the Equals as it's order keeps changing after each reboot and after each profile swap
         // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
         // generating the profile icon.
-        public Dictionary<string, List<uint>> DisplaySources;
+        public Dictionary<string, List<DISPLAY_SOURCE>> DisplaySources;
         public List<string> DisplayIdentifiers;
 
         public override bool Equals(object obj) => obj is WINDOWS_DISPLAY_CONFIG other && this.Equals(other);
@@ -181,9 +200,9 @@ namespace DisplayMagicianShared.Windows
             myDefaultConfig.DisplayConfigPaths = new DISPLAYCONFIG_PATH_INFO[0];
             myDefaultConfig.DisplayHDRStates = new List<ADVANCED_HDR_INFO_PER_PATH>();
             myDefaultConfig.DisplayIdentifiers = new List<string>();
-            myDefaultConfig.DisplaySources = new Dictionary<string, List<uint>>();
+            myDefaultConfig.DisplaySources = new Dictionary<string, List<DISPLAY_SOURCE>>();
             myDefaultConfig.GdiDisplaySettings = new Dictionary<string, GDI_DISPLAY_SETTING>();
-            myDefaultConfig.TaskBarLayout = new Dictionary<string, TaskBarStuckRectangle>();
+            myDefaultConfig.TaskBarLayout = new Dictionary<string, TaskBarLayout>();
             myDefaultConfig.TaskBarSettings = new TaskBarSettings();
             myDefaultConfig.IsCloned = false;
 
@@ -293,6 +312,32 @@ namespace DisplayMagicianShared.Windows
                 }
             }
 
+            SharedLogger.logger.Trace($"WinLibrary/PatchAdapterIDs: Going through the display sources list info to update the adapter id");
+            // Update the DIsplaySources with the current adapter id
+            for (int i = 0; i < savedDisplayConfig.DisplaySources.Count; i++)
+            {
+                List<DISPLAY_SOURCE> dsList = savedDisplayConfig.DisplaySources.ElementAt(i).Value;
+                for (int j = 0; j < dsList.Count; j++)
+                {
+                    DISPLAY_SOURCE ds = dsList[i];
+                    // Change the Display Source AdapterID
+                    if (adapterOldToNewMap.ContainsKey(ds.AdapterId.Value))
+                    {
+                        // We get here if there is a matching adapter
+                        newAdapterValue = adapterOldToNewMap[ds.AdapterId.Value];
+                        ds.AdapterId = AdapterValueToLUID(newAdapterValue);
+                    }
+                    else
+                    {
+                        // if there isn't a matching adapter, then we just pick the first current one and hope that works!
+                        // (it is highly likely to... its only if the user has multiple graphics cards with some weird config it may break)
+                        newAdapterValue = currentAdapterMap.First().Key;
+                        SharedLogger.logger.Warn($"WinLibrary/PatchAdapterIDs: Uh Oh. Adapter {savedDisplayConfig.DisplayHDRStates[i].AdapterId.Value} didn't have a current match in Display Sources! It's possible the adapter was swapped or disabled. Attempting to use adapter {newAdapterValue} instead.");
+                        ds.AdapterId = AdapterValueToLUID(newAdapterValue);
+                    }
+                }
+                
+            }
         }
 
         public bool UpdateActiveConfig()
@@ -430,19 +475,25 @@ namespace DisplayMagicianShared.Windows
                     // Store it for later
                     if (windowsDisplayConfig.DisplaySources.ContainsKey(sourceInfo.ViewGdiDeviceName))
                     {
-                        // We already have at least one display using this source, so we need to add the other cloned display to the existing list
-                        windowsDisplayConfig.DisplaySources[sourceInfo.ViewGdiDeviceName].Add(paths[i].SourceInfo.Id);
-                        isClonedPath = true;
-                        isClonedProfile = true;
-                        windowsDisplayConfig.IsCloned = true;
-                    }
-                    else
-                    {
-                        // This is the first display to use this source
-                        List<uint> sourceIds = new List<uint>();
-                        sourceIds.Add(paths[i].SourceInfo.Id);
-                        windowsDisplayConfig.DisplaySources.Add(sourceInfo.ViewGdiDeviceName, sourceIds);
-                    }
+                    // We already have at least one display using this source, so we need to add the other cloned display to the existing list
+                    DISPLAY_SOURCE ds = new DISPLAY_SOURCE();
+                    ds.AdapterId = paths[i].SourceInfo.AdapterId;
+                    ds.SourceId = paths[i].SourceInfo.Id;
+                    windowsDisplayConfig.DisplaySources[sourceInfo.ViewGdiDeviceName].Add(ds);
+                    isClonedPath = true;
+                    isClonedProfile = true;
+                    windowsDisplayConfig.IsCloned = true;
+                }
+                else
+                {
+                    // This is the first display to use this source
+                    List<DISPLAY_SOURCE> sources = new List<DISPLAY_SOURCE>();
+                    DISPLAY_SOURCE ds = new DISPLAY_SOURCE();
+                    ds.AdapterId = paths[i].SourceInfo.AdapterId;
+                    ds.SourceId = paths[i].SourceInfo.Id;
+                    sources.Add(ds);
+                    windowsDisplayConfig.DisplaySources.Add(sourceInfo.ViewGdiDeviceName, sources);
+                }
 
                     SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Display Source {sourceInfo.ViewGdiDeviceName} for source {paths[i].SourceInfo.Id}.");
                 }
@@ -619,14 +670,12 @@ namespace DisplayMagicianShared.Windows
                 }
             }
 
-            Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
+            Dictionary<string, TaskBarLayout> taskBarStuckRectangles = new Dictionary<string, TaskBarLayout>();
 
             // Now attempt to get the windows taskbar location for each display
-            taskBarStuckRectangles = GetAllCurrentTaskBarPositions();
+            taskBarStuckRectangles = TaskBarLayout.GetAllCurrentTaskBarPositions();
 
-
-
-            // We use the information we already got from the display identifiers
+            /*// We use the information we already got from the display identifiers
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar layout.");
             //Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
             foreach (var displayId in windowsDisplayConfig.DisplayIdentifiers)
@@ -639,7 +688,7 @@ namespace DisplayMagicianShared.Windows
                 {
                     string devicePath = match.Groups[1].Value;
                     SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found devicePath {devicePath} from the display identifier {displayId}.");
-                    TaskBarStuckRectangle taskBarStuckRectangle = new TaskBarStuckRectangle(devicePath);
+                    TaskBarLayout taskBarStuckRectangle = new TaskBarLayout(devicePath);
                     taskBarStuckRectangles.Add(devicePath,taskBarStuckRectangle);
                 }
                 else
@@ -649,8 +698,8 @@ namespace DisplayMagicianShared.Windows
 
             }
             // And we get the Main Screen taskbar too
-            TaskBarStuckRectangle mainTaskBarStuckRectangle = new TaskBarStuckRectangle("Settings");
-            taskBarStuckRectangles.Add("Settings", mainTaskBarStuckRectangle);
+            TaskBarLayout mainTaskBarStuckRectangle = new TaskBarLayout("Settings");
+            taskBarStuckRectangles.Add("Settings", mainTaskBarStuckRectangle);*/
 
             // Now we try to get the taskbar settings too
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar settings.");
@@ -1390,9 +1439,24 @@ namespace DisplayMagicianShared.Windows
             if (displayConfig.TaskBarLayout.Count > 0)
             {
 
-                if (displayConfig.TaskBarLayout.ContainsKey("Settings"))
+                // Enum all the monitors
+                // Go through each monitor
+                    // Look up the monitor location of the current monitor and find the matching taskbar location in the taskbar settings
+                    // check the current monitor taskbar location
+                    // if the current monitor location is the same as the monitor we want to set then
+                        // if the current monitor taskbar location where we want it then
+                            // move the taskbar manually
+                            // Find the registry key for the monitor we are modifying
+                            // save the taskbar position for the monitor in registry
+                        // else
+                            // log the fact that the monitor is in the right place so skipping moving it
+                    // if we didn't find a taskbar location for this monitor
+                        // log the fact that the taskbar location wasnt foound for this monitor
+
+
+                /*if (displayConfig.TaskBarLayout.ContainsKey("Settings"))
                 {
-                    TaskBarStuckRectangle tbsr = displayConfig.TaskBarLayout["Settings"];
+                    TaskBarLayout tbsr = displayConfig.TaskBarLayout["Settings"];
                     if (tbsr.Version >= 2 && tbsr.Version <= 3)
                     {
                         // Write the settings to registry
@@ -1403,14 +1467,14 @@ namespace DisplayMagicianShared.Windows
                 }
 
                 SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Setting the taskbar layout.");
-                foreach (KeyValuePair<string, TaskBarStuckRectangle> kvp in displayConfig.TaskBarLayout)
+                foreach (KeyValuePair<string, TaskBarLayout> kvp in displayConfig.TaskBarLayout)
                 {
                     if (displayConfig.TaskBarLayout.ContainsKey("Settings"))
                     {
                         continue;
                     }
 
-                    TaskBarStuckRectangle tbsr = kvp.Value;
+                    TaskBarLayout tbsr = kvp.Value;
                     if (tbsr.Version >= 2 && tbsr.Version <= 3)
                     {
                         // Write the settings to registry
@@ -1428,8 +1492,7 @@ namespace DisplayMagicianShared.Windows
                 if (displayConfig.TaskBarLayout.Count > 1)
                 {
                     RepositionSecondaryTaskBars();
-                }
-
+                }*/
             }
             else
             {
@@ -1979,91 +2042,7 @@ namespace DisplayMagicianShared.Windows
             }
         }
 
-        public static Dictionary<string, TaskBarStuckRectangle> GetAllCurrentTaskBarPositions()
-        {
-            Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
-
-            IntPtr hWndAppBar;
-            UInt32 uCallbackMessage;
-            ABEDGE uEdge;
-            RECT rc;
-            Int32 lParam;
-            int state;
-
-            APPBARDATA abd = new APPBARDATA();
-
-            // Firstly try to get the position of the main screen
-            try
-            {
-                abd.hWnd = Utils.FindWindow("Shell_TrayWnd", "");
-                abd.uEdge = ABEDGE.ABE_BOTTOM;
-                abd.lParam = 0x1;
-                abd.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
-
-
-                state = Utils.SHAppBarMessage(Utils.ABM_GETTASKBARPOS, ref abd);
-
-                if (state == 1)
-                {
-                    TaskBarStuckRectangle tbsr = new TaskBarStuckRectangle();
-                    tbsr.Edge = (TaskBarEdge)abd.uEdge;
-                    System.Drawing.Rectangle rect = new System.Drawing.Rectangle(abd.rc.left, abd.rc.top, Math.Abs(abd.rc.left - abd.rc.right), Math.Abs(abd.rc.top - abd.rc.bottom)); 
-                    tbsr.Location = rect;
-                    tbsr.DPI = 96;
-                    tbsr.MainScreen = true;
-
-                    taskBarStuckRectangles.Add("Settings",tbsr);
-                }
-            }
-            catch (Exception ex)
-            {
-
-            }
-
-            // Then go through the secondary windows and get the position of them
-            // Tell Windows to refresh the Other Windows Taskbars if needed
-            IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
-            for (int i = 0; i < 100; i++)
-            {
-                // Find the next "Shell_SecondaryTrayWnd" window 
-                IntPtr nextTaskBarWindowHwnd = Utils.FindWindowEx((IntPtr)Utils.NULL, lastTaskBarWindowHwnd, "Shell_SecondaryTrayWnd", null);
-                if (nextTaskBarWindowHwnd == (IntPtr)Utils.NULL)
-                {
-                    // No more windows taskbars to notify
-                    break;
-                }
-                abd.hWnd = nextTaskBarWindowHwnd;
-                abd.uEdge = ABEDGE.ABE_BOTTOM;
-                abd.lParam = 0x1;
-                abd.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
-
-
-                state = Utils.SHAppBarMessage(Utils.ABM_GETTASKBARPOS, ref abd);
-
-                if (state == 1)
-                {
-                    // Figure out which monitor this is on
-                    IntPtr thisMonitorHwnd = Utils.MonitorFromWindow(nextTaskBarWindowHwnd, Utils.MONITOR_DEFAULTTOPRIMARY);
-                    // Figure out the monitor coordinates
-                    MONITORINFOEX monitorInfo = new MONITORINFOEX();
-                    Utils.GetMonitorInfo(thisMonitorHwnd, ref monitorInfo);
-
-                    TaskBarStuckRectangle tbsr = new TaskBarStuckRectangle();
-                    tbsr.Edge = (TaskBarEdge)abd.uEdge;
-                    System.Drawing.Rectangle rect = new System.Drawing.Rectangle(abd.rc.left, abd.rc.top, Math.Abs(abd.rc.left - abd.rc.right), Math.Abs(abd.rc.top - abd.rc.bottom));
-                    tbsr.Location = rect;
-                    tbsr.DPI = 96;
-                    tbsr.MainScreen = false;
-
-                    taskBarStuckRectangles.Add($"Display #{i}", tbsr);
-                }                
-
-                // Prep the next taskbar window so we continue through them
-                lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
-            }
-
-            return taskBarStuckRectangles;
-        }
+        
 
         public static bool RepositionMainTaskBar(TaskBarEdge edge)
         {

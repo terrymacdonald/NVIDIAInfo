@@ -9,47 +9,49 @@ using System.Threading.Tasks;
 namespace DisplayMagicianShared
 {
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
     public struct RECT
     {
-        public int left;
-        public int top;
-        public int right;
-        public int bottom;
+        public Int32 left;
+        public Int32 top;
+        public Int32 right;
+        public Int32 bottom;
     }
 
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 8)]
     public struct APPBARDATA
     {
-        public Int32 cbSize;
+        public int cbSize;
         public IntPtr hWnd;
-        public UInt32 uCallbackMessage;
+        public uint uCallbackMessage;
         public ABEDGE uEdge;
         public RECT rc;
-        public Int32 lParam;
+        public int lParam;
     }
 
-    
+
+
     /// <summary>
     /// The MONITORINFOEX structure contains information about a display monitor.
     /// The GetMonitorInfo function stores information into a MONITORINFOEX structure or a MONITORINFO structure.
     /// The MONITORINFOEX structure is a superset of the MONITORINFO structure. The MONITORINFOEX structure adds a string member to contain a name
     /// for the display monitor.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 4)]
     public struct MONITORINFOEX
     {
         /// <summary>
         /// The size, in bytes, of the structure. Set this member to sizeof(MONITORINFOEX) (72) before calling the GetMonitorInfo function.
         /// Doing so lets the function determine the type of structure you are passing to it.
         /// </summary>
-        public int cbSize;
+        public UInt32 cbSize;
 
         /// <summary>
         /// A RECT structure that specifies the display monitor rectangle, expressed in virtual-screen coordinates.
         /// Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
         /// </summary>
-        public RECT Monitor;
+        public RECT rcMonitor;
 
         /// <summary>
         /// A RECT structure that specifies the work area rectangle of the display monitor that can be used by applications,
@@ -57,7 +59,7 @@ namespace DisplayMagicianShared
         /// The rest of the area in rcMonitor contains system windows such as the task bar and side bars.
         /// Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
         /// </summary>
-        public RECT WorkArea;
+        public RECT rcWork;
 
         /// <summary>
         /// The attributes of the display monitor.
@@ -65,43 +67,43 @@ namespace DisplayMagicianShared
         /// This member can be the following value:
         ///   1 : MONITORINFOF_PRIMARY
         /// </summary>
-        public uint Flags;
+        public UInt32 dwFlags;
 
         /// <summary>
         /// A string that specifies the device name of the monitor being used. Most applications have no use for a display monitor name,
         /// and so can save some bytes by using a MONITORINFO structure.
         /// </summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = Utils.CCHDEVICENAME)]
-        public string DeviceName;
+        public string szDevice;
 
-        public void Init()
+        /*public void Init()
         {
             this.cbSize = 40 + 2 * Utils.CCHDEVICENAME;
             this.DeviceName = string.Empty;
-        }
+        }*/
     }
 
 
     /// <summary>
-    /// The MONITORINFOEX structure contains information about a display monitor.
+    /// The MONITORINFO structure contains information about a display monitor.
     /// The GetMonitorInfo function stores information into a MONITORINFOEX structure or a MONITORINFO structure.
     /// The MONITORINFOEX structure is a superset of the MONITORINFO structure. The MONITORINFOEX structure adds a string member to contain a name
     /// for the display monitor.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 4)]
     public struct MONITORINFO
     {
         /// <summary>
         /// The size, in bytes, of the structure. Set this member to sizeof(MONITORINFOEX) (72) before calling the GetMonitorInfo function.
         /// Doing so lets the function determine the type of structure you are passing to it.
         /// </summary>
-        public int cbSize;
+        public UInt32 cbSize;
 
         /// <summary>
         /// A RECT structure that specifies the display monitor rectangle, expressed in virtual-screen coordinates.
         /// Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
         /// </summary>
-        public RECT Monitor;
+        public RECT rcMonitor;
 
         /// <summary>
         /// A RECT structure that specifies the work area rectangle of the display monitor that can be used by applications,
@@ -109,7 +111,7 @@ namespace DisplayMagicianShared
         /// The rest of the area in rcMonitor contains system windows such as the task bar and side bars.
         /// Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
         /// </summary>
-        public RECT WorkArea;
+        public RECT rcWork;
 
         /// <summary>
         /// The attributes of the display monitor.
@@ -117,13 +119,15 @@ namespace DisplayMagicianShared
         /// This member can be the following value:
         ///   1 : MONITORINFOF_PRIMARY
         /// </summary>
-        public uint Flags;
+        public UInt32 dwFlags;
 
-        public void Init()
+        /*public void Init()
         {
-            this.cbSize = 40 + 2;
-        }
+            this.cbSize = 40 + 2 * Utils.CCHDEVICENAME;
+            this.DeviceName = string.Empty;
+        }*/
     }
+
 
     [Flags]
     public enum SendMessageTimeoutFlag : uint
@@ -427,10 +431,12 @@ namespace DisplayMagicianShared
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
 
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
@@ -477,7 +483,8 @@ namespace DisplayMagicianShared
         private bool MonitorEnumCallBack(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData)
         {
             MONITORINFOEX mon_info = new MONITORINFOEX();
-            mon_info.cbSize = (int)Marshal.SizeOf(mon_info);
+            mon_info.cbSize = (UInt32)Marshal.SizeOf(mon_info);
+            //mon_info.szDevice = new char[Utils.CCHDEVICENAME];
             GetMonitorInfo(hMonitor, ref mon_info);
             ///Monitor info is stored in 'mon_info'
             return true;
