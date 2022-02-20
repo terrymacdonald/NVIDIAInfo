@@ -549,6 +549,18 @@ namespace DisplayMagicianShared.Windows
                     tbsr.PopulateBinaryFromFields();
 
                     taskBarStuckRectangles.Add(monitorInfo.szDevice,tbsr);
+
+                    // If it's a main screen, also add a duplicate so we track the main StuckRects settings separately too
+                    TaskBarLayout tbsrMain = new TaskBarLayout();
+                    tbsrMain.ReadFromRegistry("Settings");
+                    tbsrMain.Edge = tbsr.Edge;
+                    tbsrMain.MonitorRect = tbsr.MonitorRect;
+                    tbsrMain.Location = tbsr.Location;
+                    tbsrMain.MainScreen = tbsr.MainScreen;
+
+                    // Now as a LAST step we update the Binary field just before we apply it to make sure that the correct binary settings are stored
+                    tbsrMain.PopulateBinaryFromFields();
+                    taskBarStuckRectangles.Add("Settings", tbsrMain);
                 }
             }
             catch (Exception ex)
