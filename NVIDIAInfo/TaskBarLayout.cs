@@ -233,15 +233,14 @@ namespace DisplayMagicianShared.Windows
                 DPI == other.DPI &&
                 Edge == other.Edge &&
                 Location == other.Location &&
-                //MinSize == other.MinSize &&
+                MinSize == other.MinSize &&
                 Options == other.Options &&
                 Rows == other.Rows;
         }
 
         public override int GetHashCode()
         {
-            //return (Version, MainScreen, DevicePath, DPI, Edge, Location, MinSize, Options, Rows).GetHashCode();
-            return (Version, MainScreen, RegKeyValue, DPI, Edge, Location, Options, Rows).GetHashCode();
+            return (Version, MainScreen, RegKeyValue, DPI, Edge, Location, MinSize, Options, Rows).GetHashCode();
         }
         public static bool operator ==(TaskBarLayout lhs, TaskBarLayout rhs) => lhs.Equals(rhs);
 
