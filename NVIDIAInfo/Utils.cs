@@ -8,6 +8,17 @@ using System.Threading.Tasks;
 
 namespace DisplayMagicianShared
 {
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
+    public struct WINDOWPOS
+    {
+        IntPtr hwnd;
+        IntPtr hwndInsertAfter;
+        int x;
+        int y;
+        int cx;
+        int cy;
+        uint flags;
+    }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
     public struct RECT
@@ -126,6 +137,35 @@ namespace DisplayMagicianShared
             this.cbSize = 40 + 2 * Utils.CCHDEVICENAME;
             this.DeviceName = string.Empty;
         }*/
+    }
+
+
+    [Flags]
+    public enum SET_WINDOW_POSITION_FLAGS: UInt32
+    {
+        SWP_ASYNCWINDOWPOS = 0x4000,
+        SWP_DEFERERASE = 0x2000,
+        SWP_DRAWFRAME = 0x0020,
+        SWP_FRAMECHANGED = 0x0020,
+        SWP_HIDEWINDOW = 0x0080,
+        SWP_NOACTIVATE = 0x0010,
+        SWP_NOCOPYBITS = 0x0100,
+        SWP_NOMOVE = 0x0002,
+        SWP_NOOWNERZORDER = 0x0200,
+        SWP_NOREDRAW = 0x0008,
+        SWP_NOREPOSITION = 0x0200,
+        SWP_NOSENDCHANGING = 0x0400,
+        SWP_NOSIZE = 0x0001,
+        SWP_NOZORDER = 0x0004,
+        SWP_SHOWWINDOW = 0x0040,
+    }
+
+    public enum SET_WINDOW_POSITION_ORDER : Int32
+    {
+        HWND_TOP = 0,
+        HWND_BOTTOM = 1,
+        HWND_TOPMOST = -1,
+        HWND_NOTOPMOST = -2,
     }
 
 
@@ -426,6 +466,10 @@ namespace DisplayMagicianShared
         public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, int wParam, int lParam);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, Int16 wParam, Int16 lParam);
+
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
@@ -457,6 +501,37 @@ namespace DisplayMagicianShared
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetWindowPos(IntPtr hWnd, SET_WINDOW_POSITION_ORDER hWndInsertAfter, int x, int y, int cx, int cy, SET_WINDOW_POSITION_FLAGS uFlags);
+
+        /// <summary>
+        ///     The MoveWindow function changes the position and dimensions of the specified window. For a top-level window, the
+        ///     position and dimensions are relative to the upper-left corner of the screen. For a child window, they are relative
+        ///     to the upper-left corner of the parent window's client area.
+        ///     <para>
+        ///     Go to https://msdn.microsoft.com/en-us/library/windows/desktop/ms633534%28v=vs.85%29.aspx for more
+        ///     information
+        ///     </para>
+        /// </summary>
+        /// <param name="hWnd">C++ ( hWnd [in]. Type: HWND )<br /> Handle to the window.</param>
+        /// <param name="X">C++ ( X [in]. Type: int )<br />Specifies the new position of the left side of the window.</param>
+        /// <param name="Y">C++ ( Y [in]. Type: int )<br /> Specifies the new position of the top of the window.</param>
+        /// <param name="nWidth">C++ ( nWidth [in]. Type: int )<br />Specifies the new width of the window.</param>
+        /// <param name="nHeight">C++ ( nHeight [in]. Type: int )<br />Specifies the new height of the window.</param>
+        /// <param name="bRepaint">
+        ///     C++ ( bRepaint [in]. Type: bool )<br />Specifies whether the window is to be repainted. If this
+        ///     parameter is TRUE, the window receives a message. If the parameter is FALSE, no repainting of any kind occurs. This
+        ///     applies to the client area, the nonclient area (including the title bar and scroll bars), and any part of the
+        ///     parent window uncovered as a result of moving a child window.
+        /// </param>
+        /// <returns>
+        ///     If the function succeeds, the return value is nonzero.<br /> If the function fails, the return value is zero.
+        ///     <br />To get extended error information, call GetLastError.
+        /// </returns>
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
 
         public static bool IsWindows11()
         {
@@ -516,6 +591,10 @@ namespace DisplayMagicianShared
 
         public const int NULL = 0;
         public const int HWND_BROADCAST = 0xffff;
+        public const int WM_ENTERSIZEMOVE = 0x0231;
+        public const int WM_EXITSIZEMOVE = 0x0232;
+        public const int WM_WINDOWPOSCHANGING = 0x0046;
+        public const int WM_WINDOWPOSCHANGED = 0x0047;
         public const int WM_NOTIFY = 0xA005; 
         public const int WM_SETTINGCHANGE = 0x001a;
         public const int WM_THEMECHANGED = 0x031a;

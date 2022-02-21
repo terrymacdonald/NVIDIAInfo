@@ -438,11 +438,11 @@ namespace DisplayMagicianShared.Windows
         public bool WriteToRegistry()
         {
             // Update the binary with the current settings from the object
-            PopulateBinaryFromFields();
+            //PopulateBinaryFromFields();
 
             // Write the binary field to registry
             string address;
-            if (MainScreen)
+            if (MainScreen && RegKeyValue.Equals("Settings"))
             {
                 address = string.Format(MainDisplayAddress, Version);
                 // Set the Main Screen 
@@ -504,7 +504,7 @@ namespace DisplayMagicianShared.Windows
                 //monitorInfo.szDevice = new char[Utils.CCHDEVICENAME];
                 Utils.GetMonitorInfo(mainMonitorHwnd, ref monitorInfo);
 
-                abd.hWnd = mainMonitorHwnd;
+                abd.hWnd = mainTaskbarHwnd;
                 abd.uEdge = ABEDGE.ABE_BOTTOM;
                 abd.lParam = 0x1;
                 abd.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
@@ -672,6 +672,213 @@ namespace DisplayMagicianShared.Windows
             return taskBarStuckRectangles;
         }
 
+        public bool MoveTaskBar()
+        {
+            if (RegKeyValue.Equals("Settings") && MainScreen)
+            {
+                // We only want to set the position for the main screen if it has a "Settings" entry and is a main screen
+                // Find the window to move
+                IntPtr mainTaskbarHwnd = Utils.FindWindow("Shell_TrayWnd", "");
+                IntPtr startButtonHandle = Utils.FindWindowEx(mainTaskbarHwnd, IntPtr.Zero, "Start", null);
+                IntPtr systemTrayNotifyHandle = Utils.FindWindowEx(mainTaskbarHwnd, IntPtr.Zero, "TrayNotifyWnd", null);
+                IntPtr rebarWindowHandle = Utils.FindWindowEx(mainTaskbarHwnd, IntPtr.Zero, "ReBarWindow32", null);
+                IntPtr trayDesktopShowButtonHandle = Utils.FindWindowEx(systemTrayNotifyHandle, IntPtr.Zero, "TrayShowDesktopButtonWClass", null);
+
+                IntPtr result;
+                // Prepare the taskbar for moving
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+                // Move the window
+                Utils.MoveWindow(mainTaskbarHwnd, Location.X, Location.Y, Location.Width, Location.Height, false);
+                // Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_WINDOWPOSCHANGING, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+                // Prepare the taskbar for staying put
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+
+
+                //bool thing = Utils.SetWindowPos(mainTaskbarHwnd, SET_WINDOW_POSITION_ORDER.HWND_TOP, Location.X, Location.Y, Location.Width, Location.Height, SET_WINDOW_POSITION_FLAGS.SWP_NOSENDCHANGING);
+                /*
+
+                                APPBARDATA abd = new APPBARDATA();
+                                abd.hWnd = mainTaskbarHwnd;
+                                abd.uEdge = (ABEDGE)Edge;
+                                RECT rect = new RECT();
+                                Point targetPoint;
+                                switch (abd.uEdge)
+                                {
+                                    case ABEDGE.ABE_LEFT:
+                                        rect.left = 0;
+                                        rect.top = 0;
+                                        rect.right = Location.Width;
+                                        rect.bottom = Location.Height;
+                                        targetPoint = new Point(Location.X + 10, Location.Y + Location.Height- 10);
+                                        break;
+                                    case ABEDGE.ABE_TOP:
+                                        rect.left = 0;
+                                        rect.top = 0;
+                                        rect.right = Location.Width;
+                                        rect.bottom = Location.Height;
+                                        targetPoint = new Point(Location.X + 10, Location.Y + 10);
+                                        break;
+                                    case ABEDGE.ABE_RIGHT:
+                                        rect.left = Math.Abs(MonitorRect.X - Location.X);
+                                        rect.top = 0;
+                                        rect.right = Location.Width;
+                                        rect.bottom = Location.Height;
+                                        break;
+                                    case ABEDGE.ABE_BOTTOM:
+                                        rect.left = 0;
+                                        rect.top = Math.Abs(MonitorRect.Y - Location.Y);
+                                        rect.right = Location.Width;
+                                        rect.bottom = Math.Abs(MonitorRect.Bottom - Location.Height);
+                                        break;
+                                    default:
+                                        rect.left = 0;
+                                        rect.top = Math.Abs(MonitorRect.Y - Location.Y);
+                                        rect.right = Location.Width;
+                                        rect.bottom = Math.Abs(MonitorRect.Bottom - Location.Height);
+                                        break;
+                                }
+                                abd.rc = rect;
+                                abd.lParam = 0x1;
+                                abd.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
+
+                                //int state = Utils.SHAppBarMessage(Utils.ABM_SETPOS, ref abd);                
+
+                                IntPtr taskBarPositionBuffer = new IntPtr((Int32)Edge);
+                                Utils.SendMessage(trayDesktopShowButtonHandle, Utils.WM_USER_13, (Int16) 0x0, (Int16)taskBarPositionBuffer);*/
+
+                // We also save the taskbar position for the monitor in registry, so that Windows will actually properly update the position 
+                // after 5 seconds (and this one will stick between reboots too!).
+                WriteToRegistry();
+
+                /*Utils.MoveWindow(mainTaskbarHwnd, Location.X, Location.Y, Location.Width, Location.Height, false);
+
+                Utils.SendMessage(mainTaskbarHwnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+                Utils.SendMessage(systemTrayNotifyHandle, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+                Utils.SendMessage(systemTrayNotifyHandle, Utils.WM_THEMECHANGED, (IntPtr)0xffffffffffffffff, (IntPtr)0x000000008000001);
+
+                ForceTaskBarRedraw(mainTaskbarHwnd);*/
+                return true;
+            }
+            else if (!MainScreen && !RegKeyValue.Equals("Settings"))
+            {
+                // This is a secondary screen, so we need to set it's position
+                // Then go through the secondary windows and get the position of them
+                // Tell Windows to refresh the Other Windows Taskbars if needed
+                // We also save the taskbar position for the monitor in registry, so that Windows will actually properly update the position 
+                // after 5 seconds (and this one will stick between reboots too!).
+                WriteToRegistry();
+
+                return true;
+
+                IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
+                for (int i = 0; i < 100; i++)
+                {
+                    // Find the next "Shell_SecondaryTrayWnd" window 
+                    IntPtr nextTaskBarWindowHwnd = Utils.FindWindowEx((IntPtr)Utils.NULL, lastTaskBarWindowHwnd, "Shell_SecondaryTrayWnd", null);
+                    if (nextTaskBarWindowHwnd == (IntPtr)Utils.NULL)
+                    {
+                        // No more windows taskbars to notify
+                        break;
+                    }
+
+                    IntPtr secMonitorHwnd = Utils.MonitorFromWindow(nextTaskBarWindowHwnd, Utils.MONITOR_DEFAULTTONEAREST);
+
+                    // Figure out the monitor coordinates
+                    MONITORINFOEX monitorInfo = new MONITORINFOEX();
+                    monitorInfo.cbSize = (UInt32)Marshal.SizeOf(typeof(MONITORINFOEX));
+                    //monitorInfo.szDevice = new char[Utils.CCHDEVICENAME];
+                    Utils.GetMonitorInfo(secMonitorHwnd, ref monitorInfo);
+
+                    // Figure out the position of the taskbar ourselves
+                    int monWidth = Math.Abs(monitorInfo.rcMonitor.left - monitorInfo.rcMonitor.right);
+                    int monHeight = Math.Abs(monitorInfo.rcMonitor.top - monitorInfo.rcMonitor.bottom);
+                    int wrkWidth = Math.Abs(monitorInfo.rcWork.left - monitorInfo.rcWork.right);
+                    int wrkHeight = Math.Abs(monitorInfo.rcWork.top - monitorInfo.rcWork.bottom);
+                    int tbWidth;
+                    int tbHeight;
+
+                    // We also save the taskbar position for the monitor in registry, so that Windows will actually properly update the position 
+                    // after 5 seconds (and this one will stick between reboots too!).
+                    WriteToRegistry();
+
+                    /*TaskBarLayout tbsr = new TaskBarLayout();
+                    // Now we're at the point that we should be able to update the binary that we grabbed earlier when the object was created
+                    tbsr.ReadFromRegistry(GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath));
+                    if (monWidth == wrkWidth)
+                    {
+                        // Taskbar on top or bottom
+                        if (monitorInfo.rcMonitor.left == monitorInfo.rcWork.left && monitorInfo.rcMonitor.top == monitorInfo.rcWork.top)
+                        {
+                            // Taskbar on bottom
+                            tbWidth = monWidth;
+                            tbHeight = monHeight - wrkHeight;
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
+                            tbsr.Edge = TaskBarEdge.Bottom;
+                        }
+                        else if (monitorInfo.rcMonitor.right == monitorInfo.rcWork.right && monitorInfo.rcMonitor.bottom == monitorInfo.rcWork.bottom)
+                        {
+                            // Taskbar on top
+                            tbWidth = monWidth;
+                            tbHeight = monHeight - wrkHeight;
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                            tbsr.Edge = TaskBarEdge.Top;
+                        }
+                        else
+                        {
+                            // Invalid state
+                            SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Taskbar position was not on a horizontal edge of a monitor!");
+                        }
+
+                    }
+                    else if (monHeight == wrkHeight)
+                    {
+                        // Taskbar on the sides
+                        if (monitorInfo.rcMonitor.right == monitorInfo.rcWork.right && monitorInfo.rcMonitor.bottom == monitorInfo.rcWork.bottom)
+                        {
+                            // Taskbar on left
+                            tbWidth = monWidth - wrkWidth;
+                            tbHeight = monHeight;
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                            tbsr.Edge = TaskBarEdge.Left;
+                        }
+                        else if (monitorInfo.rcMonitor.left == monitorInfo.rcWork.left && monitorInfo.rcMonitor.top == monitorInfo.rcWork.top)
+                        {
+                            // Taskbar on right
+                            tbWidth = monWidth - wrkWidth;
+                            tbHeight = monHeight;
+                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.right, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                            tbsr.Edge = TaskBarEdge.Right;
+                        }
+                        else
+                        {
+                            // Invalid state
+                            SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Taskbar position was not on a vertical edge of a monitor!");
+                        }
+                    }
+                    else
+                    {
+                        // Invalid state
+                        SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Taskbar position was not fully along one of the monitor edges!");
+                    }
+
+                    tbsr.MonitorRect = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
+                    tbsr.MainScreen = false;
+
+                    // Now as a LAST step we update the Binary field just before we apply it to make sure that the correct binary settings are stored
+                    tbsr.PopulateBinaryFromFields();
+
+                    taskBarStuckRectangles.Add(monitorInfo.szDevice, tbsr);*/
+
+                    // Prep the next taskbar window so we continue through them
+                    lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
+                }
+            }
+                       
+
+            return true;
+        }
+
+
         public static string GetRegKeyValueFromDevicePath (string devicePath)
         {
             string regKeyValue = "";
@@ -688,6 +895,34 @@ namespace DisplayMagicianShared.Windows
                 SharedLogger.logger.Warn($"TaskBarLayout/GetRegKeyValueFromDevicePath: We were unable to figure out the regKeyValue {regKeyValue } in the devicePath {devicePath }..");
             }
             return regKeyValue;
+        }
+
+        public static bool ForceTaskBarRedraw(IntPtr mainToolBarHWnd)
+        {
+            // Tell Windows to refresh the Main Screen Windows Taskbar registry settings by telling Explorer to update.
+            Utils.SendMessage(mainToolBarHWnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+            // Tell Windows to refresh the child Windows in the taskbar
+            IntPtr lastChildWindowHwnd = (IntPtr)Utils.NULL;
+            for (int i = 0; i < 100; i++)
+            {
+                // Find the next "Shell_SecondaryTrayWnd" window 
+                IntPtr nextChildWindowHwnd = Utils.FindWindowEx((IntPtr)Utils.NULL, mainToolBarHWnd, "", null);
+                if (nextChildWindowHwnd == (IntPtr)Utils.NULL)
+                {
+                    // No more windows taskbars to notify
+                    break;
+                }
+                // Send the "Shell_TrayWnd" window a WM_SETTINGCHANGE with a wParameter of SPI_SETWORKAREA
+                Utils.SendMessage(lastChildWindowHwnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
+                lastChildWindowHwnd = nextChildWindowHwnd;
+            }
+
+            //IntPtr explorerToolBarHWnd = Utils.FindWindow("Shell_TrayWnd", null);
+            //Utils.PostMessage((IntPtr)Utils.HWND_BROADCAST, Utils.SHELLHOOK, 0x13, (int) mainToolBarHWnd);
+            //Utils.PostMessage((IntPtr)Utils.HWND_BROADCAST, Utils.WM_SETTINGCHANGE, (int)Utils.SPI_SETWORKAREA, (int)Utils.NULL);
+            /*IntPtr result;
+            Utils.SendMessageTimeout((IntPtr)Utils.HWND_BROADCAST, Utils.WM_USER_1, (IntPtr)Utils.NULL, (IntPtr)Utils.NULL, Utils.SendMessageTimeoutFlag.SMTO_ABORTIFHUNG, 15, out result);*/
+            return true;
         }
 
     }

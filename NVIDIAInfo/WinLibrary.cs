@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Microsoft.Win32;
 using System.Threading.Tasks;
 using static DisplayMagicianShared.Windows.TaskBarLayout;
+using System.Diagnostics;
 
 namespace DisplayMagicianShared.Windows
 {
@@ -1489,66 +1490,59 @@ namespace DisplayMagicianShared.Windows
 
 
             // Now set the taskbar position for each screen
-            if (displayConfig.TaskBarLayout.Count > 0)
+            if (displayConfig.TaskBarLayout.Count > 0 && allWindowsDisplayConfig.TaskBarLayout.Count > 0)
             {
-
-                // Enum all the monitors
-                List<MONITORINFOEX> currentMonitors = Utils.EnumMonitors();
-                // Go through each monitor
-                foreach (MONITORINFOEX mi in currentMonitors)
+                foreach (var tbrDictEntry in displayConfig.TaskBarLayout)
                 {
                     // Look up the monitor location of the current monitor and find the matching taskbar location in the taskbar settings
-                    // check the current monitor taskbar location
-                    // if the current monitor location is the same as the monitor we want to set then
-                    // if the current monitor taskbar location where we want it then
-                    // move the taskbar manually
-                    // Find the registry key for the monitor we are modifying
-                    // save the taskbar position for the monitor in registry
-                    // else
-                    // log the fact that the monitor is in the right place so skipping moving it
-                    // if we didn't find a taskbar location for this monitor
-                    // log the fact that the taskbar location wasnt foound for this monitor
-                }
-
-                /*if (displayConfig.TaskBarLayout.ContainsKey("Settings"))
-                {
-                    TaskBarLayout tbsr = displayConfig.TaskBarLayout["Settings"];
-                    if (tbsr.Version >= 2 && tbsr.Version <= 3)
+                    if (allWindowsDisplayConfig.TaskBarLayout.ContainsKey(tbrDictEntry.Key))
                     {
-                        // Write the settings to registry
-                        tbsr.WriteToRegistry();
-
-                    }
-                    RepositionMainTaskBar(tbsr.Edge);
-                }
-
-                SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Setting the taskbar layout.");
-                foreach (KeyValuePair<string, TaskBarLayout> kvp in displayConfig.TaskBarLayout)
-                {
-                    if (displayConfig.TaskBarLayout.ContainsKey("Settings"))
-                    {
-                        continue;
-                    }
-
-                    TaskBarLayout tbsr = kvp.Value;
-                    if (tbsr.Version >= 2 && tbsr.Version <= 3)
-                    {
-                        // Write the settings to registry
-                        tbsr.WriteToRegistry();
+                        // check the current monitor taskbar location
+                        // if the current monitor location is the same as the monitor we want to set then
+                        if (displayConfig.TaskBarLayout[tbrDictEntry.Key].Equals(allWindowsDisplayConfig.TaskBarLayout[tbrDictEntry.Key]))
+                        {
+                            SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Display {tbrDictEntry.Key} ({tbrDictEntry.Value.RegKeyValue}) has the taskbar with the correct position, size and settings, so no need to move it");
+                        }
+                        else
+                        {
+                            // if the current monitor taskbar location is not where we want it then
+                            // move the taskbar manually
+                            TaskBarLayout tbr = tbrDictEntry.Value;
+                            tbr.MoveTaskBar();
+                        }
                     }
                     else
                     {
-                        SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: Unable to set the {tbsr.DevicePath} TaskBarStuckRectangle registry settings as the version isn't v2 or v3!");
+                        SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Display {tbrDictEntry.Key} ({tbrDictEntry.Value.RegKeyValue}) is not currently in use, so cannot set any taskbars on it!");
                     }
                 }
 
-
-                // Tell Windows to refresh the Other Windows Taskbars if needed
-                IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
-                if (displayConfig.TaskBarLayout.Count > 1)
+                // This will actually move the taskbars by forcing Explorer to read from registry key
+                /*RestartManagerSession.RestartExplorer();
+                Process[] explorers = Process.GetProcessesByName("Explorer");
+                for (int i = 0; i < explorers.Length; i++)
                 {
-                    RepositionSecondaryTaskBars();
+                    kill
                 }*/
+                // Enum all the monitors
+                //List<MONITORINFOEX> currentMonitors = Utils.EnumMonitors();
+                // Go through each monitor
+                //foreach (MONITORINFOEX mi in currentMonitors)
+                //{
+                // Look up the monitor location of the current monitor and find the matching taskbar location in the taskbar settings
+                //if (current)
+                // check the current monitor taskbar location
+                // if the current monitor location is the same as the monitor we want to set then
+                // if the current monitor taskbar location where we want it then
+                // move the taskbar manually
+                // Find the registry key for the monitor we are modifying
+                // save the taskbar position for the monitor in registry
+                // else
+                // log the fact that the monitor is in the right place so skipping moving it
+                // if we didn't find a taskbar location for this monitor
+                // log the fact that the taskbar location wasnt foound for this monitor
+                //}
+
             }
             else
             {
@@ -2164,35 +2158,7 @@ namespace DisplayMagicianShared.Windows
             return true;
         }
 
-        public static bool RefreshTaskBars()
-        {
-            // Tell Windows to refresh the Main Screen Windows Taskbar registry settings by telling Explorer to update.
-            // Find the "Shell_TrayWnd" window 
-            IntPtr mainToolBarHWnd = Utils.FindWindow("Shell_TrayWnd", null);
-            Utils.SendMessage(mainToolBarHWnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
-            // Tell Windows to refresh the Other Windows Taskbars if needed
-            IntPtr lastTaskBarWindowHwnd = (IntPtr)Utils.NULL;
-            for (int i = 0; i < 100; i++)
-            {
-                // Find the next "Shell_SecondaryTrayWnd" window 
-                IntPtr nextTaskBarWindowHwnd = Utils.FindWindowEx((IntPtr)Utils.NULL, lastTaskBarWindowHwnd, "Shell_SecondaryTrayWnd", null);
-                if (nextTaskBarWindowHwnd == (IntPtr)Utils.NULL)
-                {
-                    // No more windows taskbars to notify
-                    break;
-                }
-                // Send the "Shell_TrayWnd" window a WM_SETTINGCHANGE with a wParameter of SPI_SETWORKAREA
-                Utils.SendMessage(lastTaskBarWindowHwnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, (IntPtr)Utils.NULL);
-                lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
-            }
-
-            //IntPtr explorerToolBarHWnd = Utils.FindWindow("Shell_TrayWnd", null);
-            //Utils.PostMessage((IntPtr)Utils.HWND_BROADCAST, Utils.SHELLHOOK, 0x13, (int) mainToolBarHWnd);
-            //Utils.PostMessage((IntPtr)Utils.HWND_BROADCAST, Utils.WM_SETTINGCHANGE, (int)Utils.SPI_SETWORKAREA, (int)Utils.NULL);
-            /*IntPtr result;
-            Utils.SendMessageTimeout((IntPtr)Utils.HWND_BROADCAST, Utils.WM_USER_1, (IntPtr)Utils.NULL, (IntPtr)Utils.NULL, Utils.SendMessageTimeoutFlag.SMTO_ABORTIFHUNG, 15, out result);*/
-            return true;
-        }
+        
 
         public static void RefreshTrayArea()
         {
