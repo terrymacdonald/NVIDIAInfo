@@ -685,6 +685,19 @@ namespace DisplayMagicianShared.Windows
                 IntPtr trayDesktopShowButtonHandle = Utils.FindWindowEx(systemTrayNotifyHandle, IntPtr.Zero, "TrayShowDesktopButtonWClass", null);
 
                 IntPtr result;
+                // Prepare the taskbar for moving                
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+                // Move the window
+                Utils.MoveWindow(mainTaskbarHwnd, Location.X, Location.Y, Location.Width, Location.Height, false);
+                // Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_WINDOWPOSCHANGING, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+                // Send the WM_USER+451 to this window (doesn't seem to be needed?)
+                IntPtr taskBarPositionBuffer = new IntPtr((Int32)Edge);
+                Utils.PostMessage(mainTaskbarHwnd, Utils.WM_USER_451, (int)taskBarPositionBuffer, (int) 0);
+                // Prepare the taskbar for staying put
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+                
+                ////// THIS section works fine, for mving taskbar, but start button doesn't work afterwards
+                /*IntPtr result;
                 // Prepare the taskbar for moving
                 Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
                 // Move the window
@@ -692,7 +705,10 @@ namespace DisplayMagicianShared.Windows
                 // Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_WINDOWPOSCHANGING, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
                 // Prepare the taskbar for staying put
                 Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
-
+                // Tell windows there is a setting change for this window (doesn't seem to be needed?)
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+                // Send the WM_USER+440 to this window (doesn't seem to be needed?)
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_USER_440, IntPtr.Zero,, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);*/
 
                 //bool thing = Utils.SetWindowPos(mainTaskbarHwnd, SET_WINDOW_POSITION_ORDER.HWND_TOP, Location.X, Location.Y, Location.Width, Location.Height, SET_WINDOW_POSITION_FLAGS.SWP_NOSENDCHANGING);
                 /*

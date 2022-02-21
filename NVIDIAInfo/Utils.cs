@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -11,13 +12,34 @@ namespace DisplayMagicianShared
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
     public struct WINDOWPOS
     {
-        IntPtr hwnd;
-        IntPtr hwndInsertAfter;
-        int x;
-        int y;
-        int cx;
-        int cy;
-        uint flags;
+        public IntPtr hWnd;
+        public IntPtr hwndInsertAfter;
+        public int x;
+        public int y;
+        public int cx;
+        public int cy;
+        public SET_WINDOW_POSITION_FLAGS flags;
+
+        // Returns the WINDOWPOS structure pointed to by the lParam parameter
+        // of a WM_WINDOWPOSCHANGING or WM_WINDOWPOSCHANGED message.
+        public static WINDOWPOS FromMessage(IntPtr lParam)
+        {
+            // Marshal the lParam parameter to an WINDOWPOS structure,
+            // and return the new structure
+            return (WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(WINDOWPOS));
+        }
+
+        // Replaces the original WINDOWPOS structure pointed to by the lParam
+        // parameter of a WM_WINDOWPOSCHANGING or WM_WINDOWPSCHANGING message
+        // with this one, so that the native window will be able to see any
+        // changes that we have made to its values.
+        public void UpdateMessage(IntPtr lParam)
+        {
+            // Marshal this updated structure back to lParam so the native
+            // window can respond to our changes.
+            // The old structure that it points to should be deleted, too.
+            Marshal.StructureToPtr(this, lParam, true);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
@@ -160,7 +182,7 @@ namespace DisplayMagicianShared
         SWP_SHOWWINDOW = 0x0040,
     }
 
-    public enum SET_WINDOW_POSITION_ORDER : Int32
+    public enum SET_WINDOW_POSITION_ZORDER : Int32
     {
         HWND_TOP = 0,
         HWND_BOTTOM = 1,
@@ -185,6 +207,42 @@ namespace DisplayMagicianShared
         ABE_TOP = 0x1,
         ABE_RIGHT = 0x2,
         ABE_BOTTOM = 0x3,
+    }
+
+    enum SYSCOMMAND : int
+    {
+        SC_SIZE = 0xF000,
+        SC_MOVE = 0xF010,
+        SC_MINIMIZE = 0xF020,
+        SC_MAXIMIZE = 0xF030,
+        SC_NEXTWINDOW = 0xF040,
+        SC_PREVWINDOW = 0xF050,
+        SC_CLOSE = 0xF060,
+        SC_VSCROLL = 0xF070,
+        SC_HSCROLL = 0xF080,
+        SC_MOUSEMENU = 0xF090,
+        SC_KEYMENU = 0xF100,
+        SC_ARRANGE = 0xF110,
+        SC_RESTORE = 0xF120,
+        SC_TASKLIST = 0xF130,
+        SC_SCREENSAVE = 0xF140,
+        SC_HOTKEY = 0xF150,
+        //#if(WINVER >= 0x0400) //Win95
+        SC_DEFAULT = 0xF160,
+        SC_MONITORPOWER = 0xF170,
+        SC_CONTEXTHELP = 0xF180,
+        SC_SEPARATOR = 0xF00F,
+        //#endif /* WINVER >= 0x0400 */
+
+        //#if(WINVER >= 0x0600) //Vista
+        SCF_ISSECURE = 0x00000001,
+        //#endif /* WINVER >= 0x0600 */
+
+        /*
+          * Obsolete names
+          */
+        SC_ICON = SC_MINIMIZE,
+        SC_ZOOM = SC_MAXIMIZE,
     }
 
 
@@ -504,7 +562,14 @@ namespace DisplayMagicianShared
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool SetWindowPos(IntPtr hWnd, SET_WINDOW_POSITION_ORDER hWndInsertAfter, int x, int y, int cx, int cy, SET_WINDOW_POSITION_FLAGS uFlags);
+        public static extern bool SetWindowPos(IntPtr hWnd, SET_WINDOW_POSITION_ZORDER hWndInsertAfter, int x, int y, int cx, int cy, SET_WINDOW_POSITION_FLAGS uFlags);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern int ShowWindow(IntPtr hwnd, int command);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern int SetWindowLong(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
 
         /// <summary>
         ///     The MoveWindow function changes the position and dimensions of the specified window. For a top-level window, the
@@ -589,12 +654,19 @@ namespace DisplayMagicianShared
             return true;
         }*/
 
+        public static Point PointFromLParam(IntPtr lParam)
+        {
+            return new Point((int)(lParam) & 0xFFFF, ((int)(lParam) >> 16) & 0xFFFF);
+        }     
+
+
         public const int NULL = 0;
         public const int HWND_BROADCAST = 0xffff;
         public const int WM_ENTERSIZEMOVE = 0x0231;
         public const int WM_EXITSIZEMOVE = 0x0232;
         public const int WM_WINDOWPOSCHANGING = 0x0046;
         public const int WM_WINDOWPOSCHANGED = 0x0047;
+        public const int WM_SYSCOMMAND = 0x112;
         public const int WM_NOTIFY = 0xA005; 
         public const int WM_SETTINGCHANGE = 0x001a;
         public const int WM_THEMECHANGED = 0x031a;
@@ -648,6 +720,8 @@ namespace DisplayMagicianShared
         // size of a device name string
         public const int CCHDEVICENAME = 32;
         public const uint MONITORINFOF_PRIMARY = 1;
+
+        
     }
 
 
