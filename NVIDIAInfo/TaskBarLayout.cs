@@ -493,7 +493,11 @@ namespace DisplayMagicianShared.Windows
 
             APPBARDATA abd = new APPBARDATA();
 
-            System.Threading.Thread.Sleep(5000);
+            // Sleep delay just for testing so I can get the position of the Start Menu
+            // Note for future me, the Start menu window is moved around the desktop to be next to the  start button that is pressed by the user.
+            // e.g. if you have two screens, and you click the right most start button, the Start menu window is moved to be the same as the WorkRect of the 
+            // monitor that the start button is on.
+            //System.Threading.Thread.Sleep(5000);
 
             // Firstly try to get the position of the main screen and main start menu
             try
@@ -691,6 +695,34 @@ namespace DisplayMagicianShared.Windows
                 IntPtr trayDesktopShowButtonHandle = Utils.FindWindowEx(systemTrayNotifyHandle, IntPtr.Zero, "TrayShowDesktopButtonWClass", null);
 
                 IntPtr result;
+
+                // ===== MOVE THE MAIN TASKBAR WINDOW =====
+                // Prepare the taskbar for moving
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+                // Move the taskbar window
+                Utils.MoveWindow(mainTaskbarHwnd, TaskBarLocation.X, TaskBarLocation.Y, TaskBarLocation.Width, TaskBarLocation.Height, false);
+
+                // ===== LOCK THE MAIN TASKBAR WINDOW BACK DOWN =====
+                // Tell the taskbar we've stopped moving it now
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+                // Tell the taskbar it needs to update it's theme
+                Utils.PostMessage(mainTaskbarHwnd, Utils.WM_THEMECHANGED, IntPtr.Zero, IntPtr.Zero);
+                // Tell the taskbar it needs to recalculate it's work area
+                Utils.SendMessageTimeout(systemTrayNotifyHandle, Utils.WM_SETTINGCHANGE, (IntPtr)Utils.SPI_SETWORKAREA, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+
+
+
+                /*Point pt = Utils.PointFromLParam((IntPtr)0x00000000058805BA);
+
+                IntPtr intptr = Utils.LParamFromPoint(pt);
+
+                intptr = Utils.LParamFromPoint(pt.X, pt.Y);
+                // Pretend the press the left mouse button to click and drag the taskbar
+                Utils.SendMessageTimeout(systemTrayNotifyHandle, Utils.WM_SYSCOMMAND, (IntPtr)SYSCOMMAND.SC_MOVE, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
+
+
+
+
                 // Prepare the taskbar for moving                
                 Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
                 // Move the window
@@ -702,8 +734,8 @@ namespace DisplayMagicianShared.Windows
                 Utils.SendMessage(systemTrayNotifyHandle, Utils.WM_USER_13, (int)0, (int)taskBarPositionBuffer);
 
                 // Tell the taskbar all moves have been completed
-                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
-                
+                Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);*/
+
                 ////// THIS section works fine, for mving taskbar, but start button doesn't work afterwards
                 /*IntPtr result;
                 // Prepare the taskbar for moving

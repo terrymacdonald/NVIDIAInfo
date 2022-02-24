@@ -209,6 +209,19 @@ namespace DisplayMagicianShared
         ABE_BOTTOM = 0x3,
     }
 
+    [Flags]
+    public enum MOUSEKEYS: UInt32
+    {
+        MK_LBUTTON = 0x1, 
+        MK_RBUTTON = 0x2,
+        MK_SHIFT = 0x4,
+        MK_CONTROL = 0x8,
+        MK_MBUTTON = 0x10,
+        MK_XBUTTON1 = 0x20,
+        MK_XBUTTON2 = 0x40,
+    }
+
+
     enum SYSCOMMAND : int
     {
         SC_SIZE = 0xF000,
@@ -531,6 +544,9 @@ namespace DisplayMagicianShared
         public static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -657,7 +673,17 @@ namespace DisplayMagicianShared
         public static Point PointFromLParam(IntPtr lParam)
         {
             return new Point((int)(lParam) & 0xFFFF, ((int)(lParam) >> 16) & 0xFFFF);
-        }     
+        }
+
+        public static IntPtr LParamFromPoint(Point point)
+        {
+            return (IntPtr)((point.Y << 16) | (point.X & 0xFFFF));
+        }
+
+        public static IntPtr LParamFromPoint(int x, int y)
+        {
+            return (IntPtr)((y << 16) | (x & 0xFFFF));
+        }
 
 
         public const int NULL = 0;
