@@ -107,7 +107,7 @@ namespace DisplayMagicianShared.Windows
                             // Extract the values from the binary byte field
                             PopulateFieldsFromBinary();
 
-                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: The taskbar for {RegKeyValue} is against the {Edge} edge, is positioned at ({Location.X},{Location.Y}) and is {Location.Width}x{Location.Height} in size.");
+                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: The taskbar for {RegKeyValue} is against the {Edge} edge, is positioned at ({TaskBarLocation.X},{TaskBarLocation.Y}) and is {TaskBarLocation.Width}x{TaskBarLocation.Height} in size.");
 
                             // If we get here then we're done and don't need to continue with the rest of the code.
                             return true;
@@ -174,7 +174,7 @@ namespace DisplayMagicianShared.Windows
                             // Extract the values from the binary byte field
                             PopulateFieldsFromBinary();
 
-                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: The taskbar for {RegKeyValue} is against the {Edge} edge, is positioned at ({Location.X},{Location.Y}) and is {Location.Width}x{Location.Height} in size.");
+                            SharedLogger.logger.Trace($"TaskBarStuckRectangle/TaskBarStuckRectangle: The taskbar for {RegKeyValue} is against the {Edge} edge, is positioned at ({TaskBarLocation.X},{TaskBarLocation.Y}) and is {TaskBarLocation.Width}x{TaskBarLocation.Height} in size.");
                             return true;
                         }
                         else
@@ -212,9 +212,11 @@ namespace DisplayMagicianShared.Windows
 
         public TaskBarEdge Edge { get; set; }
 
-        public Rectangle Location { get; set; }
+        public Rectangle TaskBarLocation { get; set; }
 
-        public Rectangle MonitorRect { get; set; }
+        public Rectangle StartMenuLocation { get; set; }
+
+        public Rectangle MonitorLocation { get; set; }
 
         public Size MinSize { get; set; }
 
@@ -232,7 +234,7 @@ namespace DisplayMagicianShared.Windows
                 MainScreen == other.MainScreen &&
                 DPI == other.DPI &&
                 Edge == other.Edge &&
-                Location == other.Location &&
+                TaskBarLocation == other.TaskBarLocation &&
                 MinSize == other.MinSize &&
                 Options == other.Options &&
                 Rows == other.Rows;
@@ -240,7 +242,7 @@ namespace DisplayMagicianShared.Windows
 
         public override int GetHashCode()
         {
-            return (Version, MainScreen, RegKeyValue, DPI, Edge, Location, MinSize, Options, Rows).GetHashCode();
+            return (Version, MainScreen, RegKeyValue, DPI, Edge, TaskBarLocation, MinSize, Options, Rows).GetHashCode();
         }
         public static bool operator ==(TaskBarLayout lhs, TaskBarLayout rhs) => lhs.Equals(rhs);
 
@@ -288,7 +290,7 @@ namespace DisplayMagicianShared.Windows
             // Location
             if (Binary.Length < 40)
             {
-                Location = Rectangle.Empty;
+                TaskBarLocation = Rectangle.Empty;
             }
             else
             {
@@ -297,7 +299,7 @@ namespace DisplayMagicianShared.Windows
                 var right = BitConverter.ToInt32(Binary, 32);
                 var bottom = BitConverter.ToInt32(Binary, 36);
 
-                Location = Rectangle.FromLTRB(left, top, right, bottom);
+                TaskBarLocation = Rectangle.FromLTRB(left, top, right, bottom);
             }
             // MinSize
             if (Binary.Length < 24)
@@ -330,7 +332,7 @@ namespace DisplayMagicianShared.Windows
                 Rows = BitConverter.ToUInt32(Binary, 44);
             }
 
-            SharedLogger.logger.Trace($"TaskBarStuckRectangle/PopulateFieldsFromBinary: Grabbed the following settings for {RegKeyValue} from the registry: DPI = {DPI}, Edge = {Edge}, Location = ({Location.X},{Location.Y}), MinSize = {Location.Width}x{Location.Height}, Options = {Options}, Rows = {Rows}.");
+            SharedLogger.logger.Trace($"TaskBarStuckRectangle/PopulateFieldsFromBinary: Grabbed the following settings for {RegKeyValue} from the registry: DPI = {DPI}, Edge = {Edge}, Location = ({TaskBarLocation.X},{TaskBarLocation.Y}), MinSize = {TaskBarLocation.Width}x{TaskBarLocation.Height}, Options = {Options}, Rows = {Rows}.");
 
             return true;
         }
@@ -378,16 +380,16 @@ namespace DisplayMagicianShared.Windows
             }
             else
             {
-                var bytes = BitConverter.GetBytes(Location.Left);
+                var bytes = BitConverter.GetBytes(TaskBarLocation.Left);
                 Array.Copy(bytes, 0, Binary, 24, 4);
 
-                bytes = BitConverter.GetBytes(Location.Top);
+                bytes = BitConverter.GetBytes(TaskBarLocation.Top);
                 Array.Copy(bytes, 0, Binary, 28, 4);
 
-                bytes = BitConverter.GetBytes(Location.Right);
+                bytes = BitConverter.GetBytes(TaskBarLocation.Right);
                 Array.Copy(bytes, 0, Binary, 32, 4);
 
-                bytes = BitConverter.GetBytes(Location.Bottom);
+                bytes = BitConverter.GetBytes(TaskBarLocation.Bottom);
                 Array.Copy(bytes, 0, Binary, 36, 4);
             }
             // MinSize
@@ -430,7 +432,7 @@ namespace DisplayMagicianShared.Windows
                 Array.Copy(bytes, 0, Binary, 44, 4);
             }
 
-            SharedLogger.logger.Trace($"TaskBarStuckRectangle/PopulateBinaryFromFields: Set the following settings for {RegKeyValue} into registry: DPI = {DPI}, Edge = {Edge}, Location = ({Location.X},{Location.Y}), MinSize = {Location.Width}x{Location.Height}, Options = {Options}, Rows = {Rows}.");
+            SharedLogger.logger.Trace($"TaskBarStuckRectangle/PopulateBinaryFromFields: Set the following settings for {RegKeyValue} into registry: DPI = {DPI}, Edge = {Edge}, Location = ({TaskBarLocation.X},{TaskBarLocation.Y}), MinSize = {TaskBarLocation.Width}x{TaskBarLocation.Height}, Options = {Options}, Rows = {Rows}.");
 
             return true;
         }
@@ -491,12 +493,17 @@ namespace DisplayMagicianShared.Windows
 
             APPBARDATA abd = new APPBARDATA();
 
-            // Firstly try to get the position of the main screen
+            System.Threading.Thread.Sleep(5000);
+
+            // Firstly try to get the position of the main screen and main start menu
             try
-            {
+            {                
                 // Figure out which monitor this taskbar is on
                 IntPtr mainTaskbarHwnd = Utils.FindWindow("Shell_TrayWnd", "");
                 IntPtr mainMonitorHwnd = Utils.MonitorFromWindow(mainTaskbarHwnd, Utils.MONITOR_DEFAULTTOPRIMARY);
+                //IntPtr startMenuHwnd = Utils.FindWindow("Windows.UI.Core.CoreWindow", "Start");
+                
+                //Utils.GetWindowRect(startMenuHwnd, out RECT lpRect);
 
                 // Figure out the monitor coordinates
                 MONITORINFOEX monitorInfo = new MONITORINFOEX();
@@ -508,7 +515,6 @@ namespace DisplayMagicianShared.Windows
                 abd.uEdge = ABEDGE.ABE_BOTTOM;
                 abd.lParam = 0x1;
                 abd.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
-
 
                 state = Utils.SHAppBarMessage(Utils.ABM_GETTASKBARPOS, ref abd);
 
@@ -523,24 +529,24 @@ namespace DisplayMagicianShared.Windows
                     // Now we're at the point that we should be able to update the binary that we grabbed earlier when the object was created
                     tbsr.ReadFromRegistry(GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath));
                     tbsr.Edge = (TaskBarEdge)abd.uEdge;
-                    tbsr.MonitorRect = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
+                    tbsr.MonitorLocation = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
                     switch (tbsr.Edge)
                     {
                         case TaskBarEdge.Left:
-                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                            tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
                             break;
                         case TaskBarEdge.Top:
-                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                            tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
                             break;
                         case TaskBarEdge.Right:
-                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.right, monitorInfo.rcWork.top, tbWidth, tbHeight);
+                            tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcWork.right, monitorInfo.rcWork.top, tbWidth, tbHeight);
                             break;
                         case TaskBarEdge.Bottom:
-                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
+                            tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
                             break;
                         default:
                             // Default is bottom taskbar
-                            tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
+                            tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
                             break;
                     }                    
                     tbsr.MainScreen = true;
@@ -554,8 +560,8 @@ namespace DisplayMagicianShared.Windows
                     TaskBarLayout tbsrMain = new TaskBarLayout();
                     tbsrMain.ReadFromRegistry("Settings");
                     tbsrMain.Edge = tbsr.Edge;
-                    tbsrMain.MonitorRect = tbsr.MonitorRect;
-                    tbsrMain.Location = tbsr.Location;
+                    tbsrMain.MonitorLocation = tbsr.MonitorLocation;
+                    tbsrMain.TaskBarLocation = tbsr.TaskBarLocation;
                     tbsrMain.MainScreen = tbsr.MainScreen;
 
                     // Now as a LAST step we update the Binary field just before we apply it to make sure that the correct binary settings are stored
@@ -608,7 +614,7 @@ namespace DisplayMagicianShared.Windows
                         // Taskbar on bottom
                         tbWidth = monWidth;
                         tbHeight = monHeight - wrkHeight;
-                        tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
+                        tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
                         tbsr.Edge = TaskBarEdge.Bottom;
                     }
                     else if (monitorInfo.rcMonitor.right == monitorInfo.rcWork.right && monitorInfo.rcMonitor.bottom == monitorInfo.rcWork.bottom) 
@@ -616,7 +622,7 @@ namespace DisplayMagicianShared.Windows
                         // Taskbar on top
                         tbWidth = monWidth;
                         tbHeight = monHeight - wrkHeight;
-                        tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                        tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
                         tbsr.Edge = TaskBarEdge.Top;
                     }
                     else
@@ -634,7 +640,7 @@ namespace DisplayMagicianShared.Windows
                         // Taskbar on left
                         tbWidth = monWidth - wrkWidth;
                         tbHeight = monHeight;
-                        tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                        tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
                         tbsr.Edge = TaskBarEdge.Left;
                     }
                     else if (monitorInfo.rcMonitor.left == monitorInfo.rcWork.left && monitorInfo.rcMonitor.top == monitorInfo.rcWork.top)
@@ -642,7 +648,7 @@ namespace DisplayMagicianShared.Windows
                         // Taskbar on right
                         tbWidth = monWidth - wrkWidth;
                         tbHeight = monHeight; 
-                        tbsr.Location = new System.Drawing.Rectangle(monitorInfo.rcWork.right, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
+                        tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcWork.right, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
                         tbsr.Edge = TaskBarEdge.Right;
                     }
                     else
@@ -657,7 +663,7 @@ namespace DisplayMagicianShared.Windows
                     SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Taskbar position was not fully along one of the monitor edges!");
                 }
 
-                tbsr.MonitorRect = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
+                tbsr.MonitorLocation = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
                 tbsr.MainScreen = false;
 
                 // Now as a LAST step we update the Binary field just before we apply it to make sure that the correct binary settings are stored
@@ -688,12 +694,14 @@ namespace DisplayMagicianShared.Windows
                 // Prepare the taskbar for moving                
                 Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
                 // Move the window
-                Utils.MoveWindow(mainTaskbarHwnd, Location.X, Location.Y, Location.Width, Location.Height, false);
+                Utils.MoveWindow(mainTaskbarHwnd, TaskBarLocation.X, TaskBarLocation.Y, TaskBarLocation.Width, TaskBarLocation.Height, false);
                 // Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_WINDOWPOSCHANGING, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
                 // Send the WM_USER+451 to this window (doesn't seem to be needed?)
                 IntPtr taskBarPositionBuffer = new IntPtr((Int32)Edge);
                 Utils.PostMessage(mainTaskbarHwnd, Utils.WM_USER_451, (int)taskBarPositionBuffer, (int) 0);
-                // Prepare the taskbar for staying put
+                Utils.SendMessage(systemTrayNotifyHandle, Utils.WM_USER_13, (int)0, (int)taskBarPositionBuffer);
+
+                // Tell the taskbar all moves have been completed
                 Utils.SendMessageTimeout(mainTaskbarHwnd, Utils.WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
                 
                 ////// THIS section works fine, for mving taskbar, but start button doesn't work afterwards
