@@ -1499,7 +1499,9 @@ namespace DisplayMagicianShared.Windows
                     {
                         // check the current monitor taskbar location
                         // if the current monitor location is the same as the monitor we want to set then
-                        if (displayConfig.TaskBarLayout[tbrDictEntry.Key].Equals(allWindowsDisplayConfig.TaskBarLayout[tbrDictEntry.Key]))
+                        TaskBarLayout currentLayout = displayConfig.TaskBarLayout[tbrDictEntry.Key];
+                        TaskBarLayout wantedLayout = allWindowsDisplayConfig.TaskBarLayout[tbrDictEntry.Key];
+                        if (currentLayout.Equals(wantedLayout))
                         {
                             SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: Display {tbrDictEntry.Key} ({tbrDictEntry.Value.RegKeyValue}) has the taskbar with the correct position, size and settings, so no need to move it");
                         }
