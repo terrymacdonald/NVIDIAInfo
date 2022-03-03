@@ -705,7 +705,7 @@ namespace DisplayMagicianShared.NVIDIA
                 // First pass: Figure out how many pathInfo objects there are
                 List<NV_DISPLAYCONFIG_PATH_INFO_V2> allDisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
 
-                /*uint pathInfoCount = 0;
+                uint pathInfoCount = 0;
                 NVStatus = NVImport.NvAPI_DISP_GetDisplayConfig(ref pathInfoCount);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK && pathInfoCount > 0)
                 {
@@ -808,7 +808,7 @@ namespace DisplayMagicianShared.NVIDIA
                 else
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting NVIDIA Display Config! NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on first pass");
-                }*/
+                }
 
                 // We want to get the primary monitor
                 NVStatus = NVImport.NvAPI_DISP_GetGDIPrimaryDisplayId(out UInt32 primaryDisplayId);

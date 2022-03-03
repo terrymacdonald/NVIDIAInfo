@@ -732,32 +732,6 @@ namespace DisplayMagicianShared.Windows
             // Now attempt to get the windows taskbar location for each display
             taskBarStuckRectangles = TaskBarLayout.GetAllCurrentTaskBarLayouts(windowsDisplayConfig.DisplaySources);
 
-            /*// We use the information we already got from the display identifiers
-            SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar layout.");
-            //Dictionary<string, TaskBarStuckRectangle> taskBarStuckRectangles = new Dictionary<string, TaskBarStuckRectangle>();
-            foreach (var displayId in windowsDisplayConfig.DisplayIdentifiers)
-            {
-                // e.g. "WINAPI|\\\\?\\PCI#VEN_10DE&DEV_2482&SUBSYS_408E1458&REV_A1#4&2283f625&0&0019#{5b45201d-f2f2-4f3b-85bb-30ff1f953599}|DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI|54074|4318|\\\\?\\DISPLAY#NVS10DE#5&2b46c695&0&UID185344#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}|NV Surround"
-                string[] winapiLine = displayId.Split('|');
-                string pattern = @"DISPLAY\#(.*)\#\{";
-                Match match = Regex.Match(winapiLine[5], pattern);
-                if (match.Success)
-                {
-                    string devicePath = match.Groups[1].Value;
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found devicePath {devicePath} from the display identifier {displayId}.");
-                    TaskBarLayout taskBarStuckRectangle = new TaskBarLayout(devicePath);
-                    taskBarStuckRectangles.Add(devicePath,taskBarStuckRectangle);
-                }
-                else
-                {
-                    SharedLogger.logger.Warn($"WinLibrary/GetWindowsDisplayConfig: We were unable to figure out the DevicePath for the '{displayId}' display identifier.");
-                }
-
-            }
-            // And we get the Main Screen taskbar too
-            TaskBarLayout mainTaskBarStuckRectangle = new TaskBarLayout("Settings");
-            taskBarStuckRectangles.Add("Settings", mainTaskBarStuckRectangle);*/
-
             // Now we try to get the taskbar settings too
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar settings.");
             TaskBarSettings taskBarSettings = TaskBarSettings.GetCurrent();
@@ -767,7 +741,6 @@ namespace DisplayMagicianShared.Windows
             windowsDisplayConfig.DisplayConfigModes = modes;
             windowsDisplayConfig.GdiDisplaySettings = GetGdiDisplaySettings();
             windowsDisplayConfig.TaskBarLayout = taskBarStuckRectangles;
-            //windowsDisplayConfig.OriginalTaskBarLayout = new List<TaskBarStuckRectangle>(taskBarStuckRectangles);
             windowsDisplayConfig.TaskBarSettings = taskBarSettings;
 
             return windowsDisplayConfig;
