@@ -673,7 +673,14 @@ namespace DisplayMagicianShared.Windows
                 // Now as a LAST step we update the Binary field just before we apply it to make sure that the correct binary settings are stored
                 tbsr.PopulateBinaryFromFields();
 
-                taskBarStuckRectangles.Add(monitorInfo.szDevice, tbsr);
+                if (!taskBarStuckRectangles.ContainsKey(monitorInfo.szDevice))
+                {
+                    taskBarStuckRectangles.Add(monitorInfo.szDevice, tbsr);
+                }                
+                else
+                {
+                    SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Skipping grabbing Taskbar position from a cloned display {monitorInfo.szDevice}");
+                }
 
                 // Prep the next taskbar window so we continue through them
                 lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
