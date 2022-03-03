@@ -87,9 +87,12 @@ namespace DisplayMagicianShared.Windows
            // Additionally, we had to disable the DEviceKey from the equality testing within the GDI library itself as that waould also change after changing back from NVIDIA surround
            // This still allows us to detect when refresh rates change, which will allow DisplayMagician to detect profile differences.
            GdiDisplaySettings.Values.SequenceEqual(other.GdiDisplaySettings.Values) &&
-           DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers) &&
+           DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers);
+           // NOTE: I have disabled the TaskBar specific matching for now due to errors I cannot fix
+           // WinLibrary will still track the location of the taskbars, but won't actually set them as the setting of the taskbars doesnt work at the moment.
+           /*&&
            TaskBarLayout.SequenceEqual(other.TaskBarLayout) &&
-           TaskBarSettings.Equals(other.TaskBarSettings);
+           TaskBarSettings.Equals(other.TaskBarSettings);*/
 
         public override int GetHashCode()
         {
@@ -1489,6 +1492,10 @@ namespace DisplayMagicianShared.Windows
             }
 
 
+            // NOTE: I have disabled the TaskBar setting logic for now due to errors I cannot fix in this code.
+            // WinLibrary will still track the location of the taskbars, but won't actually set them as the setting of the taskbars doesnt work at the moment.           
+            // I hope to eventually fix this code, but I don't want to hold up a new DisplayMagician release while troubleshooting this.
+            /*
             // Now set the taskbar position for each screen
             if (displayConfig.TaskBarLayout.Count > 0 && allWindowsDisplayConfig.TaskBarLayout.Count > 0)
             {
@@ -1525,7 +1532,7 @@ namespace DisplayMagicianShared.Windows
                 for (int i = 0; i < explorers.Length; i++)
                 {
                     kill
-                }*/
+                }
                 // Enum all the monitors
                 //List<MONITORINFOEX> currentMonitors = Utils.EnumMonitors();
                 // Go through each monitor
@@ -1571,7 +1578,7 @@ namespace DisplayMagicianShared.Windows
             {
                 // The settings are the same, so we should skip applying them
                 SharedLogger.logger.Trace($"WinLibrary/SetActiveConfig: The current taskbar settings are the same as the one's we want, so skipping setting them!");
-            }
+            }*/
 
             return true;
         }
