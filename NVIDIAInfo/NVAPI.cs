@@ -3558,8 +3558,8 @@ namespace DisplayMagicianShared.NVIDIA
                     status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
                 }
 
-                Marshal.AllocHGlobal(pathInfoPointer);
-                Marshal.AllocHGlobal(sourceModeInfoPointer);
+                Marshal.FreeHGlobal(pathInfoPointer);
+                Marshal.FreeHGlobal(sourceModeInfoPointer);
 
                 /*// Initialize unmanged memory to hold the unmanaged array of structs
                 int sizeOfOneStruct = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2)) + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
