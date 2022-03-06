@@ -720,6 +720,7 @@ namespace DisplayMagicianShared.NVIDIA
                         NVStatus = NVImport.NvAPI_DISP_GetDisplayConfig(ref pathInfoCount, ref pathInfos, true);
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
+                            allDisplayConfigs = pathInfos.ToList();
                             SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_GetDisplayConfig returned OK on third pass.");
                         }
                         else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)

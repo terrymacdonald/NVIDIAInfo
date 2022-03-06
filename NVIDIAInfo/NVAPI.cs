@@ -1107,7 +1107,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO : IEquatable<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO> // Requires Version 1
+    public struct NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1> // Requires Version 1
     {
         public UInt32 Version;
 
@@ -1143,9 +1143,9 @@ namespace DisplayMagicianShared.NVIDIA
                                              //!< The value NV_TIMING::NV_TIMINGEXT::rrx1k is obtained from the EDID. The driver may
                                              //!< tweak this value for HDTV, stereo, etc., before reporting it to the OS.
 
-        public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO other && this.Equals(other);
+        public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 other && this.Equals(other);
 
-        public bool Equals(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO other)
+        public bool Equals(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 other)
         => Version == other.Version &&
            Rotation == other.Rotation &&
            Scaling == other.Scaling &&
@@ -1160,16 +1160,16 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (Version, Rotation, Scaling, RefreshRateInMillihertz, Flags, ConnectorType, TvFormat, TimingOverride, Timing).GetHashCode();
         }
-        public static bool operator ==(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO lhs, NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO rhs) => lhs.Equals(rhs);
+        public static bool operator ==(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 rhs) => lhs.Equals(rhs);
 
-        public static bool operator !=(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO lhs, NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO rhs) => !(lhs == rhs);
+        public static bool operator !=(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2>
     {
         public UInt32 DisplayId;  //!< Display ID
-        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO Details;    //!< May be NULL if no advanced settings are required
+        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 Details;    //!< NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO - May be NULL if no advanced settings are required
         public UInt32 WindowsCCDTargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
 
         public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 other && this.Equals(other);
@@ -1188,11 +1188,12 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator !=(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 rhs) => !(lhs == rhs);
     }
 
+
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1>
     {
         public UInt32 DisplayId;  //!< Display ID
-        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO Details;    //!< May be NULL if no advanced settings are required
+        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 Details;    //!< May be NULL if no advanced settings are required
 
         public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 other && this.Equals(other);
 
@@ -1249,7 +1250,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_DISPLAYCONFIG_PATH_INFO_V2_P2 // Version is 2 - This is for processing pass 2 only!
+    public struct NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL // Version is 2 - This is for processing pass 2 only!
     {
         public UInt32 Version;
         public UInt32 SourceId;               //!< Identifies sourceId used by Windows CCD. This can be optionally set.
@@ -1265,6 +1266,15 @@ namespace DisplayMagicianShared.NVIDIA
 
         public bool IsNonNVIDIAAdapter => Flags.GetBit(0); //!< if bit is set then this path uses a non-nvidia adapter
     }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL
+    {
+        public UInt32 DisplayId;  //!< Display ID
+        public IntPtr Details;    //!< NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO - May be NULL if no advanced settings are required
+        public UInt32 WindowsCCDTargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
+    }
+
 
     [StructLayout(LayoutKind.Sequential)]
     public struct NV_DISPLAYCONFIG_PATH_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_INFO_V1> // Version is 1
@@ -1335,7 +1345,7 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO>
     {
         public UInt32 DisplayId;  //!< Display ID
-        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO Details;    //!< May be NULL if no advanced settings are required
+        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 Details;    //!< May be NULL if no advanced settings are required
         public UInt32 TargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
 
         public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_TARGET_INFO other && this.Equals(other);
@@ -2205,8 +2215,8 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_EDID_V3_VER = MAKE_NVAPI_VERSION<NV_EDID_V3>(3);
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V1>(1);
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2>(2);
-        public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2_P2>(2);
-        //public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER = 131120;        
+        public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL>(2);
+        public static UInt32 NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1>(1);
         public static UInt32 NV_CUSTOM_DISPLAY_V1_VER = MAKE_NVAPI_VERSION<NV_CUSTOM_DISPLAY_V1>(1);
 
 
@@ -3423,56 +3433,123 @@ namespace DisplayMagicianShared.NVIDIA
             NVAPI_STATUS status = NVAPI_STATUS.NVAPI_OK;
             if (thirdPass)
             {
-                int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_P2));
+                NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] pass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[PathInfoCount];
+                int totalTargetInfoCount = 0;
+                for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
+                {
+                    totalTargetInfoCount += (int)PathInfos[x].TargetInfoCount;
+                }
+
+                int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
                 int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
+                int onePathTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2));
+                int oneAdvTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
                 IntPtr pathInfoPointer = Marshal.AllocHGlobal(onePathInfoMemSize * (int)PathInfoCount);
                 IntPtr sourceModeInfoPointer = Marshal.AllocHGlobal(oneSourceModeMemSize * (int)PathInfoCount);
+                IntPtr targetInfoPointer = Marshal.AllocHGlobal(onePathTargetMemSize * totalTargetInfoCount);
+                IntPtr advTargetPointer = Marshal.AllocHGlobal(oneAdvTargetMemSize * totalTargetInfoCount);
                 // Also set another memory pointer to the same place so that we can do the memory copying item by item
                 // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
                 IntPtr currentPathInfoPointer = pathInfoPointer;
                 IntPtr currentSourceModeInfoPointer = sourceModeInfoPointer;
+                IntPtr currentTargetInfoPointer = targetInfoPointer;
+                IntPtr currentAdvTargetPointer = advTargetPointer;
 
-                // Copy the supplied object for the third pass (when we have the pathInfoCount and the targetInfoCount for each pathInfo, but we want the details)
-                // Third Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect
-                //!                               to number of targetInfoCount(from Second Pass).
-                NV_DISPLAYCONFIG_PATH_INFO_V2[] passedPathInfo = PathInfos;
-                PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2[PathInfoCount];
-                // Calculate the size of memory required
-                int overallTargetCount = 0;
+                // Go through the array and copy things from managed code to unmanaged code
                 for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
                 {
-                    overallTargetCount += (int)PathInfos[x].TargetInfoCount;                    
-                }
-                // Initialize unmanged memory to hold the unmanaged array of structs
-                int memorySizeRequired = (Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2)) * (int)PathInfoCount) 
-                    + (Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)) * (int)overallTargetCount);
-                pathInfoPointer = Marshal.AllocHGlobal(memorySizeRequired);
-                // Also set another memory pointer to the same place so that we can do the memory copying item by item
-                // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
-                currentPathInfoPointer = pathInfoPointer;
+                    // Set up the fields in the path info
+                    pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
+                    pass2PathInfos[x].TargetInfoCount = PathInfos[x].TargetInfoCount;
+                    // Create a target info array and copy it over
+                    NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[] targetInforArray = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[PathInfos[x].TargetInfoCount];
+                    pass2PathInfos[x].TargetInfo = currentTargetInfoPointer;
+                    for (Int32 y = 0; y < (Int32)PathInfos[x].TargetInfoCount; y++)
+                    {
+                        NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 advInfo = new NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1();
+                        advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER;
+                        Marshal.StructureToPtr(advInfo, currentAdvTargetPointer, true);
+                        targetInforArray[y].Details = currentAdvTargetPointer;
+                        Marshal.StructureToPtr(targetInforArray[y], currentTargetInfoPointer, true);
+                        currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
+                        currentAdvTargetPointer = new IntPtr(currentAdvTargetPointer.ToInt64() + oneAdvTargetMemSize);
+                    }                        
+                    
+                    // Create a source mode info object and copy it over
+                    NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo = PathInfos[x].SourceModeInfo;
+                    Marshal.StructureToPtr(sourceModeInfo, currentSourceModeInfoPointer, true);
+                    pass2PathInfos[x].SourceModeInfo = currentSourceModeInfoPointer;
 
-                // Go through the array and create the structure 
-                for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
-                {
-                    // Copy the information passed in, into the buffer we want to pass
-                    PathInfos[x].SourceId = passedPathInfo[x].SourceId;
-                    PathInfos[x].TargetInfoCount = passedPathInfo[x].TargetInfoCount;                    
-                    PathInfos[x].SourceModeInfo = passedPathInfo[x].SourceModeInfo;
-                    PathInfos[x].Version = MAKE_NVAPI_VERSION(Marshal.SizeOf(passedPathInfo[x]), 1);
-
-                    // Figure out where the TargetInfoBuffer will go
-                    NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[] TargetInfo = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[passedPathInfo[x].TargetInfoCount];
-                    IntPtr TargetInfoBuffer = (IntPtr)((long)currentPathInfoPointer + Marshal.SizeOf(TargetInfo));
-                    Marshal.StructureToPtr(TargetInfo, TargetInfoBuffer, false);
-                    //PathInfos[x].TargetInfo = TargetInfoBuffer;
                     // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
-                    Marshal.StructureToPtr(PathInfos[x], currentPathInfoPointer, false);
-                    // advance the buffer forwards to the next object
-                    currentPathInfoPointer = (IntPtr)((long)currentPathInfoPointer + Marshal.SizeOf(PathInfos[x]) + Marshal.SizeOf(TargetInfo));
-                    // advance the buffer forwards to the next object
-                    currentPathInfoPointer = (IntPtr)((long)currentPathInfoPointer.ToInt64() + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)));
+                    Marshal.StructureToPtr(pass2PathInfos[x], currentPathInfoPointer, true);
+
+                    // advance the buffer forwards to the next object for each object
+                    currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize);
+                    currentSourceModeInfoPointer = new IntPtr(currentSourceModeInfoPointer.ToInt64() + oneSourceModeMemSize);
                 }
 
+                if (DISP_GetDisplayConfigInternal != null)
+                {
+                    // Use the unmanaged buffer in the unmanaged C call
+                    status = DISP_GetDisplayConfigInternal(ref PathInfoCount, pathInfoPointer);
+
+                    if (status == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        // If everything worked, then copy the data back from the unmanaged array into the managed array
+                        // So that we can use it in C# land
+                        // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
+                        currentPathInfoPointer = pathInfoPointer;
+                        // Create a managed array to store the received information within
+                        PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2[PathInfoCount];
+                        NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] returnedPass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[PathInfoCount];
+                        // Go through the memory buffer item by item and copy the items into the managed array
+                        for (int i = 0; i < PathInfoCount; i++)
+                        {
+                            // fill the returned pass2 array slot structure with the data from the buffer
+                            // This lets us get the information and then copy it across to the one we want to return!
+                            returnedPass2PathInfos[i] = (NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
+
+                            // Next copy the information across to the PathInfo we actually want to return
+                            PathInfos[i].SourceId = returnedPass2PathInfos[i].SourceId;
+                            PathInfos[i].Flags = returnedPass2PathInfos[i].Flags;
+                            PathInfos[i].OSAdapterID = returnedPass2PathInfos[i].OSAdapterID;
+                            PathInfos[i].TargetInfoCount = returnedPass2PathInfos[i].TargetInfoCount;
+                            PathInfos[i].TargetInfo = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[PathInfos[i].TargetInfoCount];
+                            PathInfos[i].Version = returnedPass2PathInfos[i].Version;
+
+                            // And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
+                            PathInfos[i].SourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)Marshal.PtrToStructure(returnedPass2PathInfos[i].SourceModeInfo, typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
+
+                            currentTargetInfoPointer = returnedPass2PathInfos[i].TargetInfo;
+                            for (Int32 y = 0; y < (Int32)PathInfos[i].TargetInfoCount; y++)
+                            {
+                                // And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
+                                NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL targetInfo = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentTargetInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL));
+                                PathInfos[i].TargetInfo[y].DisplayId = targetInfo.DisplayId;
+                                PathInfos[i].TargetInfo[y].WindowsCCDTargetId = targetInfo.WindowsCCDTargetId;
+
+                                // Next we need to get access to the details object.
+                                NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 targetInfoDetails = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1)Marshal.PtrToStructure(targetInfo.Details, typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
+                                PathInfos[i].TargetInfo[y].Details = targetInfoDetails;
+                                currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
+                            }
+
+                            // destroy the bit of memory we no longer need
+                            //Marshal.DestroyStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2));
+                            // advance the buffer forwards to the next object
+                            currentPathInfoPointer = (IntPtr)((long)currentPathInfoPointer + Marshal.SizeOf(returnedPass2PathInfos[i]));
+                        }
+                    }
+                }
+                else
+                {
+                    status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                }
+
+                Marshal.FreeHGlobal(pathInfoPointer);
+                Marshal.FreeHGlobal(sourceModeInfoPointer);
+                Marshal.FreeHGlobal(targetInfoPointer);
+                Marshal.FreeHGlobal(advTargetPointer);
             }
             else
             {
@@ -3481,9 +3558,9 @@ namespace DisplayMagicianShared.NVIDIA
                 //                               targetInfoCount. If sourceModeInfo is needed allocate memory or it can be initialized to NULL.
                 // Build a new blank object for the second pass (when we have the pathInfoCount, but want the targetInfoCount  for each pathInfo)
                 // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
-                NV_DISPLAYCONFIG_PATH_INFO_V2_P2[] pass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_P2[PathInfoCount];
+                NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] pass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[PathInfoCount];
 
-                int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_P2));
+                int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
                 int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
                 IntPtr pathInfoPointer = Marshal.AllocHGlobal(onePathInfoMemSize * (int)PathInfoCount);
                 IntPtr sourceModeInfoPointer = Marshal.AllocHGlobal(oneSourceModeMemSize * (int)PathInfoCount);
@@ -3527,13 +3604,13 @@ namespace DisplayMagicianShared.NVIDIA
                         currentPathInfoPointer = pathInfoPointer;
                         // Create a managed array to store the received information within
                         PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2[PathInfoCount];
-                        NV_DISPLAYCONFIG_PATH_INFO_V2_P2[] returnedPass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_P2[PathInfoCount];
+                        NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] returnedPass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[PathInfoCount];
                         // Go through the memory buffer item by item and copy the items into the managed array
                         for (int i = 0; i < PathInfoCount; i++)
                         {
                             // fill the returned pass2 array slot structure with the data from the buffer
                             // This lets us get the information and then copy it across to the one we want to return!
-                            returnedPass2PathInfos[i] = (NV_DISPLAYCONFIG_PATH_INFO_V2_P2)Marshal.PtrToStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_P2));
+                            returnedPass2PathInfos[i] = (NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
 
                             // Next copy the information across to the PathInfo we actually want to return
                             PathInfos[i].SourceId = returnedPass2PathInfos[i].SourceId;
@@ -3561,42 +3638,6 @@ namespace DisplayMagicianShared.NVIDIA
                 Marshal.FreeHGlobal(pathInfoPointer);
                 Marshal.FreeHGlobal(sourceModeInfoPointer);
 
-                /*// Initialize unmanged memory to hold the unmanaged array of structs
-                int sizeOfOneStruct = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2)) + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
-                int sizeOfAllStructs = sizeOfOneStruct * (int)PathInfoCount;
-                //int sizeOfOneStruct = Marshal.SizeOf(PathInfos);
-                pathInfoBuffer = Marshal.AllocCoTaskMem(sizeOfAllStructs);*/
-
-                // Also set another memory pointer to the same place so that we can do the memory copying item by item
-                // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
-                //currentPathInfoBuffer = pathInfoBuffer;
-                // Go through the array and copy things from managed code to unmanaged code
-                //for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
-                //{
-                //NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceMode = new NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1();
-                //sourceMode.Position = new NV_POSITION();
-                //sourceMode.Resolution = new NV_RESOLUTION();
-                //IntPtr sourceModeBuffer = (IntPtr)((long)currentPathInfoBuffer.ToInt64() + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)));
-                //Marshal.StructureToPtr(sourceMode, sourceModeBuffer, true);
-                //PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_VER;
-                //PathInfos[x].SourceModeInfo = IntPtr.Zero;
-                /*PathInfos[x].SourceModeInfo.Resolution = new NV_RESOLUTION();
-                PathInfos[x].SourceModeInfo.Position = new NV_POSITION();
-                //PathInfos[x].SourceModeInfo = null;
-                PathInfos[x].TargetInfoCount = 0;
-                PathInfos[x].TargetInfo = IntPtr.Zero;
-                //!< This field is reserved. There is ongoing debate if we need this field.
-                //!< Identifies sourceIds used by Windows. If all sourceIds are 0,
-                //!< these will be computed automatically.
-                PathInfos[x].SourceId = 0;
-                PathInfos[x].Flags = 0;
-                PathInfos[x].OSAdapterID = new NV_LUID();
-                //PathInfos[x].OSAdapterID = IntPtr.Zero;*/
-                // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
-                //Marshal.StructureToPtr(PathInfos[x], currentPathInfoBuffer, true);
-                // advance the buffer forwards to the next object
-                //currentPathInfoBuffer = (IntPtr)((long)currentPathInfoBuffer.ToInt64() + Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)));
-                //}
             }
 
             return status;
