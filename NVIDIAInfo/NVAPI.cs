@@ -2354,6 +2354,7 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_Disp_ColorControl, out Disp_ColorControlInternal);
                 GetDelegate(NvId_DISP_GetDisplayConfig, out DISP_GetDisplayConfigInternal);
                 GetDelegate(NvId_DISP_GetDisplayConfig, out DISP_GetDisplayConfigInternalNull); // null version of the submission
+                GetDelegate(NvId_DISP_SetDisplayConfig, out DISP_SetDisplayConfigInternal);
                 GetDelegate(NvId_DISP_GetDisplayIdByDisplayName, out DISP_GetDisplayIdByDisplayNameInternal);
                 GetDelegate(NvId_DISP_EnumCustomDisplay, out Disp_EnumCustomDisplayInternal);
 
@@ -3672,6 +3673,111 @@ namespace DisplayMagicianShared.NVIDIA
 
             return status;
         }
+
+        // ******** IMPORTANT! This code has an error when attempting to perform the third pass as required by NVAPI documentation *********
+        // ******** FOr this reason I have disabled the code as I don't actually need to get it going. ******** 
+        // NVAPI_INTERFACE NvAPI_DISP_SetDisplayConfig	(	__in NvU32 	pathInfoCount, __in_ecount(pathInfoCount) NV_DISPLAYCONFIG_PATH_INFO* pathInfo,__in NvU32 flags )	
+        private delegate NVAPI_STATUS DISP_SetDisplayConfigDelegate(
+            [In] UInt32 pathInfoCount,
+            [In] IntPtr pathInfoBuffer,
+            [In] NV_DISPLAYCONFIG_FLAGS flags);
+        private static readonly DISP_SetDisplayConfigDelegate DISP_SetDisplayConfigInternal;
+
+        /// <summary>
+        /// DESCRIPTION: This API lets caller apply a global display configuration across multiple GPUs.
+        ///     If all sourceIds are zero, then NvAPI will pick up sourceId's based on the following criteria :
+        ///     If user provides sourceModeInfo then we are trying to assign 0th sourceId always to GDIPrimary.This is needed since active windows always moves along with 0th sourceId.
+        ///     For rest of the paths, we are incrementally assigning the sourceId per adapter basis.
+        ///     If user doesn't provide sourceModeInfo then NVAPI just picks up some default sourceId's in incremental order. Note : NVAPI will not intelligently choose the sourceIDs for any configs that does not need a modeset.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// </summary>
+        /// <param name="pathInfoCount"></param>
+        /// <param name="pathInfos"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DISP_SetDisplayConfig(UInt32 pathInfoCount, NV_DISPLAYCONFIG_PATH_INFO_V2[] pathInfos, NV_DISPLAYCONFIG_FLAGS flags)
+        {
+            NVAPI_STATUS status = NVAPI_STATUS.NVAPI_OK;
+            NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] pass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[pathInfoCount];
+
+            int totalTargetInfoCount = 0;
+            for (Int32 x = 0; x < (Int32)pathInfoCount; x++)
+            {
+                totalTargetInfoCount += (int)pathInfos[x].TargetInfoCount;
+            }
+
+            int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
+            int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
+            int onePathTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2));
+            int oneAdvTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
+
+            IntPtr pathInfoPointer = Marshal.AllocHGlobal(onePathInfoMemSize * (int)pathInfoCount);
+            IntPtr sourceModeInfoPointer = Marshal.AllocHGlobal(oneSourceModeMemSize * (int)pathInfoCount);
+            IntPtr targetInfoPointer = Marshal.AllocHGlobal(onePathTargetMemSize * totalTargetInfoCount);
+            IntPtr advTargetPointer = Marshal.AllocHGlobal(oneAdvTargetMemSize * totalTargetInfoCount);
+            // Also set another memory pointer to the same place so that we can do the memory copying item by item
+            // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
+            IntPtr currentPathInfoPointer = pathInfoPointer;
+            IntPtr currentSourceModeInfoPointer = sourceModeInfoPointer;
+            IntPtr currentTargetInfoPointer = targetInfoPointer;
+            IntPtr currentAdvTargetPointer = advTargetPointer;
+
+            // Go through the array and copy things from managed code to unmanaged code
+            for (Int32 x = 0; x < (Int32)pathInfoCount; x++)
+            {
+                // Set up the fields in the path info
+                pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
+                pass2PathInfos[x].TargetInfoCount = pathInfos[x].TargetInfoCount;
+                pass2PathInfos[x].Flags = pathInfos[x].Flags;
+                pass2PathInfos[x].OSAdapterID = pathInfos[x].OSAdapterID;
+                pass2PathInfos[x].SourceId = pathInfos[x].SourceId;                
+                // Create a target info array and copy it over
+                NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[] targetInforArray = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[pathInfos[x].TargetInfoCount];
+                pass2PathInfos[x].TargetInfo = currentTargetInfoPointer;
+                for (Int32 y = 0; y < (Int32)pathInfos[x].TargetInfoCount; y++)
+                {
+                    NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 advInfo = pathInfos[x].TargetInfo[y].Details;
+                    //advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER;
+                    Marshal.StructureToPtr(advInfo, currentAdvTargetPointer, true);
+                    targetInforArray[y].Details = currentAdvTargetPointer;
+                    targetInforArray[y].DisplayId = pathInfos[x].TargetInfo[y].DisplayId;
+                    targetInforArray[y].WindowsCCDTargetId = pathInfos[x].TargetInfo[y].WindowsCCDTargetId;
+                    Marshal.StructureToPtr(targetInforArray[y], currentTargetInfoPointer, true);
+                    currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
+                    currentAdvTargetPointer = new IntPtr(currentAdvTargetPointer.ToInt64() + oneAdvTargetMemSize);
+                }
+
+                // Create a source mode info object and copy it over
+                NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo = pathInfos[x].SourceModeInfo;
+                Marshal.StructureToPtr(sourceModeInfo, currentSourceModeInfoPointer, true);
+                pass2PathInfos[x].SourceModeInfo = currentSourceModeInfoPointer;
+
+                // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                Marshal.StructureToPtr(pass2PathInfos[x], currentPathInfoPointer, true);
+
+                // advance the buffer forwards to the next object for each object
+                currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize);
+                currentSourceModeInfoPointer = new IntPtr(currentSourceModeInfoPointer.ToInt64() + oneSourceModeMemSize);
+            }
+
+            if (DISP_GetDisplayConfigInternal != null)
+            {
+                // Use the unmanaged buffer in the unmanaged C call
+                status = DISP_SetDisplayConfigInternal(pathInfoCount, pathInfoPointer, flags);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
+
+            Marshal.FreeHGlobal(pathInfoPointer);
+            Marshal.FreeHGlobal(sourceModeInfoPointer);
+            Marshal.FreeHGlobal(targetInfoPointer);
+            Marshal.FreeHGlobal(advTargetPointer);
+
+            return status;
+        }
+
 
 
         // NVAPI_INTERFACE NvAPI_DISP_GetDisplayIdByDisplayName(const char *displayName, NvU32* displayId);
