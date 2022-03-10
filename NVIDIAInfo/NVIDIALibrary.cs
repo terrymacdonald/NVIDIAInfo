@@ -757,6 +757,10 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: ModeSet has not yet completed. Please wait and call it again. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on third pass.");
                         }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                        {
+                            SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on third pass.");
+                        }
                         else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
                         {
                             SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on third pass.");
@@ -785,6 +789,10 @@ namespace DisplayMagicianShared.NVIDIA
                     else if (NVStatus == NVAPI_STATUS.NVAPI_DEVICE_BUSY)
                     {
                         SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: ModeSet has not yet completed. Please wait and call it again. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on second pass.");
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on second pass.");
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
                     {
@@ -815,6 +823,10 @@ namespace DisplayMagicianShared.NVIDIA
                 else if (NVStatus == NVAPI_STATUS.NVAPI_DEVICE_BUSY)
                 {
                     SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: ModeSet has not yet completed. Please wait and call it again. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on first pass");
+                }
+                else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                {
+                    SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on first pass.");
                 }
                 else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
                 {
@@ -1995,7 +2007,7 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // We are on a non-Mosaic profile now, and we are changing to a non-Mosaic profile
                     // so there is nothing to do as far as NVIDIA is concerned!
-                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We are on a non-Mosaic profile now, and we are changing to a non-Mosaic profile so there is nothing to do as far as NVIDIA is concerned!");
+                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We are on a non-Mosaic profile now, and we are changing to a non-Mosaic profile so there is no need to modify Mosaic settings!");
                 }
 
                 // Now we set the NVIDIA Display Config (if we have one!)
