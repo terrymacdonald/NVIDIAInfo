@@ -755,7 +755,7 @@ namespace DisplayMagicianShared.NVIDIA
     // ==================================
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct DisplayHandle : IEquatable<DisplayHandle>
+    public struct DisplayHandle : IEquatable<DisplayHandle>, ICloneable
     {
         public IntPtr Ptr;
 
@@ -772,10 +772,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(DisplayHandle lhs, DisplayHandle rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(DisplayHandle lhs, DisplayHandle rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            DisplayHandle other = (DisplayHandle)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct UnAttachedDisplayHandle : IEquatable<UnAttachedDisplayHandle>
+    public struct UnAttachedDisplayHandle : IEquatable<UnAttachedDisplayHandle>, ICloneable
     {
         public IntPtr Ptr;
 
@@ -792,10 +798,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(UnAttachedDisplayHandle lhs, UnAttachedDisplayHandle rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(UnAttachedDisplayHandle lhs, UnAttachedDisplayHandle rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            UnAttachedDisplayHandle other = (UnAttachedDisplayHandle)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct PhysicalGpuHandle : IEquatable<PhysicalGpuHandle>
+    public struct PhysicalGpuHandle : IEquatable<PhysicalGpuHandle>, ICloneable
     {
         public IntPtr Ptr;
 
@@ -811,11 +823,17 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(PhysicalGpuHandle lhs, PhysicalGpuHandle rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(PhysicalGpuHandle lhs, PhysicalGpuHandle rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            PhysicalGpuHandle other = (PhysicalGpuHandle)MemberwiseClone();
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct LogicalGpuHandle : IEquatable<LogicalGpuHandle>
+    public struct LogicalGpuHandle : IEquatable<LogicalGpuHandle>, ICloneable
     {
         public IntPtr Ptr;
 
@@ -831,10 +849,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(LogicalGpuHandle lhs, LogicalGpuHandle rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(LogicalGpuHandle lhs, LogicalGpuHandle rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            LogicalGpuHandle other = (LogicalGpuHandle)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_BOARD_INFO_V1 : IEquatable<NV_BOARD_INFO_V1> // Note: Version 1 of NV_BOARD_INFO_V1 structure
+    public struct NV_BOARD_INFO_V1 : IEquatable<NV_BOARD_INFO_V1>, ICloneable // Note: Version 1 of NV_BOARD_INFO_V1 structure
     {
         public UInt32 Version;                   //!< structure version
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
@@ -853,10 +877,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_BOARD_INFO_V1 lhs, NV_BOARD_INFO_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_BOARD_INFO_V1 lhs, NV_BOARD_INFO_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_BOARD_INFO_V1 other = (NV_BOARD_INFO_V1)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_EDID_V3 : IEquatable<NV_EDID_V3> // Note: Version 3 of NV_EDID_V3 structure
+    public struct NV_EDID_V3 : IEquatable<NV_EDID_V3>, ICloneable // Note: Version 3 of NV_EDID_V3 structure
     {
         public UInt32 Version;        //!< Structure version
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_EDID_DATA_SIZE)]
@@ -885,11 +914,17 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_EDID_V3 lhs, NV_EDID_V3 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_EDID_V3 lhs, NV_EDID_V3 rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_EDID_V3 other = (NV_EDID_V3)MemberwiseClone();
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
-    public struct NV_TIMING_EXTRA : IEquatable<NV_TIMING_EXTRA>
+    public struct NV_TIMING_EXTRA : IEquatable<NV_TIMING_EXTRA>, ICloneable
     {
         public UInt32 Flags;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
         public ushort RefreshRate;            //!< Logical refresh rate to present
@@ -921,10 +956,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_TIMING_EXTRA lhs, NV_TIMING_EXTRA rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_TIMING_EXTRA lhs, NV_TIMING_EXTRA rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_TIMING_EXTRA other = (NV_TIMING_EXTRA)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_TIMING : IEquatable<NV_TIMING>
+    public struct NV_TIMING : IEquatable<NV_TIMING>, ICloneable
     {
         // VESA scan out timing parameters:
         public ushort HVisible;         //!< horizontal visible
@@ -973,10 +1014,17 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_TIMING lhs, NV_TIMING rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_TIMING lhs, NV_TIMING rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_TIMING other = (NV_TIMING)MemberwiseClone();
+            other.Extra = (NV_TIMING_EXTRA)Extra.Clone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_RECT : IEquatable<NV_RECT>
+    public struct NV_RECT : IEquatable<NV_RECT>, ICloneable
     {
         public UInt32 Left;
         public UInt32 Top;
@@ -998,10 +1046,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_RECT lhs, NV_RECT rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_RECT lhs, NV_RECT rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_RECT other = (NV_RECT)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_LUID : IEquatable<NV_LUID>
+    public struct NV_LUID : IEquatable<NV_LUID>, ICloneable
     {
         public UInt32 LowPart;
         public UInt32 HighPart;
@@ -1019,11 +1073,17 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_LUID lhs, NV_LUID rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_LUID lhs, NV_LUID rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_LUID other = (NV_LUID)MemberwiseClone();
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_POSITION : IEquatable<NV_POSITION>
+    public struct NV_POSITION : IEquatable<NV_POSITION>, ICloneable
     {
         public Int32 X;
         public Int32 Y;
@@ -1041,11 +1101,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_POSITION lhs, NV_POSITION rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_POSITION lhs, NV_POSITION rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_POSITION other = (NV_POSITION)MemberwiseClone();
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_RESOLUTION : IEquatable<NV_RESOLUTION>
+    public struct NV_RESOLUTION : IEquatable<NV_RESOLUTION>, ICloneable
     {
         public UInt32 Width;
         public UInt32 Height;
@@ -1065,10 +1130,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_RESOLUTION lhs, NV_RESOLUTION rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_RESOLUTION lhs, NV_RESOLUTION rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_RESOLUTION other = (NV_RESOLUTION)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_VIEWPORTF : IEquatable<NV_VIEWPORTF>
+    public struct NV_VIEWPORTF : IEquatable<NV_VIEWPORTF>, ICloneable
     {
         public float X;    //!<  x-coordinate of the viewport top-left point
         public float Y;    //!<  y-coordinate of the viewport top-left point
@@ -1104,10 +1175,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_VIEWPORTF lhs, NV_VIEWPORTF rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_VIEWPORTF lhs, NV_VIEWPORTF rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_VIEWPORTF other = (NV_VIEWPORTF)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1> // Requires Version 1
+    public struct NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1>, ICloneable // Requires Version 1
     {
         public UInt32 Version;
 
@@ -1163,10 +1240,17 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 other = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1)MemberwiseClone();
+            other.Timing = (NV_TIMING)Timing.Clone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2>
+    public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2>, ICloneable
     {
         public UInt32 DisplayId;  //!< Display ID
         public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 Details;    //!< NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO - May be NULL if no advanced settings are required
@@ -1186,11 +1270,18 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 otherTargetInfo = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)MemberwiseClone();
+            otherTargetInfo.Details = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1)Details.Clone();
+            return otherTargetInfo;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1>
+    public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1>, ICloneable
     {
         public UInt32 DisplayId;  //!< Display ID
         public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 Details;    //!< May be NULL if no advanced settings are required
@@ -1208,10 +1299,17 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1 other = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V1)MemberwiseClone();
+            other.Details = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1)Details.Clone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_DISPLAYCONFIG_PATH_INFO_V2 : IEquatable<NV_DISPLAYCONFIG_PATH_INFO_V2> // Version is 2
+    public struct NV_DISPLAYCONFIG_PATH_INFO_V2 : IEquatable<NV_DISPLAYCONFIG_PATH_INFO_V2>, ICloneable // Version is 2
     {
         public UInt32 Version;
         public UInt32 SourceId;               //!< Identifies sourceId used by Windows CCD. This can be optionally set.
@@ -1247,6 +1345,17 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_DISPLAYCONFIG_PATH_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_INFO_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_DISPLAYCONFIG_PATH_INFO_V2 lhs, NV_DISPLAYCONFIG_PATH_INFO_V2 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_DISPLAYCONFIG_PATH_INFO_V2 other = (NV_DISPLAYCONFIG_PATH_INFO_V2)MemberwiseClone();
+            other.TargetInfo = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[TargetInfoCount];
+            for (int x = 0; x < (int)TargetInfoCount; x++)
+            {
+                other.TargetInfo[x] = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)TargetInfo[x].Clone();
+            }
+            other.SourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)SourceModeInfo.Clone(); ;
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1273,11 +1382,12 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 DisplayId;  //!< Display ID
         public IntPtr Details;    //!< NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO - May be NULL if no advanced settings are required
         public UInt32 WindowsCCDTargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
+
     }
 
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct NV_DISPLAYCONFIG_PATH_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_INFO_V1> // Version is 1
+    public struct NV_DISPLAYCONFIG_PATH_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_PATH_INFO_V1>, ICloneable // Version is 1
     {
         public UInt32 Version;
         public UInt32 SourceId;               //!< Identifies sourceId used by Windows CCD. This can be optionally set.
@@ -1307,11 +1417,22 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_DISPLAYCONFIG_PATH_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_INFO_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_DISPLAYCONFIG_PATH_INFO_V1 lhs, NV_DISPLAYCONFIG_PATH_INFO_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_DISPLAYCONFIG_PATH_INFO_V2 other = (NV_DISPLAYCONFIG_PATH_INFO_V2)MemberwiseClone();
+            other.TargetInfo = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[TargetInfoCount];
+            for (int x = 0; x < (int)TargetInfoCount; x++)
+            {
+                other.TargetInfo[x] = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)TargetInfo[x].Clone();
+            }
+            other.SourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)SourceModeInfo.Clone(); ;
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1>
+    public struct NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 : IEquatable<NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1>, ICloneable
     {
         public NV_RESOLUTION Resolution;
         public NV_FORMAT ColorFormat;                //!< Ignored at present, must be NV_FORMAT_UNKNOWN (0)
@@ -1329,44 +1450,29 @@ namespace DisplayMagicianShared.NVIDIA
         public bool Equals(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 other)
         => Resolution.Equals(other.Resolution) &&
            ColorFormat == other.ColorFormat &&
-           Position.Equals(other.Position);
+           Position.Equals(other.Position) &&
+           Flags == other.Flags;
 
         public override Int32 GetHashCode()
         {
-            return (Resolution, ColorFormat, Position).GetHashCode();
+            return (Resolution, ColorFormat, Position, Flags).GetHashCode();
         }
         public static bool operator ==(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 lhs, NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 lhs, NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 rhs) => !(lhs == rhs);
-    }
 
-
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO : IEquatable<NV_DISPLAYCONFIG_PATH_TARGET_INFO>
-    {
-        public UInt32 DisplayId;  //!< Display ID
-        public NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 Details;    //!< May be NULL if no advanced settings are required
-        public UInt32 TargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
-
-        public override bool Equals(object obj) => obj is NV_DISPLAYCONFIG_PATH_TARGET_INFO other && this.Equals(other);
-
-        public bool Equals(NV_DISPLAYCONFIG_PATH_TARGET_INFO other)
-        => DisplayId == other.DisplayId &&
-           Details.Equals(other.Details) &&
-           TargetId == other.TargetId;
-
-        public override Int32 GetHashCode()
+        public object Clone()
         {
-            return (DisplayId, Details, TargetId).GetHashCode();
+            NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 other = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)MemberwiseClone();
+            other.Resolution = (NV_RESOLUTION)Resolution.Clone();
+            other.Position = (NV_POSITION)Position.Clone();
+            return other;
         }
-        public static bool operator ==(NV_DISPLAYCONFIG_PATH_TARGET_INFO lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO rhs) => lhs.Equals(rhs);
-
-        public static bool operator !=(NV_DISPLAYCONFIG_PATH_TARGET_INFO lhs, NV_DISPLAYCONFIG_PATH_TARGET_INFO rhs) => !(lhs == rhs);
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_TOPO_BRIEF : IEquatable<NV_MOSAIC_TOPO_BRIEF> // Note: Version 1 of NV_MOSAIC_TOPO_BRIEF structure
+    public struct NV_MOSAIC_TOPO_BRIEF : IEquatable<NV_MOSAIC_TOPO_BRIEF>, ICloneable // Note: Version 1 of NV_MOSAIC_TOPO_BRIEF structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 1
         public NV_MOSAIC_TOPO Topo;     //!< The topology
@@ -1392,6 +1498,11 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_TOPO_BRIEF lhs, NV_MOSAIC_TOPO_BRIEF rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_TOPO_BRIEF lhs, NV_MOSAIC_TOPO_BRIEF rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_TOPO_BRIEF other = (NV_MOSAIC_TOPO_BRIEF)MemberwiseClone();
+            return other;
+        }
     }
 
     //
@@ -1412,7 +1523,7 @@ namespace DisplayMagicianShared.NVIDIA
     //! You can then look at the detailed values within the structure.  There are no
     //! entrypoInt32s which take this structure as input (effectively making it read-only).
     [StructLayout(LayoutKind.Sequential)]
-    public struct NV_MOSAIC_TOPO_GROUP : IEquatable<NV_MOSAIC_TOPO_GROUP> // Note: Version 1 of NV_MOSAIC_TOPO_GROUP structure
+    public struct NV_MOSAIC_TOPO_GROUP : IEquatable<NV_MOSAIC_TOPO_GROUP>, ICloneable // Note: Version 1 of NV_MOSAIC_TOPO_GROUP structure
     {
         public UInt32 Version;                        // Version of this structure - MUST BE SET TO 1
         public NV_MOSAIC_TOPO_BRIEF Brief;          //!< The brief details of this topo
@@ -1435,11 +1546,22 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_TOPO_GROUP lhs, NV_MOSAIC_TOPO_GROUP rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_TOPO_GROUP lhs, NV_MOSAIC_TOPO_GROUP rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_TOPO_GROUP other = (NV_MOSAIC_TOPO_GROUP)MemberwiseClone();
+            other.Brief = (NV_MOSAIC_TOPO_BRIEF)Brief.Clone();
+            other.Topos = new NV_MOSAIC_TOPO_DETAILS[Topos.Length];
+            for (int x = 0; x < (int)Topos.Length; x++)
+            {
+                other.Topos[x] = (NV_MOSAIC_TOPO_DETAILS)Topos[x].Clone();
+            }
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct NV_MOSAIC_TOPO_DETAILS : IEquatable<NV_MOSAIC_TOPO_DETAILS> // Note: Version 1 of NV_MOSAIC_TOPO_DETAILS structure
+    public struct NV_MOSAIC_TOPO_DETAILS : IEquatable<NV_MOSAIC_TOPO_DETAILS>, ICloneable // Note: Version 1 of NV_MOSAIC_TOPO_DETAILS structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 1 
         public LogicalGpuHandle LogicalGPUHandle;     //!< Logical GPU for this topology  
@@ -1479,7 +1601,7 @@ namespace DisplayMagicianShared.NVIDIA
                 GPULayout = value;
             }
         }
-
+        
         public override bool Equals(object obj) => obj is NV_MOSAIC_TOPO_DETAILS other && this.Equals(other);
         public bool Equals(NV_MOSAIC_TOPO_DETAILS other)
         => Version == other.Version &&
@@ -1506,10 +1628,31 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_TOPO_DETAILS lhs, NV_MOSAIC_TOPO_DETAILS rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_TOPO_DETAILS lhs, NV_MOSAIC_TOPO_DETAILS rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NV_MOSAIC_TOPO_DETAILS other = (NV_MOSAIC_TOPO_DETAILS)MemberwiseClone();
+            other.LogicalGPUHandle = (LogicalGpuHandle)LogicalGPUHandle.Clone();
+            other.GPULayout1D = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[GPULayout1D.Length];
+            for (int x = 0; x < (int)GPULayout1D.Length; x++)
+            {
+                other.GPULayout1D[x] = (NV_MOSAIC_TOPO_GPU_LAYOUT_CELL)GPULayout1D[x].Clone();
+            }
+
+            other.GPULayout = new NV_MOSAIC_TOPO_GPU_LAYOUT_CELL[GPULayout.GetLength(0), GPULayout.GetLength(1)];
+            for (int x = 0; x < (int)GPULayout.GetLength(0); x++)
+            {
+                for (int y = 0; y < (int)GPULayout.GetLength(1); y++)
+                {
+                    other.GPULayout[x,y] = (NV_MOSAIC_TOPO_GPU_LAYOUT_CELL)GPULayout[x,y].Clone();
+                }
+            }
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_TOPO_GPU_LAYOUT_CELL : IEquatable<NV_MOSAIC_TOPO_GPU_LAYOUT_CELL>
+    public struct NV_MOSAIC_TOPO_GPU_LAYOUT_CELL : IEquatable<NV_MOSAIC_TOPO_GPU_LAYOUT_CELL>, ICloneable
     {
         public PhysicalGpuHandle PhysicalGPUHandle;     //!< Physical GPU to be used in the topology (0 if GPU missing) size is 8
         public UInt32 DisplayOutputId;            //!< Connected display target(0 if no display connected) size is 8
@@ -1531,10 +1674,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_TOPO_GPU_LAYOUT_CELL lhs, NV_MOSAIC_TOPO_GPU_LAYOUT_CELL rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_TOPO_GPU_LAYOUT_CELL lhs, NV_MOSAIC_TOPO_GPU_LAYOUT_CELL rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_TOPO_GPU_LAYOUT_CELL other = (NV_MOSAIC_TOPO_GPU_LAYOUT_CELL)MemberwiseClone();
+            other.PhysicalGPUHandle = (PhysicalGpuHandle)PhysicalGPUHandle.Clone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_DISPLAY_SETTING_V1 : IEquatable<NV_MOSAIC_DISPLAY_SETTING_V1> // Note: Version 1 of NV_MOSAIC_DISPLAY_SETTING structure
+    public struct NV_MOSAIC_DISPLAY_SETTING_V1 : IEquatable<NV_MOSAIC_DISPLAY_SETTING_V1>, ICloneable // Note: Version 1 of NV_MOSAIC_DISPLAY_SETTING structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 1
         public UInt32 Width;              //!< Per-display width
@@ -1558,10 +1707,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_DISPLAY_SETTING_V1 lhs, NV_MOSAIC_DISPLAY_SETTING_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_DISPLAY_SETTING_V1 lhs, NV_MOSAIC_DISPLAY_SETTING_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_DISPLAY_SETTING_V1 other = (NV_MOSAIC_DISPLAY_SETTING_V1)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_DISPLAY_SETTING_V2 : IEquatable<NV_MOSAIC_DISPLAY_SETTING_V2> // Note: Version 2 of NV_MOSAIC_DISPLAY_SETTING structure
+    public struct NV_MOSAIC_DISPLAY_SETTING_V2 : IEquatable<NV_MOSAIC_DISPLAY_SETTING_V2>, ICloneable // Note: Version 2 of NV_MOSAIC_DISPLAY_SETTING structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 2
         public UInt32 Width;              //!< Per-display width
@@ -1587,10 +1741,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_DISPLAY_SETTING_V2 lhs, NV_MOSAIC_DISPLAY_SETTING_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_DISPLAY_SETTING_V2 lhs, NV_MOSAIC_DISPLAY_SETTING_V2 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_DISPLAY_SETTING_V2 other = (NV_MOSAIC_DISPLAY_SETTING_V2)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_GRID_TOPO_V1 : IEquatable<NV_MOSAIC_GRID_TOPO_V1> // Note: Version 1 of NV_MOSAIC_GRID_TOPO structure
+    public struct NV_MOSAIC_GRID_TOPO_V1 : IEquatable<NV_MOSAIC_GRID_TOPO_V1>, ICloneable // Note: Version 1 of NV_MOSAIC_GRID_TOPO structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 1
         public UInt32 Rows;              //!< Per-display width
@@ -1625,10 +1784,21 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_GRID_TOPO_V1 lhs, NV_MOSAIC_GRID_TOPO_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_GRID_TOPO_V1 lhs, NV_MOSAIC_GRID_TOPO_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_GRID_TOPO_V1 other = (NV_MOSAIC_GRID_TOPO_V1)MemberwiseClone();
+            other.DisplaySettings = (NV_MOSAIC_DISPLAY_SETTING_V1)DisplaySettings.Clone();
+            other.Displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V1[Displays.Length];
+            for (int x = 0; x < (int)Displays.Length; x++)
+            {
+                other.Displays[x] = (NV_MOSAIC_GRID_TOPO_DISPLAY_V1)Displays[x].Clone();
+            }
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_GRID_TOPO_V2 : IEquatable<NV_MOSAIC_GRID_TOPO_V2> // Note: Version 2 of NV_MOSAIC_GRID_TOPO structure
+    public struct NV_MOSAIC_GRID_TOPO_V2 : IEquatable<NV_MOSAIC_GRID_TOPO_V2>, ICloneable // Note: Version 2 of NV_MOSAIC_GRID_TOPO structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 2
         public UInt32 Rows;              //!< Per-display width
@@ -1664,10 +1834,21 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_GRID_TOPO_V2 lhs, NV_MOSAIC_GRID_TOPO_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_GRID_TOPO_V2 lhs, NV_MOSAIC_GRID_TOPO_V2 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_GRID_TOPO_V2 other = (NV_MOSAIC_GRID_TOPO_V2)MemberwiseClone();
+            other.DisplaySettings = (NV_MOSAIC_DISPLAY_SETTING_V1)DisplaySettings.Clone();
+            other.Displays = new NV_MOSAIC_GRID_TOPO_DISPLAY_V2[Displays.Length];
+            for (int x = 0; x < (int)Displays.Length; x++)
+            {
+                other.Displays[x] = (NV_MOSAIC_GRID_TOPO_DISPLAY_V2)Displays[x].Clone();
+            }
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_GRID_TOPO_DISPLAY_V1 : IEquatable<NV_MOSAIC_GRID_TOPO_DISPLAY_V1> // Note: Version 1 of NV_MOSAIC_GRID_TOPO_DISPLAY structure
+    public struct NV_MOSAIC_GRID_TOPO_DISPLAY_V1 : IEquatable<NV_MOSAIC_GRID_TOPO_DISPLAY_V1>, ICloneable // Note: Version 1 of NV_MOSAIC_GRID_TOPO_DISPLAY structure
     {
         public UInt32 DisplayId;              //!< DisplayID of the display
         public Int32 OverlapX;             //!< (+overlap, -gap)
@@ -1690,10 +1871,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_GRID_TOPO_DISPLAY_V1 lhs, NV_MOSAIC_GRID_TOPO_DISPLAY_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_GRID_TOPO_DISPLAY_V1 lhs, NV_MOSAIC_GRID_TOPO_DISPLAY_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_GRID_TOPO_DISPLAY_V1 other = (NV_MOSAIC_GRID_TOPO_DISPLAY_V1)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_GRID_TOPO_DISPLAY_V2 : IEquatable<NV_MOSAIC_GRID_TOPO_DISPLAY_V2> // Note: Version 2 of NV_MOSAIC_GRID_TOPO_DISPLAY structure
+    public struct NV_MOSAIC_GRID_TOPO_DISPLAY_V2 : IEquatable<NV_MOSAIC_GRID_TOPO_DISPLAY_V2>, ICloneable // Note: Version 2 of NV_MOSAIC_GRID_TOPO_DISPLAY structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 2
         public UInt32 DisplayId;              //!< DisplayID of the display
@@ -1720,11 +1906,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_GRID_TOPO_DISPLAY_V2 lhs, NV_MOSAIC_GRID_TOPO_DISPLAY_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_GRID_TOPO_DISPLAY_V2 lhs, NV_MOSAIC_GRID_TOPO_DISPLAY_V2 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_GRID_TOPO_DISPLAY_V2 other = (NV_MOSAIC_GRID_TOPO_DISPLAY_V2)MemberwiseClone();
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 : IEquatable<NV_MOSAIC_SUPPORTED_TOPO_INFO_V1> // Note: Version 1 of NV_MOSAIC_SUPPORTED_TOPO_INFO structure
+    public struct NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 : IEquatable<NV_MOSAIC_SUPPORTED_TOPO_INFO_V1>, ICloneable // Note: Version 1 of NV_MOSAIC_SUPPORTED_TOPO_INFO structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 1
         public UInt32 TopoBriefsCount;              //!< Number of topologies in below array
@@ -1750,10 +1941,25 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 lhs, NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 lhs, NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_SUPPORTED_TOPO_INFO_V1 other = (NV_MOSAIC_SUPPORTED_TOPO_INFO_V1)MemberwiseClone();
+            other.TopoBriefs = new NV_MOSAIC_TOPO_BRIEF[TopoBriefs.Length];
+            for (int x = 0; x < (int)TopoBriefs.Length; x++)
+            {
+                other.TopoBriefs[x] = (NV_MOSAIC_TOPO_BRIEF)TopoBriefs[x].Clone();
+            }
+            other.DisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V1[DisplaySettings.Length];
+            for (int x = 0; x < (int)DisplaySettings.Length; x++)
+            {
+                other.DisplaySettings[x] = (NV_MOSAIC_DISPLAY_SETTING_V1)DisplaySettings[x].Clone();
+            }
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 : IEquatable<NV_MOSAIC_SUPPORTED_TOPO_INFO_V2> // Note: Version 2 of NV_MOSAIC_SUPPORTED_TOPO_INFO structure
+    public struct NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 : IEquatable<NV_MOSAIC_SUPPORTED_TOPO_INFO_V2>, ICloneable // Note: Version 2 of NV_MOSAIC_SUPPORTED_TOPO_INFO structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 2
         public UInt32 TopoBriefsCount;              //!< Number of topologies in below array
@@ -1778,10 +1984,25 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 lhs, NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 lhs, NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 other = (NV_MOSAIC_SUPPORTED_TOPO_INFO_V2)MemberwiseClone();
+            other.TopoBriefs = new NV_MOSAIC_TOPO_BRIEF[TopoBriefs.Length];
+            for (int x = 0; x < (int)TopoBriefs.Length; x++)
+            {
+                other.TopoBriefs[x] = (NV_MOSAIC_TOPO_BRIEF)TopoBriefs[x].Clone();
+            }
+            other.DisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2[DisplaySettings.Length];
+            for (int x = 0; x < (int)DisplaySettings.Length; x++)
+            {
+                other.DisplaySettings[x] = (NV_MOSAIC_DISPLAY_SETTING_V2)DisplaySettings[x].Clone();
+            }
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_GPU_DISPLAYIDS_V2 : IEquatable<NV_GPU_DISPLAYIDS_V2> // Note: Version 2 of NV_GPU_DISPLAYIDS_V2 structure
+    public struct NV_GPU_DISPLAYIDS_V2 : IEquatable<NV_GPU_DISPLAYIDS_V2>, ICloneable // Note: Version 2 of NV_GPU_DISPLAYIDS_V2 structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 2 (NOTE R470 contains a bug, and sets this to 3!)
         public NV_MONITOR_CONN_TYPE ConnectorType;              //!< out: vga, tv, dvi, hdmi and dp.This is reserved for future use and clients should not rely on this information.Instead get the
@@ -1815,11 +2036,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_GPU_DISPLAYIDS_V2 lhs, NV_GPU_DISPLAYIDS_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_GPU_DISPLAYIDS_V2 lhs, NV_GPU_DISPLAYIDS_V2 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_GPU_DISPLAYIDS_V2 other = (NV_GPU_DISPLAYIDS_V2)MemberwiseClone();
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 : IEquatable<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1> // Note: Version 1 of NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 structure
+    public struct NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 : IEquatable<NV_MOSAIC_DISPLAY_TOPO_STATUS_V1>, ICloneable // Note: Version 1 of NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 structure
     {
         public UInt32 Version;
         public NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS ErrorFlags;            //!< (OUT) Any of the NV_MOSAIC_DISPLAYTOPO_ERROR_* flags.
@@ -1844,10 +2070,20 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 lhs, NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 lhs, NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_DISPLAY_TOPO_STATUS_V1 other = (NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)MemberwiseClone();
+            other.Displays = new NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY[Displays.Length];
+            for (int x = 0; x < (int)Displays.Length; x++)
+            {
+                other.Displays[x] = (NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY)Displays[x].Clone();
+            }
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY : IEquatable<NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY>
+    public struct NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY : IEquatable<NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY>, ICloneable
     {
         public UInt32 DisplayId;             //!< (OUT) The DisplayID of this display.
         public NV_MOSAIC_DISPLAYCAPS_PROBLEM_FLAGS ErrorFlags;            //!< (OUT) Any of the NV_MOSAIC_DISPLAYCAPS_PROBLEM_* flags.
@@ -1870,11 +2106,16 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY lhs, NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY lhs, NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY other = (NV_MOSAIC_DISPLAY_TOPO_STATUS_DISPLAY)MemberwiseClone();
+            return other;
+        }
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_HDR_CAPABILITIES_V2 : IEquatable<NV_HDR_CAPABILITIES_V2> // Note: Version 2 of NV_HDR_CAPABILITIES structure
+    public struct NV_HDR_CAPABILITIES_V2 : IEquatable<NV_HDR_CAPABILITIES_V2>, ICloneable // Note: Version 2 of NV_HDR_CAPABILITIES structure
     {
         public UInt32 Version;            // Version of this structure - MUST BE SET TO 2
         public NV_HDR_CAPABILITIES_V2_FLAGS SupportFlags;              //!< Various flags indicating HDR support 
@@ -1905,10 +2146,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_HDR_CAPABILITIES_V2 lhs, NV_HDR_CAPABILITIES_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_HDR_CAPABILITIES_V2 lhs, NV_HDR_CAPABILITIES_V2 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_POSITION other = (NV_POSITION)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_HDR_DV_STATIC_METADATA : IEquatable<NV_HDR_DV_STATIC_METADATA>
+    public struct NV_HDR_DV_STATIC_METADATA : IEquatable<NV_HDR_DV_STATIC_METADATA>, ICloneable
     {
         public UInt32 Flags;
         public UInt16 TargetMinLuminance;
@@ -1944,10 +2190,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_HDR_DV_STATIC_METADATA lhs, NV_HDR_DV_STATIC_METADATA rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_HDR_DV_STATIC_METADATA lhs, NV_HDR_DV_STATIC_METADATA rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_POSITION other = (NV_POSITION)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_HDR_CAPABILITIES_DISPLAY_DATA : IEquatable<NV_HDR_CAPABILITIES_DISPLAY_DATA>
+    public struct NV_HDR_CAPABILITIES_DISPLAY_DATA : IEquatable<NV_HDR_CAPABILITIES_DISPLAY_DATA>, ICloneable
     {
         public UInt16 DisplayPrimaryX0;
         public UInt16 DisplayPrimaryY0;
@@ -1983,10 +2234,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_HDR_CAPABILITIES_DISPLAY_DATA lhs, NV_HDR_CAPABILITIES_DISPLAY_DATA rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_HDR_CAPABILITIES_DISPLAY_DATA lhs, NV_HDR_CAPABILITIES_DISPLAY_DATA rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_POSITION other = (NV_POSITION)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_HDR_COLOR_DATA_V2 : IEquatable<NV_HDR_COLOR_DATA_V2>
+    public struct NV_HDR_COLOR_DATA_V2 : IEquatable<NV_HDR_COLOR_DATA_V2>, ICloneable
     {
         public UInt32 Version;                                 //!< Version of this structure
         public NV_HDR_CMD Cmd;                                     //!< Command get/set
@@ -2018,10 +2274,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_HDR_COLOR_DATA_V2 lhs, NV_HDR_COLOR_DATA_V2 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_HDR_COLOR_DATA_V2 lhs, NV_HDR_COLOR_DATA_V2 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_POSITION other = (NV_POSITION)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_HDR_COLOR_DISPLAY_DATA : IEquatable<NV_HDR_COLOR_DISPLAY_DATA>
+    public struct NV_HDR_COLOR_DISPLAY_DATA : IEquatable<NV_HDR_COLOR_DISPLAY_DATA>, ICloneable
     {
         public UInt16 DisplayPrimaryX0;
         public UInt16 DisplayPrimaryY0;
@@ -2059,10 +2320,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_HDR_COLOR_DISPLAY_DATA lhs, NV_HDR_COLOR_DISPLAY_DATA rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_HDR_COLOR_DISPLAY_DATA lhs, NV_HDR_COLOR_DISPLAY_DATA rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_POSITION other = (NV_POSITION)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_COLOR_DATA_V5 : IEquatable<NV_COLOR_DATA_V5>
+    public struct NV_COLOR_DATA_V5 : IEquatable<NV_COLOR_DATA_V5>, ICloneable
     {
         public UInt32 Version; //!< Version of this structure
         public UInt16 Size;    //!< Size of this structure
@@ -2093,10 +2359,15 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_COLOR_DATA_V5 lhs, NV_COLOR_DATA_V5 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_COLOR_DATA_V5 lhs, NV_COLOR_DATA_V5 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_POSITION other = (NV_POSITION)MemberwiseClone();
+            return other;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NV_CUSTOM_DISPLAY_V1 : IEquatable<NV_CUSTOM_DISPLAY_V1>
+    public struct NV_CUSTOM_DISPLAY_V1 : IEquatable<NV_CUSTOM_DISPLAY_V1>, ICloneable
     {
         public UInt32 Version; //!< Version of this structure
         public UInt32 Width; //!< Source surface(source mode) width
@@ -2132,6 +2403,11 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator ==(NV_CUSTOM_DISPLAY_V1 lhs, NV_CUSTOM_DISPLAY_V1 rhs) => lhs.Equals(rhs);
 
         public static bool operator !=(NV_CUSTOM_DISPLAY_V1 lhs, NV_CUSTOM_DISPLAY_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_POSITION other = (NV_POSITION)MemberwiseClone();
+            return other;
+        }
     }
 
     // ==================================
@@ -3445,10 +3721,10 @@ namespace DisplayMagicianShared.NVIDIA
                 int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
                 int onePathTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2));
                 int oneAdvTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
-                IntPtr pathInfoPointer = Marshal.AllocHGlobal(onePathInfoMemSize * (int)PathInfoCount);
-                IntPtr sourceModeInfoPointer = Marshal.AllocHGlobal(oneSourceModeMemSize * (int)PathInfoCount);
-                IntPtr targetInfoPointer = Marshal.AllocHGlobal(onePathTargetMemSize * totalTargetInfoCount);
-                IntPtr advTargetPointer = Marshal.AllocHGlobal(oneAdvTargetMemSize * totalTargetInfoCount);
+                IntPtr pathInfoPointer = Marshal.AllocCoTaskMem(onePathInfoMemSize * (int)PathInfoCount);
+                IntPtr sourceModeInfoPointer = Marshal.AllocCoTaskMem(oneSourceModeMemSize * (int)PathInfoCount);
+                IntPtr targetInfoPointer = Marshal.AllocCoTaskMem(onePathTargetMemSize * totalTargetInfoCount);
+                IntPtr advTargetPointer = Marshal.AllocCoTaskMem(oneAdvTargetMemSize * totalTargetInfoCount);
                 // Also set another memory pointer to the same place so that we can do the memory copying item by item
                 // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
                 IntPtr currentPathInfoPointer = pathInfoPointer;
@@ -3456,101 +3732,133 @@ namespace DisplayMagicianShared.NVIDIA
                 IntPtr currentTargetInfoPointer = targetInfoPointer;
                 IntPtr currentAdvTargetPointer = advTargetPointer;
 
-                // Go through the array and copy things from managed code to unmanaged code
-                for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
+                try
                 {
-                    // Set up the fields in the path info
-                    pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
-                    pass2PathInfos[x].TargetInfoCount = PathInfos[x].TargetInfoCount;
-                    // Create a target info array and copy it over
-                    NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[] targetInforArray = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[PathInfos[x].TargetInfoCount];
-                    pass2PathInfos[x].TargetInfo = currentTargetInfoPointer;
-                    for (Int32 y = 0; y < (Int32)PathInfos[x].TargetInfoCount; y++)
+                    // Go through the array and copy things from managed code to unmanaged code
+                    for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
                     {
-                        NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 advInfo = new NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1();
-                        advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER;
-                        Marshal.StructureToPtr(advInfo, currentAdvTargetPointer, true);
-                        targetInforArray[y].Details = currentAdvTargetPointer;
-                        Marshal.StructureToPtr(targetInforArray[y], currentTargetInfoPointer, true);
-                        currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
-                        currentAdvTargetPointer = new IntPtr(currentAdvTargetPointer.ToInt64() + oneAdvTargetMemSize);
-                    }                        
-                    
-                    // Create a source mode info object and copy it over
-                    NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo = PathInfos[x].SourceModeInfo;
-                    Marshal.StructureToPtr(sourceModeInfo, currentSourceModeInfoPointer, true);
-                    pass2PathInfos[x].SourceModeInfo = currentSourceModeInfoPointer;
-
-                    // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
-                    Marshal.StructureToPtr(pass2PathInfos[x], currentPathInfoPointer, true);
-
-                    // advance the buffer forwards to the next object for each object
-                    currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize);
-                    currentSourceModeInfoPointer = new IntPtr(currentSourceModeInfoPointer.ToInt64() + oneSourceModeMemSize);
-                }
-
-                if (DISP_GetDisplayConfigInternal != null)
-                {
-                    // Use the unmanaged buffer in the unmanaged C call
-                    status = DISP_GetDisplayConfigInternal(ref PathInfoCount, pathInfoPointer);
-
-                    if (status == NVAPI_STATUS.NVAPI_OK)
-                    {
-                        // If everything worked, then copy the data back from the unmanaged array into the managed array
-                        // So that we can use it in C# land
-                        // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
-                        currentPathInfoPointer = pathInfoPointer;
-                        // Create a managed array to store the received information within
-                        PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2[PathInfoCount];
-                        NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] returnedPass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[PathInfoCount];
-                        // Go through the memory buffer item by item and copy the items into the managed array
-                        for (int i = 0; i < PathInfoCount; i++)
+                        // Set up the fields in the path info
+                        pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
+                        pass2PathInfos[x].TargetInfoCount = PathInfos[x].TargetInfoCount;
+                        pass2PathInfos[x].Flags = PathInfos[x].Flags;
+                        pass2PathInfos[x].OSAdapterID = PathInfos[x].OSAdapterID;
+                        pass2PathInfos[x].SourceId = PathInfos[x].SourceId;
+                        // Create a target info array and copy it over
+                        NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[] targetInforArray = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[PathInfos[x].TargetInfoCount];
+                        pass2PathInfos[x].TargetInfo = currentTargetInfoPointer;
+                        //for (Int32 y = 0; y < (Int32)PathInfos[x].TargetInfoCount; y++)
+                        for (Int32 y = 0; y < (Int32)PathInfos[x].TargetInfoCount; y++)
                         {
-                            // fill the returned pass2 array slot structure with the data from the buffer
-                            // This lets us get the information and then copy it across to the one we want to return!
-                            returnedPass2PathInfos[i] = (NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
+                            NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 advInfo = new NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1();
+                            advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER;
+                            Marshal.StructureToPtr(advInfo, currentAdvTargetPointer, true);
+                            targetInforArray[y].Details = currentAdvTargetPointer;
+                            Marshal.StructureToPtr(targetInforArray[y], currentTargetInfoPointer, true);
+                            currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
+                            currentAdvTargetPointer = new IntPtr(currentAdvTargetPointer.ToInt64() + oneAdvTargetMemSize);
+                        }
 
-                            // Next copy the information across to the PathInfo we actually want to return
-                            PathInfos[i].SourceId = returnedPass2PathInfos[i].SourceId;
-                            PathInfos[i].Flags = returnedPass2PathInfos[i].Flags;
-                            PathInfos[i].OSAdapterID = returnedPass2PathInfos[i].OSAdapterID;
-                            PathInfos[i].TargetInfoCount = returnedPass2PathInfos[i].TargetInfoCount;
-                            PathInfos[i].TargetInfo = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[PathInfos[i].TargetInfoCount];
-                            PathInfos[i].Version = returnedPass2PathInfos[i].Version;
+                        // Create a source mode info object and copy it over
+                        NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)PathInfos[x].SourceModeInfo.Clone();
+                        Marshal.StructureToPtr(sourceModeInfo, currentSourceModeInfoPointer, true);
+                        pass2PathInfos[x].SourceModeInfo = currentSourceModeInfoPointer;
 
-                            // And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
-                            PathInfos[i].SourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)Marshal.PtrToStructure(returnedPass2PathInfos[i].SourceModeInfo, typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
+                        // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                        Marshal.StructureToPtr(pass2PathInfos[x], currentPathInfoPointer, true);
 
-                            currentTargetInfoPointer = returnedPass2PathInfos[i].TargetInfo;
-                            for (Int32 y = 0; y < (Int32)PathInfos[i].TargetInfoCount; y++)
+                        // advance the buffer forwards to the next object for each object
+                        currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize);
+                        currentSourceModeInfoPointer = new IntPtr(currentSourceModeInfoPointer.ToInt64() + oneSourceModeMemSize);
+                    }
+
+                    if (DISP_GetDisplayConfigInternal != null)
+                    {
+                        // Use the unmanaged buffer in the unmanaged C call
+                        status = DISP_GetDisplayConfigInternal(ref PathInfoCount, pathInfoPointer);
+
+                        if (status == NVAPI_STATUS.NVAPI_OK)
+                        {
+                            // If everything worked, then copy the data back from the unmanaged array into the managed array
+                            // So that we can use it in C# land
+                            // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
+                            currentPathInfoPointer = pathInfoPointer;
+                            // Create a managed array to store the received information within
+                            PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2[PathInfoCount];
+                            NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] returnedPass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[PathInfoCount];
+                            // Go through the memory buffer item by item and copy the items into the managed array
+                            for (int i = 0; i < PathInfoCount; i++)
                             {
+                                // fill the returned pass2 array slot structure with the data from the buffer
+                                // This lets us get the information and then copy it across to the one we want to return!
+                                returnedPass2PathInfos[i] = (NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
+
+                                // Next copy the information across to the PathInfo we actually want to return
+                                PathInfos[i].SourceId = returnedPass2PathInfos[i].SourceId;
+                                PathInfos[i].Flags = returnedPass2PathInfos[i].Flags;
+                                PathInfos[i].OSAdapterID = returnedPass2PathInfos[i].OSAdapterID;
+                                PathInfos[i].TargetInfoCount = returnedPass2PathInfos[i].TargetInfoCount;
+                                PathInfos[i].TargetInfo = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[PathInfos[i].TargetInfoCount];
+                                PathInfos[i].Version = returnedPass2PathInfos[i].Version;
+
                                 // And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
-                                NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL targetInfo = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentTargetInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL));
-                                PathInfos[i].TargetInfo[y].DisplayId = targetInfo.DisplayId;
-                                PathInfos[i].TargetInfo[y].WindowsCCDTargetId = targetInfo.WindowsCCDTargetId;
+                                PathInfos[i].SourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)Marshal.PtrToStructure(returnedPass2PathInfos[i].SourceModeInfo, typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
 
-                                // Next we need to get access to the details object.
-                                NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 targetInfoDetails = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1)Marshal.PtrToStructure(targetInfo.Details, typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
-                                PathInfos[i].TargetInfo[y].Details = targetInfoDetails;
-                                currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
+                                currentTargetInfoPointer = returnedPass2PathInfos[i].TargetInfo;
+                                for (Int32 y = 0; y < (Int32)PathInfos[i].TargetInfoCount; y++)
+                                {
+                                    NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL targetInfo;
+                                    NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 targetInfoDetails;
+                                    if (y == 0)
+                                    {
+                                        // And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
+                                        targetInfo = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentTargetInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL));
+                                        PathInfos[i].TargetInfo[y].DisplayId = targetInfo.DisplayId;
+                                        PathInfos[i].TargetInfo[y].WindowsCCDTargetId = targetInfo.WindowsCCDTargetId;
+
+                                        // Next we need to get access to the details object.
+                                        targetInfoDetails = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1)Marshal.PtrToStructure(targetInfo.Details, typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
+                                        PathInfos[i].TargetInfo[y].Details = targetInfoDetails;
+                                        currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
+                                    }
+                                    else if (y > 0)
+                                    {
+                                        // And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
+                                        //targetInfo = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentTargetInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL));
+                                        PathInfos[i].TargetInfo[y] = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2)PathInfos[0].TargetInfo[0].Clone();
+                                        currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
+                                    }
+
+                                    /*// And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
+                                    NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL targetInfo = (NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentTargetInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL));
+                                    PathInfos[i].TargetInfo[y].DisplayId = targetInfo.DisplayId;
+                                    PathInfos[i].TargetInfo[y].WindowsCCDTargetId = targetInfo.WindowsCCDTargetId;
+
+                                    // Next we need to get access to the details object.
+                                    NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 targetInfoDetails = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1)Marshal.PtrToStructure(targetInfo.Details, typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
+                                    PathInfos[i].TargetInfo[y].Details = targetInfoDetails;
+                                    currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);*/
+                                }
+
+                                // destroy the bit of memory we no longer need
+                                //Marshal.DestroyStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2));
+                                // advance the buffer forwards to the next object
+                                currentPathInfoPointer = (IntPtr)((long)currentPathInfoPointer + Marshal.SizeOf(returnedPass2PathInfos[i]));
                             }
-
-                            // destroy the bit of memory we no longer need
-                            //Marshal.DestroyStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2));
-                            // advance the buffer forwards to the next object
-                            currentPathInfoPointer = (IntPtr)((long)currentPathInfoPointer + Marshal.SizeOf(returnedPass2PathInfos[i]));
                         }
                     }
+                    else
+                    {
+                        status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                    }
                 }
-                else
+                finally
                 {
-                    status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                    Marshal.FreeCoTaskMem(pathInfoPointer);
+                    Marshal.FreeCoTaskMem(sourceModeInfoPointer);
+                    Marshal.FreeCoTaskMem(targetInfoPointer);
+                    Marshal.FreeCoTaskMem(advTargetPointer);
                 }
-
-                Marshal.FreeHGlobal(pathInfoPointer);
-                Marshal.FreeHGlobal(sourceModeInfoPointer);
-                Marshal.FreeHGlobal(targetInfoPointer);
-                Marshal.FreeHGlobal(advTargetPointer);
+                
             }
             else
             {
@@ -3563,81 +3871,86 @@ namespace DisplayMagicianShared.NVIDIA
 
                 int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
                 int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
-                IntPtr pathInfoPointer = Marshal.AllocHGlobal(onePathInfoMemSize * (int)PathInfoCount);
-                IntPtr sourceModeInfoPointer = Marshal.AllocHGlobal(oneSourceModeMemSize * (int)PathInfoCount);
+                IntPtr pathInfoPointer = Marshal.AllocCoTaskMem(onePathInfoMemSize * (int)PathInfoCount);
+                IntPtr sourceModeInfoPointer = Marshal.AllocCoTaskMem(oneSourceModeMemSize * (int)PathInfoCount);
                 // Also set another memory pointer to the same place so that we can do the memory copying item by item
                 // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
                 IntPtr currentPathInfoPointer = pathInfoPointer;
                 IntPtr currentSourceModeInfoPointer = sourceModeInfoPointer;
 
-                // Go through the array and copy things from managed code to unmanaged code
-                for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
+                try
                 {
-                    // Set up the fields in the path info
-                    pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
-                    pass2PathInfos[x].TargetInfoCount = 0;
-                    pass2PathInfos[x].TargetInfo = IntPtr.Zero;
-
-                    // Create a source mode info object and copy it over
-                    NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo = new NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1();
-                    Marshal.StructureToPtr(sourceModeInfo, currentSourceModeInfoPointer, true);
-                    pass2PathInfos[x].SourceModeInfo = currentSourceModeInfoPointer;
-                    
-                    // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
-                    Marshal.StructureToPtr(pass2PathInfos[x], currentPathInfoPointer, true);
-                    
-                    // advance the buffer forwards to the next object for each object
-                    //currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize + oneSourceModeMemSize);
-                    currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize);
-                    currentSourceModeInfoPointer = new IntPtr(currentSourceModeInfoPointer.ToInt64() + oneSourceModeMemSize);
-                }
-
-                if (DISP_GetDisplayConfigInternal != null)
-                {
-                    // Use the unmanaged buffer in the unmanaged C call
-                    status = DISP_GetDisplayConfigInternal(ref PathInfoCount, pathInfoPointer);
-
-                    if (status == NVAPI_STATUS.NVAPI_OK)
+                    // Go through the array and copy things from managed code to unmanaged code
+                    for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
                     {
-                        // If everything worked, then copy the data back from the unmanaged array into the managed array
-                        // So that we can use it in C# land
-                        // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
-                        currentPathInfoPointer = pathInfoPointer;
-                        // Create a managed array to store the received information within
-                        PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2[PathInfoCount];
-                        NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] returnedPass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[PathInfoCount];
-                        // Go through the memory buffer item by item and copy the items into the managed array
-                        for (int i = 0; i < PathInfoCount; i++)
+                        // Set up the fields in the path info
+                        pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
+                        pass2PathInfos[x].TargetInfoCount = 0;
+                        pass2PathInfos[x].TargetInfo = IntPtr.Zero;
+
+                        // Create a source mode info object and copy it over
+                        NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo = new NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1();
+                        Marshal.StructureToPtr(sourceModeInfo, currentSourceModeInfoPointer, true);
+                        pass2PathInfos[x].SourceModeInfo = currentSourceModeInfoPointer;
+
+                        // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                        Marshal.StructureToPtr(pass2PathInfos[x], currentPathInfoPointer, true);
+
+                        // advance the buffer forwards to the next object for each object
+                        //currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize + oneSourceModeMemSize);
+                        currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize);
+                        currentSourceModeInfoPointer = new IntPtr(currentSourceModeInfoPointer.ToInt64() + oneSourceModeMemSize);
+                    }
+
+                    if (DISP_GetDisplayConfigInternal != null)
+                    {
+                        // Use the unmanaged buffer in the unmanaged C call
+                        status = DISP_GetDisplayConfigInternal(ref PathInfoCount, pathInfoPointer);
+
+                        if (status == NVAPI_STATUS.NVAPI_OK)
                         {
-                            // fill the returned pass2 array slot structure with the data from the buffer
-                            // This lets us get the information and then copy it across to the one we want to return!
-                            returnedPass2PathInfos[i] = (NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
+                            // If everything worked, then copy the data back from the unmanaged array into the managed array
+                            // So that we can use it in C# land
+                            // Reset the memory pointer we're using for tracking where we are back to the start of the unmanaged memory buffer
+                            currentPathInfoPointer = pathInfoPointer;
+                            // Create a managed array to store the received information within
+                            PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2[PathInfoCount];
+                            NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[] returnedPass2PathInfos = new NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL[PathInfoCount];
+                            // Go through the memory buffer item by item and copy the items into the managed array
+                            for (int i = 0; i < PathInfoCount; i++)
+                            {
+                                // fill the returned pass2 array slot structure with the data from the buffer
+                                // This lets us get the information and then copy it across to the one we want to return!
+                                returnedPass2PathInfos[i] = (NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL)Marshal.PtrToStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
 
-                            // Next copy the information across to the PathInfo we actually want to return
-                            PathInfos[i].SourceId = returnedPass2PathInfos[i].SourceId;
-                            PathInfos[i].Flags = returnedPass2PathInfos[i].Flags;
-                            PathInfos[i].OSAdapterID = returnedPass2PathInfos[i].OSAdapterID;
-                            PathInfos[i].TargetInfo = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[0];
-                            PathInfos[i].TargetInfoCount = returnedPass2PathInfos[i].TargetInfoCount;
-                            PathInfos[i].Version = returnedPass2PathInfos[i].Version;
+                                // Next copy the information across to the PathInfo we actually want to return
+                                PathInfos[i].SourceId = returnedPass2PathInfos[i].SourceId;
+                                PathInfos[i].Flags = returnedPass2PathInfos[i].Flags;
+                                PathInfos[i].OSAdapterID = returnedPass2PathInfos[i].OSAdapterID;
+                                PathInfos[i].TargetInfo = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2[0];
+                                PathInfos[i].TargetInfoCount = returnedPass2PathInfos[i].TargetInfoCount;
+                                PathInfos[i].Version = returnedPass2PathInfos[i].Version;
 
-                            // And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
-                            PathInfos[i].SourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)Marshal.PtrToStructure(returnedPass2PathInfos[i].SourceModeInfo, typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
+                                // And turn the memory pointer to NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 into an actual object and populate the object.
+                                PathInfos[i].SourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1)Marshal.PtrToStructure(returnedPass2PathInfos[i].SourceModeInfo, typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
 
-                            // destroy the bit of memory we no longer need
-                            //Marshal.DestroyStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2));
-                            // advance the buffer forwards to the next object
-                            currentPathInfoPointer = (IntPtr)((long)currentPathInfoPointer + Marshal.SizeOf(returnedPass2PathInfos[i]));
+                                // destroy the bit of memory we no longer need
+                                //Marshal.DestroyStructure(currentPathInfoPointer, typeof(NV_DISPLAYCONFIG_PATH_INFO_V2));
+                                // advance the buffer forwards to the next object
+                                currentPathInfoPointer = (IntPtr)((long)currentPathInfoPointer + Marshal.SizeOf(returnedPass2PathInfos[i]));
+                            }
                         }
                     }
+                    else
+                    {
+                        status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                    }
                 }
-                else
+                finally
                 {
-                    status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                    Marshal.FreeCoTaskMem(pathInfoPointer);
+                    Marshal.FreeCoTaskMem(sourceModeInfoPointer);
                 }
-
-                Marshal.FreeHGlobal(pathInfoPointer);
-                Marshal.FreeHGlobal(sourceModeInfoPointer);
 
             }
 
@@ -3737,11 +4050,11 @@ namespace DisplayMagicianShared.NVIDIA
                 for (Int32 y = 0; y < (Int32)pathInfos[x].TargetInfoCount; y++)
                 {
                     NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 advInfo = pathInfos[x].TargetInfo[y].Details;
-                    //advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER;
+                    advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER;
                     Marshal.StructureToPtr(advInfo, currentAdvTargetPointer, true);
                     targetInforArray[y].Details = currentAdvTargetPointer;
                     targetInforArray[y].DisplayId = pathInfos[x].TargetInfo[y].DisplayId;
-                    targetInforArray[y].WindowsCCDTargetId = pathInfos[x].TargetInfo[y].WindowsCCDTargetId;
+                    targetInforArray[y].WindowsCCDTargetId = pathInfos[x].TargetInfo[y].WindowsCCDTargetId;                    
                     Marshal.StructureToPtr(targetInforArray[y], currentTargetInfoPointer, true);
                     currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
                     currentAdvTargetPointer = new IntPtr(currentAdvTargetPointer.ToInt64() + oneAdvTargetMemSize);

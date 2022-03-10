@@ -720,6 +720,20 @@ namespace DisplayMagicianShared.NVIDIA
                         NVStatus = NVImport.NvAPI_DISP_GetDisplayConfig(ref pathInfoCount, ref pathInfos, true);
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_GetDisplayConfig returned OK on third and final pass.");
+                            // If this worked, we need to check for and handle cloned displays if there are any
+                            // They need to be set in a special way (see DisplayConfiguration.cpp from the DisplayConfiguration sample from NVIDIA)
+                            for (int x = 0; x < pathInfoCount; x++)
+                            {
+                                if (pathInfos[x].TargetInfoCount > 1)
+                                {
+                                    // This is a cloned display, we need to edit the cloned target in order to make this load properly
+                                    // when it comes time to actually activate this config
+
+
+                                }
+                            }
+
                             allDisplayConfigs = pathInfos.ToList();
                             SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_GetDisplayConfig returned OK on third pass.");
                         }
@@ -1984,58 +1998,67 @@ namespace DisplayMagicianShared.NVIDIA
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We are on a non-Mosaic profile now, and we are changing to a non-Mosaic profile so there is nothing to do as far as NVIDIA is concerned!");
                 }
 
-                // Now we set the NVIDIA Display Config
-                NVStatus = NVImport.NvAPI_DISP_SetDisplayConfig((UInt32)displayConfig.DisplayConfigs.Count, displayConfig.DisplayConfigs.ToArray(), NV_DISPLAYCONFIG_FLAGS.SAVE_TO_PERSISTENCE);
-                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                // Now we set the NVIDIA Display Config (if we have one!)
+                // If the display profile is a cloned config then NVIDIA GetDisplayConfig doesn't work
+                // so we need to check for that. We just skip the SetDisplayConfig as it won't exist
+                if (displayConfig.DisplayConfigs.Count > 0)
                 {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_DISP_SetDisplayConfig returned OK.");
-                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 0.5 second to let the Display Config layout change take place before continuing");
-                    System.Threading.Thread.Sleep(500);
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_NO_ACTIVE_SLI_TOPOLOGY)
-                {
-                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: No matching GPU topologies could be found. NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}");
-                    return false;
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
-                {
-                    SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The Display ID of the first display is not currently possible to use. NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}. Trying again with the next display.");
-                    return false;
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
-                {
-                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: One or more arguments passed in are invalid. NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}");
-                    return false;
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
-                {
-                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The NvAPI API needs to be initialized first. NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}");
-                    return false;
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
-                {
-                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: This entry point not available in this NVIDIA Driver. NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}");
-                    return false;
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
-                {
-                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}");
-                    return false;
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
-                {
-                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: There was an error changing the display mode. NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}");
-                    return false;
-                }
-                else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
-                {
-                    SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: A miscellaneous error occurred. NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}");
-                    return false;
-                }
+                    NVStatus = NVImport.NvAPI_DISP_SetDisplayConfig((UInt32)displayConfig.DisplayConfigs.Count, displayConfig.DisplayConfigs.ToArray(), NV_DISPLAYCONFIG_FLAGS.SAVE_TO_PERSISTENCE);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_DISP_SetDisplayConfig returned OK.");
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Waiting 0.5 second to let the Display Config layout change take place before continuing");
+                        System.Threading.Thread.Sleep(500);
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_ACTIVE_SLI_TOPOLOGY)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: No matching GPU topologies could be found. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
+                    {
+                        SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The Display ID of the first display is not currently possible to use. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}. Trying again with the next display.");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: One or more arguments passed in are invalid. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The NvAPI API needs to be initialized first. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: This entry point not available in this NVIDIA Driver. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: The version of the structure passed in is not compatible with this entrypoint. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_MODE_CHANGE_FAILED)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: There was an error changing the display mode. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                    {
+                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: A miscellaneous error occurred. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                        return false;
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Setting the NVIDIA Display Config! NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                        return false;
+                    }
+                }                
                 else
                 {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Display Grids! NvAPI_Mosaic_ValidateDisplayGrids() returned error code {NVStatus}");
-                    return false;
+                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Skipping setting the NVIDIA Display Config as there isn't one provided in the configuration.");
                 }
 
             }
