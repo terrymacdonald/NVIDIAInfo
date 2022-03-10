@@ -1334,7 +1334,7 @@ namespace DisplayMagicianShared.NVIDIA
         => Version == other.Version &&
            SourceId == other.SourceId &&
            TargetInfoCount == other.TargetInfoCount &&
-           TargetInfo.Equals(other.TargetInfo) &&
+           TargetInfo.SequenceEqual(other.TargetInfo) &&
            SourceModeInfo.Equals(other.SourceModeInfo) &&
            Flags == other.Flags;
 
@@ -1407,7 +1407,7 @@ namespace DisplayMagicianShared.NVIDIA
         => Version == other.Version &&
            SourceId == other.SourceId &&
            TargetInfoCount == other.TargetInfoCount &&
-           TargetInfo.Equals(other.TargetInfo) &&
+           TargetInfo.SequenceEqual(other.TargetInfo) &&
            SourceModeInfo.Equals(other.SourceModeInfo);
 
         public override Int32 GetHashCode()
@@ -3721,10 +3721,10 @@ namespace DisplayMagicianShared.NVIDIA
                 int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
                 int onePathTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2));
                 int oneAdvTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
-                IntPtr pathInfoPointer = Marshal.AllocCoTaskMem(onePathInfoMemSize * (int)PathInfoCount);
-                IntPtr sourceModeInfoPointer = Marshal.AllocCoTaskMem(oneSourceModeMemSize * (int)PathInfoCount);
-                IntPtr targetInfoPointer = Marshal.AllocCoTaskMem(onePathTargetMemSize * totalTargetInfoCount);
-                IntPtr advTargetPointer = Marshal.AllocCoTaskMem(oneAdvTargetMemSize * totalTargetInfoCount);
+                IntPtr pathInfoPointer = Marshal.AllocHGlobal(onePathInfoMemSize * (int)PathInfoCount);
+                IntPtr sourceModeInfoPointer = Marshal.AllocHGlobal(oneSourceModeMemSize * (int)PathInfoCount);
+                IntPtr targetInfoPointer = Marshal.AllocHGlobal(onePathTargetMemSize * totalTargetInfoCount);
+                IntPtr advTargetPointer = Marshal.AllocHGlobal(oneAdvTargetMemSize * totalTargetInfoCount);
                 // Also set another memory pointer to the same place so that we can do the memory copying item by item
                 // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
                 IntPtr currentPathInfoPointer = pathInfoPointer;
@@ -3871,8 +3871,8 @@ namespace DisplayMagicianShared.NVIDIA
 
                 int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
                 int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
-                IntPtr pathInfoPointer = Marshal.AllocCoTaskMem(onePathInfoMemSize * (int)PathInfoCount);
-                IntPtr sourceModeInfoPointer = Marshal.AllocCoTaskMem(oneSourceModeMemSize * (int)PathInfoCount);
+                IntPtr pathInfoPointer = Marshal.AllocHGlobal(onePathInfoMemSize * (int)PathInfoCount);
+                IntPtr sourceModeInfoPointer = Marshal.AllocHGlobal(oneSourceModeMemSize * (int)PathInfoCount);
                 // Also set another memory pointer to the same place so that we can do the memory copying item by item
                 // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
                 IntPtr currentPathInfoPointer = pathInfoPointer;
@@ -4195,7 +4195,7 @@ namespace DisplayMagicianShared.NVIDIA
             // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
             displaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2[displayCount];
             // Initialize unmanged memory to hold the unmanaged array of structs
-            IntPtr displaySettingsBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_SETTING_V2)) * (int)displayCount);
+            IntPtr displaySettingsBuffer = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_SETTING_V2)) * (int)displayCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentDisplaySettingsBuffer = displaySettingsBuffer;
@@ -4299,7 +4299,7 @@ namespace DisplayMagicianShared.NVIDIA
             // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
             GridTopologies = new NV_MOSAIC_GRID_TOPO_V2[GridCount];
             // Initialize unmanged memory to hold the unmanaged array of structs
-            IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)GridCount);
+            IntPtr gridTopologiesBuffer = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)GridCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentGridTopologiesBuffer = gridTopologiesBuffer;
@@ -4405,7 +4405,7 @@ namespace DisplayMagicianShared.NVIDIA
             // Warning! - This function still has some errors with it. It errors with an NVAPI_INCOMPATIBLE_STRUCT_VERSION error. Still needs troubleshooting.
             NVAPI_STATUS status;
             // Initialize unmanged memory to hold the unmanaged array of structs
-            IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)gridCount);
+            IntPtr gridTopologiesBuffer = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)gridCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentGridTopologiesBuffer = gridTopologiesBuffer;
@@ -4420,7 +4420,7 @@ namespace DisplayMagicianShared.NVIDIA
             // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
             topoStatuses = new NV_MOSAIC_DISPLAY_TOPO_STATUS_V1[gridCount];
             // Initialize unmanged memory to hold the unmanaged array of structs
-            IntPtr topoStatusesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)) * (int)gridCount);
+            IntPtr topoStatusesBuffer = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NV_MOSAIC_DISPLAY_TOPO_STATUS_V1)) * (int)gridCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentTopoStatusesBuffer = topoStatusesBuffer;
@@ -4496,7 +4496,7 @@ namespace DisplayMagicianShared.NVIDIA
             NVAPI_STATUS status;
 
             // Initialize unmanged memory to hold the unmanaged array of structs
-            IntPtr gridTopologiesBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)GridCount);
+            IntPtr gridTopologiesBuffer = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NV_MOSAIC_GRID_TOPO_V2)) * (int)GridCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentGridTopologiesBuffer = gridTopologiesBuffer;
@@ -4802,7 +4802,7 @@ namespace DisplayMagicianShared.NVIDIA
             // Build a managed structure for us to use as a data source for another object that the unmanaged NVAPI C library can use
             displayIds = new NV_GPU_DISPLAYIDS_V2[displayCount];
             // Initialize unmanged memory to hold the unmanaged array of structs
-            IntPtr displayIdBuffer = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(NV_GPU_DISPLAYIDS_V2)) * (int)displayCount);
+            IntPtr displayIdBuffer = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NV_GPU_DISPLAYIDS_V2)) * (int)displayCount);
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentDisplayIdBuffer = displayIdBuffer;

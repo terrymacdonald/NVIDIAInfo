@@ -484,27 +484,27 @@ namespace DisplayMagicianShared.Windows
                     // Store it for later
                     if (windowsDisplayConfig.DisplaySources.ContainsKey(sourceInfo.ViewGdiDeviceName))
                     {
-                    // We already have at least one display using this source, so we need to add the other cloned display to the existing list
-                    DISPLAY_SOURCE ds = new DISPLAY_SOURCE();
-                    ds.AdapterId = paths[i].SourceInfo.AdapterId;
-                    ds.SourceId = paths[i].SourceInfo.Id;
-                    ds.TargetId = paths[i].TargetInfo.Id;
-                    windowsDisplayConfig.DisplaySources[sourceInfo.ViewGdiDeviceName].Add(ds);
-                    isClonedPath = true;
-                    isClonedProfile = true;
-                    windowsDisplayConfig.IsCloned = true;
-                }
-                else
-                {
-                    // This is the first display to use this source
-                    List<DISPLAY_SOURCE> sources = new List<DISPLAY_SOURCE>();
-                    DISPLAY_SOURCE ds = new DISPLAY_SOURCE();
-                    ds.AdapterId = paths[i].SourceInfo.AdapterId;
-                    ds.SourceId = paths[i].SourceInfo.Id;
-                    ds.TargetId = paths[i].TargetInfo.Id;
-                    sources.Add(ds);
-                    windowsDisplayConfig.DisplaySources.Add(sourceInfo.ViewGdiDeviceName, sources);
-                }
+                        // We already have at least one display using this source, so we need to add the other cloned display to the existing list
+                        DISPLAY_SOURCE ds = new DISPLAY_SOURCE();
+                        ds.AdapterId = paths[i].SourceInfo.AdapterId;
+                        ds.SourceId = paths[i].SourceInfo.Id;
+                        ds.TargetId = paths[i].TargetInfo.Id;
+                        windowsDisplayConfig.DisplaySources[sourceInfo.ViewGdiDeviceName].Add(ds);
+                        isClonedPath = true;
+                        isClonedProfile = true;
+                        windowsDisplayConfig.IsCloned = true;
+                    }
+                    else
+                    {
+                        // This is the first display to use this source
+                        List<DISPLAY_SOURCE> sources = new List<DISPLAY_SOURCE>();
+                        DISPLAY_SOURCE ds = new DISPLAY_SOURCE();
+                        ds.AdapterId = paths[i].SourceInfo.AdapterId;
+                        ds.SourceId = paths[i].SourceInfo.Id;
+                        ds.TargetId = paths[i].TargetInfo.Id;
+                        sources.Add(ds);
+                        windowsDisplayConfig.DisplaySources.Add(sourceInfo.ViewGdiDeviceName, sources);
+                    }
 
                     SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Found Display Source {sourceInfo.ViewGdiDeviceName} for source {paths[i].SourceInfo.Id}.");
                 }
