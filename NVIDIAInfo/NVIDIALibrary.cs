@@ -950,11 +950,7 @@ namespace DisplayMagicianShared.NVIDIA
                 // We want to get the number of displays we have
                 // Go through the Physical GPUs one by one
                 for (uint physicalGpuIndex = 0; physicalGpuIndex < physicalGpuCount; physicalGpuIndex++)
-                {
-                    // Firstly let's get 
-                    NvAPI_GetLogicalGPUFromPhysicalGPU(PhysicalGpuHandle physicalGPUHandle, ref LogicalGpuHandle logicalGPUHandle);
-                    NvAPI_GPU_GetLogicalGpuInfo(LogicalGpuHandle gpuHandle, ref NV_LOGICAL_GPU_DATA_V1 logicalGPUData)
-
+                {                    
                     //This function retrieves the number of display IDs we know about
                     UInt32 displayCount = 0;
                     NVStatus = NVImport.NvAPI_GPU_GetConnectedDisplayIds(physicalGpus[physicalGpuIndex], ref displayCount, 0);
