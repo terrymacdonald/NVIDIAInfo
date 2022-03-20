@@ -856,6 +856,38 @@ namespace DisplayMagicianShared.NVIDIA
             return other;
         }
     }
+    
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_LOGICAL_GPU_DATA_V1 : IEquatable<NV_LOGICAL_GPU_DATA_V1>, ICloneable // Note: Version 1 of NV_BOARD_INFO_V1 structure
+    {
+        public UInt32 Version;                   //!< structure version
+        public IntPtr OSAdapterId;
+        public UInt32 PhysicalGPUCount;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)NVImport.NVAPI_MAX_PHYSICAL_GPUS)]
+        public PhysicalGpuHandle[] PhysicalGPUHandles;
+        public UInt32 Reserved;
+
+        public override bool Equals(object obj) => obj is NV_LOGICAL_GPU_DATA_V1 other && this.Equals(other);
+
+        public bool Equals(NV_LOGICAL_GPU_DATA_V1 other)
+        => Version == other.Version &&
+           PhysicalGPUCount == other.PhysicalGPUCount &&
+           PhysicalGPUHandles.SequenceEqual(other.PhysicalGPUHandles);
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, PhysicalGPUCount, PhysicalGPUHandles).GetHashCode();
+        }
+        public static bool operator ==(NV_LOGICAL_GPU_DATA_V1 lhs, NV_LOGICAL_GPU_DATA_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_LOGICAL_GPU_DATA_V1 lhs, NV_LOGICAL_GPU_DATA_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_LOGICAL_GPU_DATA_V1 other = (NV_LOGICAL_GPU_DATA_V1)MemberwiseClone();
+            return other;
+        }
+    }
+
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_BOARD_INFO_V1 : IEquatable<NV_BOARD_INFO_V1>, ICloneable // Note: Version 1 of NV_BOARD_INFO_V1 structure
@@ -2494,6 +2526,8 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL>(2);
         public static UInt32 NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1>(1);
         public static UInt32 NV_CUSTOM_DISPLAY_V1_VER = MAKE_NVAPI_VERSION<NV_CUSTOM_DISPLAY_V1>(1);
+        public static UInt32 NV_LOGICAL_GPU_DATA_V1_VER = MAKE_NVAPI_VERSION<NV_LOGICAL_GPU_DATA_V1>(1);
+        
 
 
         #region Internal Constant
@@ -2644,6 +2678,9 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_GPU_GetBusType, out GPU_GetBusTypeInternal);
                 GetDelegate(NvId_GPU_GetBusId, out GPU_GetBusIdInternal);
                 GetDelegate(NvId_GPU_GetEDID, out GPU_GetEDIDInternal);
+                GetDelegate(NvId_GPU_GetEDID, out GPU_GetEDIDInternal);
+                GetDelegate(NvId_GetLogicalGPUFromPhysicalGPU, out GetLogicalGPUFromPhysicalGPUInternal);
+                GetDelegate(NvId_GPU_GetLogicalGpuInfo, out GPU_GetLogicalGpuInfoInternal);
 
                 // Mosaic                
                 GetDelegate(NvId_Mosaic_EnableCurrentTopo, out Mosaic_EnableCurrentTopoInternal);
@@ -5120,5 +5157,52 @@ namespace DisplayMagicianShared.NVIDIA
 
             return status;
         }
+
+        //NVAPI_INTERFACE NvAPI_GPU_GetLogicalGpuInfo(__in NvLogicalGpuHandle hLogicalGpu, __inout NV_LOGICAL_GPU_DATA * pLogicalGpuData)
+        private delegate NVAPI_STATUS GPU_GetLogicalGpuInfoDelegate(
+            [In] LogicalGpuHandle gpuHandle,
+            [In][Out] ref NV_LOGICAL_GPU_DATA_V1 logicalGPUData);
+        private static readonly GPU_GetLogicalGpuInfoDelegate GPU_GetLogicalGpuInfoInternal;
+        /// <summary>
+        /// This function is used to query Logical GPU information.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="gpuHandle"></param>
+        /// <param name="logicalGPUData"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GPU_GetLogicalGpuInfo(LogicalGpuHandle gpuHandle, ref NV_LOGICAL_GPU_DATA_V1 logicalGPUData)
+        {
+            NVAPI_STATUS status;
+
+            logicalGPUData = new NV_LOGICAL_GPU_DATA_V1();
+            logicalGPUData.Version = NVImport.NV_LOGICAL_GPU_DATA_V1_VER;
+            logicalGPUData.PhysicalGPUHandles = new PhysicalGpuHandle[(int)NVImport.NVAPI_MAX_PHYSICAL_GPUS];
+
+            if (GPU_GetEDIDInternal != null) { status = GPU_GetLogicalGpuInfoInternal(gpuHandle, ref logicalGPUData); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        //NVAPI_INTERFACE NvAPI_GetLogicalGPUFromPhysicalGPU(NvPhysicalGpuHandle hPhysicalGPU, NvLogicalGpuHandle* pLogicalGPU)
+        private delegate NVAPI_STATUS GetLogicalGPUFromPhysicalGPUDelegate(
+            [In] PhysicalGpuHandle physicalGPUHandle,
+            [In][Out] ref LogicalGpuHandle logicalGPUHandle);
+        private static readonly GetLogicalGPUFromPhysicalGPUDelegate GetLogicalGPUFromPhysicalGPUInternal;
+        /// <summary>
+        /// This function is used to query Logical GPU information.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="physicalGPUHandle"></param>
+        /// <param name="logicalGPUHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_GetLogicalGPUFromPhysicalGPU(PhysicalGpuHandle physicalGPUHandle, ref LogicalGpuHandle logicalGPUHandle)
+        {
+            NVAPI_STATUS status;
+
+            if (GPU_GetEDIDInternal != null) { status = GetLogicalGPUFromPhysicalGPUInternal(physicalGPUHandle, ref logicalGPUHandle); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
     }
 }
