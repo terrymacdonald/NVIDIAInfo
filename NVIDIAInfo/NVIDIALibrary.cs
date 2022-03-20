@@ -394,6 +394,54 @@ namespace DisplayMagicianShared.NVIDIA
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting Quadro status. NvAPI_GPU_GetQuadroStatus() returned error code {NVStatus}");
                     }
+
+                    // Firstly let's get the logical GPU from the Physical handle
+                    LogicalGpuHandle logicalGPUHandle;                    
+                    NVStatus = NVImport.NvAPI_GetLogicalGPUFromPhysicalGPU(physicalGpus[physicalGpuIndex], out logicalGPUHandle);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        if (quadroStatus == 0)
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is one from the GeForce range");
+                        }
+                        else if (quadroStatus == 1)
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is one from the Quadro range");
+                            myAdapter.IsQuadro = true;
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is neither a GeForce or Quadro range vodeo card (QuadroStatus = {quadroStatus})");
+                        }
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting Quadro status. NvAPI_GPU_GetQuadroStatus() returned error code {NVStatus}");
+                    }
+
+                    NV_LOGICAL_GPU_DATA_V1 logicalGPUData = new NV_LOGICAL_GPU_DATA_V1();
+                    NVStatus = NVImport.NvAPI_GPU_GetLogicalGpuInfo(logicalGPUHandle, ref logicalGPUData);
+                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                    {
+                        if (quadroStatus == 0)
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is one from the GeForce range");
+                        }
+                        else if (quadroStatus == 1)
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is one from the Quadro range");
+                            myAdapter.IsQuadro = true;
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NVIDIA Video Card is neither a GeForce or Quadro range vodeo card (QuadroStatus = {quadroStatus})");
+                        }
+                    }
+                    else
+                    {
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting Quadro status. NvAPI_GPU_GetQuadroStatus() returned error code {NVStatus}");
+                    }
+
                     myDisplayConfig.PhysicalAdapters[physicalGpuIndex] = myAdapter;
                 }
 
@@ -902,7 +950,10 @@ namespace DisplayMagicianShared.NVIDIA
                 // We want to get the number of displays we have
                 // Go through the Physical GPUs one by one
                 for (uint physicalGpuIndex = 0; physicalGpuIndex < physicalGpuCount; physicalGpuIndex++)
-                {                    
+                {
+                    // Firstly let's get 
+                    NvAPI_GetLogicalGPUFromPhysicalGPU(PhysicalGpuHandle physicalGPUHandle, ref LogicalGpuHandle logicalGPUHandle);
+                    NvAPI_GPU_GetLogicalGpuInfo(LogicalGpuHandle gpuHandle, ref NV_LOGICAL_GPU_DATA_V1 logicalGPUData)
 
                     //This function retrieves the number of display IDs we know about
                     UInt32 displayCount = 0;

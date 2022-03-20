@@ -5186,7 +5186,7 @@ namespace DisplayMagicianShared.NVIDIA
         //NVAPI_INTERFACE NvAPI_GetLogicalGPUFromPhysicalGPU(NvPhysicalGpuHandle hPhysicalGPU, NvLogicalGpuHandle* pLogicalGPU)
         private delegate NVAPI_STATUS GetLogicalGPUFromPhysicalGPUDelegate(
             [In] PhysicalGpuHandle physicalGPUHandle,
-            [In][Out] ref LogicalGpuHandle logicalGPUHandle);
+            [Out] out LogicalGpuHandle logicalGPUHandle);
         private static readonly GetLogicalGPUFromPhysicalGPUDelegate GetLogicalGPUFromPhysicalGPUInternal;
         /// <summary>
         /// This function is used to query Logical GPU information.
@@ -5194,12 +5194,18 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="physicalGPUHandle"></param>
         /// <param name="logicalGPUHandle"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_GetLogicalGPUFromPhysicalGPU(PhysicalGpuHandle physicalGPUHandle, ref LogicalGpuHandle logicalGPUHandle)
+        public static NVAPI_STATUS NvAPI_GetLogicalGPUFromPhysicalGPU(PhysicalGpuHandle physicalGPUHandle, out LogicalGpuHandle logicalGPUHandle)
         {
             NVAPI_STATUS status;
 
-            if (GPU_GetEDIDInternal != null) { status = GetLogicalGPUFromPhysicalGPUInternal(physicalGPUHandle, ref logicalGPUHandle); }
-            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+            if (GPU_GetEDIDInternal != null) { 
+                status = GetLogicalGPUFromPhysicalGPUInternal(physicalGPUHandle, out LogicalGpuHandle lgpu);
+                logicalGPUHandle = lgpu;
+            }
+            else { 
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                logicalGPUHandle = new LogicalGpuHandle();
+            }
 
             return status;
         }
