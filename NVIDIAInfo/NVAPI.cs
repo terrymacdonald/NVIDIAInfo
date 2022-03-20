@@ -5175,6 +5175,7 @@ namespace DisplayMagicianShared.NVIDIA
 
             logicalGPUData = new NV_LOGICAL_GPU_DATA_V1();
             logicalGPUData.Version = NVImport.NV_LOGICAL_GPU_DATA_V1_VER;
+            logicalGPUData.OSAdapterId = IntPtr.Zero;
             logicalGPUData.PhysicalGPUHandles = new PhysicalGpuHandle[(int)NVImport.NVAPI_MAX_PHYSICAL_GPUS];
 
             if (GPU_GetEDIDInternal != null) { status = GPU_GetLogicalGpuInfoInternal(gpuHandle, ref logicalGPUData); }
