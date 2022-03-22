@@ -996,6 +996,22 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Ansi)]
+    public struct NV_TIMING_EXTRA_INTERNAL
+    {
+        public UInt32 Flags;          //!< Reserved for NVIDIA hardware-based enhancement, such as double-scan.
+        public ushort RefreshRate;            //!< Logical refresh rate to present
+        public UInt32 FrequencyInMillihertz;         //!< Physical vertical refresh rate in 0.001Hz
+        public ushort VerticalAspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
+        public ushort HorizontalAspect;        //!< Display aspect ratio Hi(aspect):horizontal-aspect, Low(aspect):vertical-aspect
+        public ushort HorizontalPixelRepetition;           //!< Bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
+        public UInt32 TimingStandard;        //!< Timing standard
+        //[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
+        public string Name;      //!< Timing name
+        
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_TIMING : IEquatable<NV_TIMING>, ICloneable
     {
@@ -1053,6 +1069,32 @@ namespace DisplayMagicianShared.NVIDIA
             other.Extra = (NV_TIMING_EXTRA)Extra.Clone();
             return other;
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_TIMING_INTERNAL
+    {
+        // VESA scan out timing parameters:
+        public ushort HVisible;         //!< horizontal visible
+        public ushort HBorder;          //!< horizontal border
+        public ushort HFrontPorch;      //!< horizontal front porch
+        public ushort HSyncWidth;       //!< horizontal sync width
+        public ushort HTotal;           //!< horizontal total
+        public TIMING_HORIZONTAL_SYNC_POLARITY HSyncPol;         //!< horizontal sync polarity: 1-negative, 0-positive
+
+        public ushort VVisible;         //!< vertical visible
+        public ushort VBorder;          //!< vertical border
+        public ushort VFrontPorch;      //!< vertical front porch
+        public ushort VSyncWidth;       //!< vertical sync width
+        public ushort VTotal;           //!< vertical total
+        public TIMING_VERTICAL_SYNC_POLARITY VSyncPol;         //!< vertical sync polarity: 1-negative, 0-positive
+
+        public TIMING_SCAN_MODE ScanMode;       //!< 1-Int32erlaced, 0-progressive
+        public UInt32 Pclk;             //!< pixel clock in 10 kHz
+
+        //other timing related extras - points to a NV_TIMING_EXTRA_INTERNAL
+        public IntPtr Extra;
+
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1140,6 +1182,13 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_POSITION_INTERNAL
+    {
+        public Int32 X;
+        public Int32 Y;
+    }
+
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_RESOLUTION : IEquatable<NV_RESOLUTION>, ICloneable
@@ -1169,6 +1218,15 @@ namespace DisplayMagicianShared.NVIDIA
             return other;
         }
     }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_RESOLUTION_INTERNAL
+    {
+        public UInt32 Width;
+        public UInt32 Height;
+        public UInt32 ColorDepth;
+    }
+
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_VIEWPORTF : IEquatable<NV_VIEWPORTF>, ICloneable
@@ -1279,6 +1337,46 @@ namespace DisplayMagicianShared.NVIDIA
             other.Timing = (NV_TIMING)Timing.Clone();
             return other;
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL
+    {
+        public UInt32 Version;
+
+        // Rotation and Scaling
+        public NV_ROTATE Rotation;       //!< (IN) rotation setting.
+        public NV_SCALING Scaling;        //!< (IN) scaling setting.
+
+        // Refresh Rate
+        public UInt32 RefreshRateInMillihertz;  //!< (IN) Non-Int32erlaced Refresh Rate of the mode, multiplied by 1000, 0 = ignored
+                                                //!< This is the value which driver reports to the OS.
+                                                // Flags
+                                                //public UInt32 Int32erlaced:1;   //!< (IN) Interlaced mode flag, ignored if refreshRate == 0
+                                                //public UInt32 primary:1;      //!< (IN) Declares primary display in clone configuration. This is *NOT* GDI Primary.
+                                                //!< Only one target can be primary per source. If no primary is specified, the first
+                                                //!< target will automatically be primary.
+                                                //public UInt32 isPanAndScanTarget:1; //!< Whether on this target Pan and Scan is enabled or has to be enabled. Valid only
+                                                //!< when the target is part of clone topology.
+                                                //public UInt32 disableVirtualModeSupport:1;
+                                                //public UInt32 isPreferredUnscaledTarget:1;
+                                                //public UInt32 reserved:27;
+        public UInt32 Flags;
+        // TV format information
+        public NV_GPU_CONNECTOR_TYPE ConnectorType;      //!< Specify connector type. For TV only, ignored if tvFormat == NV_DISPLAY_TV_FORMAT_NONE
+        public NV_DISPLAY_TV_FORMAT TvFormat;       //!< (IN) to choose the last TV format set this value to NV_DISPLAY_TV_FORMAT_NONE
+                                                    //!< In case of NvAPI_DISP_GetDisplayConfig(), this field will indicate the currently applied TV format;
+                                                    //!< if no TV format is applied, this field will have NV_DISPLAY_TV_FORMAT_NONE value.
+                                                    //!< In case of NvAPI_DISP_SetDisplayConfig(), this field should only be set in case of TVs;
+                                                    //!< for other displays this field will be ignored and resolution & refresh rate specified in input will be used to apply the TV format.
+
+        // Backend (raster) timing standard
+        public NV_TIMING_OVERRIDE TimingOverride;     //!< Ignored if timingOverride == NV_TIMING_OVERRIDE_CURRENT
+        public IntPtr Timing;             // Points to a NV_TIMING_INTERNAL object
+                                            //!< Scan out timing, valid only if timingOverride == NV_TIMING_OVERRIDE_CUST
+                                             //!< The value NV_TIMING::NV_TIMINGEXT::rrx1k is obtained from the EDID. The driver may
+                                             //!< tweak this value for HDTV, stereo, etc., before reporting it to the OS.
+
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -1412,7 +1510,8 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL
     {
         public UInt32 DisplayId;  //!< Display ID
-        public IntPtr Details;    //!< NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO - May be NULL if no advanced settings are required
+        public IntPtr Details;  // Points to an NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL object  
+                                //!< NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO - May be NULL if no advanced settings are required
         public UInt32 WindowsCCDTargetId;   //!< Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
 
     }
@@ -1500,6 +1599,19 @@ namespace DisplayMagicianShared.NVIDIA
             other.Position = (NV_POSITION)Position.Clone();
             return other;
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1_INTERNAL
+    {
+        public IntPtr Resolution;       // Points to a NV_RESOLUTION_INTERNAL object
+        public NV_FORMAT ColorFormat;                //!< Ignored at present, must be NV_FORMAT_UNKNOWN (0)
+        public IntPtr Position;                   // Points to a NV_POSITION_INTERNAL object
+                                                  //!< Is all positions are 0 or invalid, displays will be automatically
+                                                  //!< positioned from left to right with GDI Primary at 0,0, and all
+                                                  //!< other displays in the order of the path array.
+        public NV_DISPLAYCONFIG_SPANNING_ORIENTATION SpanningOrientation;        //!< Spanning is only supported on XP
+        public UInt32 Flags;
     }
 
 
@@ -2523,11 +2635,14 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_EDID_V3_VER = MAKE_NVAPI_VERSION<NV_EDID_V3>(3);
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V1>(1);
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2>(2);
-        public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL>(2);
         public static UInt32 NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1>(1);
         public static UInt32 NV_CUSTOM_DISPLAY_V1_VER = MAKE_NVAPI_VERSION<NV_CUSTOM_DISPLAY_V1>(1);
         public static UInt32 NV_LOGICAL_GPU_DATA_V1_VER = MAKE_NVAPI_VERSION<NV_LOGICAL_GPU_DATA_V1>(1);
-        
+
+        public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL>(2);
+        public static UInt32 NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL>(1);
+
+
 
 
         #region Internal Constant
@@ -3775,7 +3890,7 @@ namespace DisplayMagicianShared.NVIDIA
                     for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
                     {
                         // Set up the fields in the path info
-                        pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
+                        pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL_VER;
                         pass2PathInfos[x].TargetInfoCount = PathInfos[x].TargetInfoCount;
                         pass2PathInfos[x].Flags = PathInfos[x].Flags;
                         pass2PathInfos[x].OSAdapterID = PathInfos[x].OSAdapterID;
@@ -3921,7 +4036,7 @@ namespace DisplayMagicianShared.NVIDIA
                     for (Int32 x = 0; x < (Int32)PathInfoCount; x++)
                     {
                         // Set up the fields in the path info
-                        pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
+                        pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL_VER;
                         pass2PathInfos[x].TargetInfoCount = 0;
                         pass2PathInfos[x].TargetInfo = IntPtr.Zero;
 
@@ -4058,72 +4173,169 @@ namespace DisplayMagicianShared.NVIDIA
 
             int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
             int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
-            int onePathTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2));
+            int onePathTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL));
             int oneAdvTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
+            //int oneTimingMemSize = Marshal.SizeOf(typeof(NV_TIMING_INTERNAL));
+            //int oneTimingExtraMemSize = Marshal.SizeOf(typeof(NV_TIMING_EXTRA_INTERNAL));
+            //int onePositionMemSize = Marshal.SizeOf(typeof(NV_POSITION_INTERNAL));
+            //int oneResolutionMemSize = Marshal.SizeOf(typeof(NV_RESOLUTION_INTERNAL));
 
-            IntPtr pathInfoPointer = Marshal.AllocHGlobal(onePathInfoMemSize * (int)pathInfoCount);
-            IntPtr sourceModeInfoPointer = Marshal.AllocHGlobal(oneSourceModeMemSize * (int)pathInfoCount);
-            IntPtr targetInfoPointer = Marshal.AllocHGlobal(onePathTargetMemSize * totalTargetInfoCount);
-            IntPtr advTargetPointer = Marshal.AllocHGlobal(oneAdvTargetMemSize * totalTargetInfoCount);
+
+            IntPtr pathInfoPointer = Marshal.AllocCoTaskMem(onePathInfoMemSize * (int)pathInfoCount);
+            IntPtr sourceModeInfoPointer = Marshal.AllocCoTaskMem(oneSourceModeMemSize * (int)pathInfoCount);
+            IntPtr targetInfoPointer = Marshal.AllocCoTaskMem(onePathTargetMemSize * totalTargetInfoCount);
+            IntPtr advTargetPointer = Marshal.AllocCoTaskMem(oneAdvTargetMemSize * totalTargetInfoCount);
+            //IntPtr timingPointer = Marshal.AllocCoTaskMem(oneTimingMemSize * totalTargetInfoCount);
+            //IntPtr timingExtraPointer = Marshal.AllocCoTaskMem(oneTimingExtraMemSize * totalTargetInfoCount);
+            //IntPtr positionPointer = Marshal.AllocCoTaskMem(onePositionMemSize * (int)pathInfoCount);
+            //IntPtr resolutionPointer = Marshal.AllocCoTaskMem(oneTimingExtraMemSize * (int)pathInfoCount);
+
             // Also set another memory pointer to the same place so that we can do the memory copying item by item
             // as we have to do it ourselves (there isn't an easy to use Marshal equivalent)
             IntPtr currentPathInfoPointer = pathInfoPointer;
             IntPtr currentSourceModeInfoPointer = sourceModeInfoPointer;
             IntPtr currentTargetInfoPointer = targetInfoPointer;
             IntPtr currentAdvTargetPointer = advTargetPointer;
+            //IntPtr currentTimingPointer = timingPointer;
+            //IntPtr currentTimingExtraPointer = timingExtraPointer;
+            //IntPtr currentPositionPointer = positionPointer;
+            //IntPtr currentResolutionPointer = resolutionPointer;
 
             // Go through the array and copy things from managed code to unmanaged code
             for (Int32 x = 0; x < (Int32)pathInfoCount; x++)
             {
-                // Set up the fields in the path info
-                pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_P2_VER;
-                pass2PathInfos[x].TargetInfoCount = pathInfos[x].TargetInfoCount;
-                pass2PathInfos[x].Flags = pathInfos[x].Flags;
-                pass2PathInfos[x].OSAdapterID = pathInfos[x].OSAdapterID;
-                pass2PathInfos[x].SourceId = pathInfos[x].SourceId;                
                 // Create a target info array and copy it over
-                NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[] targetInforArray = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[pathInfos[x].TargetInfoCount];
+                NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[] targetInfoArray = new NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL[pathInfos[x].TargetInfoCount];
                 pass2PathInfos[x].TargetInfo = currentTargetInfoPointer;
                 for (Int32 y = 0; y < (Int32)pathInfos[x].TargetInfoCount; y++)
                 {
-                    NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 advInfo = pathInfos[x].TargetInfo[y].Details;
+                    /*// Set up the timing extra object and pointer
+                    NV_TIMING_EXTRA_INTERNAL timingExtraInfo = new NV_TIMING_EXTRA_INTERNAL();
+                    timingExtraInfo.Flags = pathInfos[x].TargetInfo[y].Details.Timing.Extra.Flags;
+                    timingExtraInfo.FrequencyInMillihertz = pathInfos[x].TargetInfo[y].Details.Timing.Extra.FrequencyInMillihertz;
+                    timingExtraInfo.HorizontalAspect = pathInfos[x].TargetInfo[y].Details.Timing.Extra.HorizontalAspect;
+                    timingExtraInfo.HorizontalPixelRepetition = pathInfos[x].TargetInfo[y].Details.Timing.Extra.HorizontalPixelRepetition;
+                    timingExtraInfo.Name = pathInfos[x].TargetInfo[y].Details.Timing.Extra.Name;
+                    timingExtraInfo.RefreshRate = pathInfos[x].TargetInfo[y].Details.Timing.Extra.RefreshRate;
+                    timingExtraInfo.TimingStandard = pathInfos[x].TargetInfo[y].Details.Timing.Extra.TimingStandard;
+                    timingExtraInfo.VerticalAspect = pathInfos[x].TargetInfo[y].Details.Timing.Extra.VerticalAspect;
+                    Marshal.StructureToPtr(timingExtraInfo, currentTimingExtraPointer, true);
+
+                    // Set up the timing pointer
+                    NV_TIMING_INTERNAL timingInfo = new NV_TIMING_INTERNAL();
+                    timingInfo.Extra = currentTimingExtraPointer;
+                    timingInfo.HBorder = pathInfos[x].TargetInfo[y].Details.Timing.HBorder;
+                    timingInfo.HFrontPorch = pathInfos[x].TargetInfo[y].Details.Timing.HFrontPorch;
+                    timingInfo.HSyncPol = pathInfos[x].TargetInfo[y].Details.Timing.HSyncPol;
+                    timingInfo.HSyncWidth = pathInfos[x].TargetInfo[y].Details.Timing.HSyncWidth;
+                    timingInfo.HTotal = pathInfos[x].TargetInfo[y].Details.Timing.HTotal;
+                    timingInfo.HVisible = pathInfos[x].TargetInfo[y].Details.Timing.HVisible;
+                    timingInfo.Pclk = pathInfos[x].TargetInfo[y].Details.Timing.Pclk;
+                    timingInfo.ScanMode = pathInfos[x].TargetInfo[y].Details.Timing.ScanMode;
+                    timingInfo.VBorder = pathInfos[x].TargetInfo[y].Details.Timing.VBorder;
+                    timingInfo.VSyncWidth = pathInfos[x].TargetInfo[y].Details.Timing.VSyncWidth;
+                    timingInfo.VTotal = pathInfos[x].TargetInfo[y].Details.Timing.VTotal;
+                    timingInfo.VVisible = pathInfos[x].TargetInfo[y].Details.Timing.VVisible;
+                    Marshal.StructureToPtr(timingInfo, currentTimingPointer, true);*/
+
+                    /*// Set up the Advanced details
+                    NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL advInfo = new NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL();
+                    advInfo.ConnectorType = pathInfos[x].TargetInfo[y].Details.ConnectorType;
+                    advInfo.Flags = pathInfos[x].TargetInfo[y].Details.Flags;
+                    advInfo.RefreshRateInMillihertz = pathInfos[x].TargetInfo[y].Details.RefreshRateInMillihertz;
+                    advInfo.Rotation = pathInfos[x].TargetInfo[y].Details.Rotation;
+                    advInfo.Scaling = pathInfos[x].TargetInfo[y].Details.Scaling;
+                    advInfo.Timing = currentTimingPointer;
+                    advInfo.TimingOverride = pathInfos[x].TargetInfo[y].Details.TimingOverride;
+                    advInfo.TvFormat = pathInfos[x].TargetInfo[y].Details.TvFormat;
+                    //advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL_VER;
                     advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER;
-                    Marshal.StructureToPtr(advInfo, currentAdvTargetPointer, true);
-                    targetInforArray[y].Details = currentAdvTargetPointer;
-                    targetInforArray[y].DisplayId = pathInfos[x].TargetInfo[y].DisplayId;
-                    targetInforArray[y].WindowsCCDTargetId = pathInfos[x].TargetInfo[y].WindowsCCDTargetId;                    
-                    Marshal.StructureToPtr(targetInforArray[y], currentTargetInfoPointer, true);
+                    Marshal.StructureToPtr(advInfo, currentAdvTargetPointer, true);*/
+
+                    NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1 advInfo = new NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1();
+                    advInfo.ConnectorType = pathInfos[x].TargetInfo[y].Details.ConnectorType;
+                    advInfo.Flags = pathInfos[x].TargetInfo[y].Details.Flags;
+                    advInfo.RefreshRateInMillihertz = pathInfos[x].TargetInfo[y].Details.RefreshRateInMillihertz;
+                    advInfo.Rotation = pathInfos[x].TargetInfo[y].Details.Rotation;
+                    advInfo.Scaling = pathInfos[x].TargetInfo[y].Details.Scaling;
+                    advInfo.Timing = (NV_TIMING)pathInfos[x].TargetInfo[y].Details.Timing.Clone();
+                    advInfo.TimingOverride = pathInfos[x].TargetInfo[y].Details.TimingOverride;
+                    advInfo.TvFormat = pathInfos[x].TargetInfo[y].Details.TvFormat;
+                    //advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL_VER;
+                    advInfo.Version = NVImport.NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER;
+                    Marshal.StructureToPtr(advInfo, currentAdvTargetPointer, true); 
+
+                     // Fill in this target info array item
+                     targetInfoArray[y].Details = currentAdvTargetPointer;
+                    targetInfoArray[y].DisplayId = pathInfos[x].TargetInfo[y].DisplayId;
+                    targetInfoArray[y].WindowsCCDTargetId = pathInfos[x].TargetInfo[y].WindowsCCDTargetId;                    
+                    Marshal.StructureToPtr(targetInfoArray[y], currentTargetInfoPointer, true);
+
+                    // Prepare the pointers for the next objects
                     currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
                     currentAdvTargetPointer = new IntPtr(currentAdvTargetPointer.ToInt64() + oneAdvTargetMemSize);
+                    //currentTimingPointer = new IntPtr(currentTimingPointer.ToInt64() + oneTimingMemSize);
+                    //currentTimingExtraPointer = new IntPtr(currentTimingExtraPointer.ToInt64() + oneTimingExtraMemSize);
                 }
 
+                /*// Setup the position info
+                NV_POSITION_INTERNAL position = new NV_POSITION_INTERNAL();
+                position.X = pathInfos[x].SourceModeInfo.Position.X;
+                position.Y = pathInfos[x].SourceModeInfo.Position.Y;
+                Marshal.StructureToPtr(position, currentPositionPointer, true);
+                
+                // Setup the resolution info
+                NV_RESOLUTION_INTERNAL resolution = new NV_RESOLUTION_INTERNAL();
+                resolution.ColorDepth = pathInfos[x].SourceModeInfo.Resolution.ColorDepth;
+                resolution.Height = pathInfos[x].SourceModeInfo.Resolution.Height;
+                resolution.Width = pathInfos[x].SourceModeInfo.Resolution.Width;
+                Marshal.StructureToPtr(resolution, currentResolutionPointer, true);*/
+
                 // Create a source mode info object and copy it over
-                NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo = pathInfos[x].SourceModeInfo;
+                NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1 sourceModeInfo = new NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1(); 
+                sourceModeInfo.ColorFormat = pathInfos[x].SourceModeInfo.ColorFormat;
+                sourceModeInfo.Flags = pathInfos[x].SourceModeInfo.Flags;
+                sourceModeInfo.Position = (NV_POSITION)pathInfos[x].SourceModeInfo.Position.Clone();
+                sourceModeInfo.Resolution = (NV_RESOLUTION)pathInfos[x].SourceModeInfo.Resolution.Clone();
+                sourceModeInfo.SpanningOrientation = pathInfos[x].SourceModeInfo.SpanningOrientation;
                 Marshal.StructureToPtr(sourceModeInfo, currentSourceModeInfoPointer, true);
+
+                // Set up the fields in the path info
+                pass2PathInfos[x].Version = NVImport.NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL_VER;
+                pass2PathInfos[x].TargetInfoCount = pathInfos[x].TargetInfoCount;
+                pass2PathInfos[x].Flags = pathInfos[x].Flags;
+                pass2PathInfos[x].OSAdapterID = pathInfos[x].OSAdapterID;
+                pass2PathInfos[x].SourceId = pathInfos[x].SourceId;
                 pass2PathInfos[x].SourceModeInfo = currentSourceModeInfoPointer;
 
-                // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
-                Marshal.StructureToPtr(pass2PathInfos[x], currentPathInfoPointer, true);
+                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
+                 Marshal.StructureToPtr(pass2PathInfos[x], currentPathInfoPointer, true);
 
                 // advance the buffer forwards to the next object for each object
                 currentPathInfoPointer = new IntPtr(currentPathInfoPointer.ToInt64() + onePathInfoMemSize);
                 currentSourceModeInfoPointer = new IntPtr(currentSourceModeInfoPointer.ToInt64() + oneSourceModeMemSize);
+                //currentPositionPointer = new IntPtr(currentPositionPointer.ToInt64() + onePositionMemSize);
+                //currentResolutionPointer = new IntPtr(currentResolutionPointer.ToInt64() + oneResolutionMemSize);
             }
 
-            if (DISP_GetDisplayConfigInternal != null)
+            if (DISP_SetDisplayConfigInternal != null)
             {
                 // Use the unmanaged buffer in the unmanaged C call
-                status = DISP_SetDisplayConfigInternal(pathInfoCount, pathInfoPointer, flags);
+                status = DISP_SetDisplayConfigInternal(pathInfoCount, pathInfoPointer, 0);
             }
             else
             {
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
             }
 
-            Marshal.FreeHGlobal(pathInfoPointer);
-            Marshal.FreeHGlobal(sourceModeInfoPointer);
-            Marshal.FreeHGlobal(targetInfoPointer);
-            Marshal.FreeHGlobal(advTargetPointer);
+            Marshal.FreeCoTaskMem(pathInfoPointer);
+            Marshal.FreeCoTaskMem(sourceModeInfoPointer);
+            Marshal.FreeCoTaskMem(targetInfoPointer);
+            Marshal.FreeCoTaskMem(advTargetPointer);
+            //Marshal.FreeCoTaskMem(timingPointer);
+            //Marshal.FreeCoTaskMem(timingExtraPointer);
+            //Marshal.FreeCoTaskMem(positionPointer);
+            //Marshal.FreeCoTaskMem(resolutionPointer);
 
             return status;
         }

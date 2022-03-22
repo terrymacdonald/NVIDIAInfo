@@ -367,8 +367,12 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // Prepare the physicalGPU per adapter structure to use later
                     NVIDIA_PER_ADAPTER_CONFIG myAdapter = new NVIDIA_PER_ADAPTER_CONFIG();
-                    myAdapter.ColorConfig = new NVIDIA_COLOR_CONFIG();
+                    myAdapter.LogicalGPU.PhysicalGPUHandles = new PhysicalGpuHandle[0];
+                    myAdapter.ColorConfig = new NVIDIA_COLOR_CONFIG();                    
+                    myAdapter.ColorConfig.ColorData = new Dictionary<string, NV_COLOR_DATA_V5>();
                     myAdapter.HdrConfig = new NVIDIA_HDR_CONFIG();
+                    myAdapter.HdrConfig.HdrColorData = new Dictionary<string, NV_HDR_COLOR_DATA_V2>();
+                    myAdapter.HdrConfig.HdrCapabilities = new Dictionary<string, NV_HDR_CAPABILITIES_V2>();
                     myAdapter.IsQuadro = false;
 
                     //This function retrieves the Quadro status for the GPU (1 if Quadro, 0 if GeForce)
@@ -401,23 +405,26 @@ namespace DisplayMagicianShared.NVIDIA
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Successfully got Logical GPU Handle from physical GPU.");
+                        NV_LOGICAL_GPU_DATA_V1 logicalGPUData = new NV_LOGICAL_GPU_DATA_V1();
+                        NVStatus = NVImport.NvAPI_GPU_GetLogicalGpuInfo(logicalGPUHandle, ref logicalGPUData);
+                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Successfully got the Logical GPU information from the NVIDIA driver!");
+
+                        }
+                        else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_POINTER)
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: No Logical GPU found so no logicalGPUData available. NvAPI_GPU_GetLogicalGpuInfo() returned error code {NVStatus}");    
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting Logical GPU information from NVIDIA driver. NvAPI_GPU_GetLogicalGpuInfo() returned error code {NVStatus}");
+                        }
                     }
                     else
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting Logical GPU handle from Physical GPU. NvAPI_GetLogicalGPUFromPhysicalGPU() returned error code {NVStatus}");
-                    }
-
-                    NV_LOGICAL_GPU_DATA_V1 logicalGPUData = new NV_LOGICAL_GPU_DATA_V1();
-                    NVStatus = NVImport.NvAPI_GPU_GetLogicalGpuInfo(logicalGPUHandle, ref logicalGPUData);
-                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Successfully got the Logical GPU information from the NVIDIA driver!");
-                        
-                    }
-                    else
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting Logical GPU information from NVIDIA driver. NvAPI_GPU_GetLogicalGpuInfo() returned error code {NVStatus}");
-                    }
+                    }                    
 
                     myDisplayConfig.PhysicalAdapters[physicalGpuIndex] = myAdapter;
                 }
