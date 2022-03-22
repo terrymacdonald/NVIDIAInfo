@@ -134,6 +134,7 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_DISPLAY_CONFIG : IEquatable<NVIDIA_DISPLAY_CONFIG>
     {
+        public bool IsCloned; 
         public NVIDIA_MOSAIC_CONFIG MosaicConfig;
         public Dictionary<UInt32,NVIDIA_PER_ADAPTER_CONFIG> PhysicalAdapters;
         public Dictionary<string, List<NV_CUSTOM_DISPLAY_V1>> CustomDisplays;
@@ -142,21 +143,22 @@ namespace DisplayMagicianShared.NVIDIA
         // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
         // generating the profile icon.
         public Dictionary<string, string> DisplayNames;
-        public List<string> DisplayIdentifiers;
+        public List<string> DisplayIdentifiers;        
 
         public override bool Equals(object obj) => obj is NVIDIA_DISPLAY_CONFIG other && this.Equals(other);
 
         public bool Equals(NVIDIA_DISPLAY_CONFIG other)
-           => PhysicalAdapters.SequenceEqual(other.PhysicalAdapters) &&
+           => IsCloned == other.IsCloned &&
+            PhysicalAdapters.SequenceEqual(other.PhysicalAdapters) &&
             MosaicConfig.Equals(other.MosaicConfig) &&
-           CustomDisplays.SequenceEqual(other.CustomDisplays) &&
-           DisplayConfigs.SequenceEqual(other.DisplayConfigs) &&
-           DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers);
+            CustomDisplays.SequenceEqual(other.CustomDisplays) &&
+            DisplayConfigs.SequenceEqual(other.DisplayConfigs) &&
+            DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers);
 
 
         public override int GetHashCode()
         {
-            return (MosaicConfig, PhysicalAdapters, CustomDisplays, DisplayConfigs, DisplayIdentifiers, DisplayNames).GetHashCode();
+            return (IsCloned, MosaicConfig, PhysicalAdapters, CustomDisplays, DisplayConfigs, DisplayIdentifiers, DisplayNames).GetHashCode();
         }
         public static bool operator ==(NVIDIA_DISPLAY_CONFIG lhs, NVIDIA_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
 
@@ -316,6 +318,7 @@ namespace DisplayMagicianShared.NVIDIA
             myDefaultConfig.DisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
             myDefaultConfig.DisplayNames = new Dictionary<string, string>();
             myDefaultConfig.DisplayIdentifiers = new List<string>();
+            myDefaultConfig.IsCloned = false;
 
             return myDefaultConfig;
         }
@@ -349,6 +352,10 @@ namespace DisplayMagicianShared.NVIDIA
 
             if (_initialised)
             {
+
+                // Store all the found display IDs so we can use them later
+                List<UInt32> foundDisplayIds = new List<uint>();
+
                 // Enumerate all the Physical GPUs
                 PhysicalGpuHandle[] physicalGpus = new PhysicalGpuHandle[NVImport.NVAPI_MAX_PHYSICAL_GPUS];
                 uint physicalGpuCount = 0;
@@ -789,10 +796,8 @@ namespace DisplayMagicianShared.NVIDIA
                             {
                                 if (pathInfos[x].TargetInfoCount > 1)
                                 {
-                                    // This is a cloned display, we need to edit the cloned target in order to make this load properly
-                                    // when it comes time to actually activate this config
-
-
+                                    // This is a cloned display, we need to mark this NVIDIA display profile as cloned so we correct the profile later
+                                    myDisplayConfig.IsCloned = true;
                                 }
                             }
 
@@ -1026,6 +1031,9 @@ namespace DisplayMagicianShared.NVIDIA
                                     continue;
                                 }
                             }
+
+                            // Record this as an active display ID
+                            foundDisplayIds.Add(displayIds[displayIndex].DisplayId);
 
                             // We need to skip recording anything that doesn't support color communication
                             if (!SkippedColorConnectionTypes.Contains(displayIds[displayIndex].ConnectorType))
@@ -1306,6 +1314,59 @@ namespace DisplayMagicianShared.NVIDIA
 
                 // Get the display identifiers                
                 myDisplayConfig.DisplayIdentifiers = GetCurrentDisplayIdentifiers();
+
+                // Go through and find the list of displayIDs
+                // ignore the ones that were found
+                // if one was not found, then
+                // go through the modes
+                // patch the target
+                if (myDisplayConfig.IsCloned)
+                {
+                    List<UInt32> clonedIdsWeKnow = new List<uint>();
+                    List<UInt32> missingIdsWeWant = new List<uint>();
+                    // Find all displays in the displayconfig
+                    foreach (var displayConfig in myDisplayConfig.DisplayConfigs)
+                    {
+                        foreach (var targetInfo in displayConfig.TargetInfo)
+                        {
+                            if (foundDisplayIds.Contains(targetInfo.DisplayId))
+                            {
+                                // We have this foundId
+                                clonedIdsWeKnow.Add(targetInfo.DisplayId);
+                            }
+                        }                        
+                    }
+
+                    // Now go through and figure out which foundDisplayId we're missing
+                    foreach (var foundDisplayId in foundDisplayIds)
+                    {
+                        if (!clonedIdsWeKnow.Contains(foundDisplayId))
+                        {
+                            // We found a cloned display id \o/
+                            missingIdsWeWant.Add(foundDisplayId);
+                        }
+                    }
+
+                    int clonedIdOffset = 0;
+                    // Now we go through the list of missing cloned id's and we fill them in
+                    for (int x = 0; x < myDisplayConfig.DisplayConfigs.Count; x++)
+                    {
+                        // We go through all the displayconfigs, but we want to only change the cloned displays (those with > 1 targetInfo)
+                        if (myDisplayConfig.DisplayConfigs[x].TargetInfoCount > 1)
+                        {
+                            // We only want to change the cloned displays, so we start at index 1 (the clones themselves)
+                            for (int y = 1; y <  myDisplayConfig.DisplayConfigs[x].TargetInfoCount; y++)
+                            {
+                                // We want to assign the cloned display the display ID from the missing display
+                                myDisplayConfig.DisplayConfigs[x].TargetInfo[y].DisplayId = missingIdsWeWant[clonedIdOffset++];
+                                // We also want to clone the Details struct from the base display (the first display) and replicate them on the clone
+                                // This copies the process used within the DisplayCOnfiguration C++ Sample released by NVIDIA
+                                myDisplayConfig.DisplayConfigs[x].TargetInfo[y].Details = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1)myDisplayConfig.DisplayConfigs[0].TargetInfo[0].Details.Clone();
+                            }
+                        }                        
+                    }
+                }
+
             }
             else
             {
