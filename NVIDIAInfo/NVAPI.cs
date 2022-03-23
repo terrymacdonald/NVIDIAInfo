@@ -2554,6 +2554,81 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_GET_ADAPTIVE_SYNC_DATA_V1 : IEquatable<NV_GET_ADAPTIVE_SYNC_DATA_V1>, ICloneable
+    {
+        public UInt32 Version; // Must be V1
+        public UInt32 MaxFrameInterval;             //!< maximum frame interval in micro seconds as set previously using NvAPI_DISP_SetAdaptiveSyncData function. If default values from EDID are used, this parameter returns 0.
+        public UInt32 Flags;            
+        public UInt32 LastFlipRefreshCount;             //!< Number of times the last flip was shown on the screen
+        public UInt64 LastFlipTimeStamp;             //!< Timestamp for the lastest flip on the screen
+        public UInt32 ReservedEx1;
+        public UInt32 ReservedEx2;
+        public UInt32 ReservedEx3;
+        public UInt32 ReservedEx4;
+
+        public bool DisableAdaptiveSync=> (Flags & 0x1) == 0x1; //!< Indicates if adaptive sync is disabled on the display.
+        public bool DisableFrameSplitting => (Flags & 0x1) == 0x1; //!< Indicates if frame splitting is disabled on the display.
+
+        public override bool Equals(object obj) => obj is NV_GET_ADAPTIVE_SYNC_DATA_V1 other && this.Equals(other);
+
+        public bool Equals(NV_GET_ADAPTIVE_SYNC_DATA_V1 other)
+        => MaxFrameInterval == other.MaxFrameInterval &&
+           Flags == other.Flags &&
+           LastFlipRefreshCount == other.LastFlipRefreshCount &&
+           LastFlipTimeStamp == other.LastFlipTimeStamp;
+
+        public override Int32 GetHashCode()
+        {
+            return (MaxFrameInterval, Flags, LastFlipRefreshCount, LastFlipTimeStamp).GetHashCode();
+        }
+        public static bool operator ==(NV_GET_ADAPTIVE_SYNC_DATA_V1 lhs, NV_GET_ADAPTIVE_SYNC_DATA_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_GET_ADAPTIVE_SYNC_DATA_V1 lhs, NV_GET_ADAPTIVE_SYNC_DATA_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_GET_ADAPTIVE_SYNC_DATA_V1 other = (NV_GET_ADAPTIVE_SYNC_DATA_V1)MemberwiseClone();
+            return other;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NV_SET_ADAPTIVE_SYNC_DATA_V1 : IEquatable<NV_SET_ADAPTIVE_SYNC_DATA_V1>, ICloneable
+    {
+        public UInt32 Version; // Must be V1
+        public UInt32 MaxFrameInterval;             //!< maximum frame interval in micro seconds as set previously using NvAPI_DISP_SetAdaptiveSyncData function. If default values from EDID are used, this parameter returns 0.
+        public UInt32 Flags;
+        public UInt32 ReservedEx1;             //!< Number of times the last flip was shown on the screen
+        public UInt64 ReservedEx2;             //!< Timestamp for the lastest flip on the screen
+        public UInt32 ReservedEx3;
+        public UInt32 ReservedEx4;
+        public UInt32 ReservedEx5;
+        public UInt32 ReservedEx6;
+        public UInt32 ReservedEx7;
+
+        public bool DisableAdaptiveSync => (Flags & 0x1) == 0x1; //!< Indicates if adaptive sync is disabled on the display.
+        public bool DisableFrameSplitting => (Flags & 0x1) == 0x1; //!< Indicates if frame splitting is disabled on the display.
+
+        public override bool Equals(object obj) => obj is NV_SET_ADAPTIVE_SYNC_DATA_V1 other && this.Equals(other);
+
+        public bool Equals(NV_SET_ADAPTIVE_SYNC_DATA_V1 other)
+        =>  MaxFrameInterval == other.MaxFrameInterval &&
+            Flags == other.Flags;
+
+        public override Int32 GetHashCode()
+        {
+            return (MaxFrameInterval, Flags).GetHashCode();
+        }
+        public static bool operator ==(NV_SET_ADAPTIVE_SYNC_DATA_V1 lhs, NV_SET_ADAPTIVE_SYNC_DATA_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NV_SET_ADAPTIVE_SYNC_DATA_V1 lhs, NV_SET_ADAPTIVE_SYNC_DATA_V1 rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            NV_SET_ADAPTIVE_SYNC_DATA_V1 other = (NV_SET_ADAPTIVE_SYNC_DATA_V1)MemberwiseClone();
+            return other;
+        }
+    }
+
     // ==================================
     // NVImport Class
     // ==================================
@@ -2638,6 +2713,8 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1>(1);
         public static UInt32 NV_CUSTOM_DISPLAY_V1_VER = MAKE_NVAPI_VERSION<NV_CUSTOM_DISPLAY_V1>(1);
         public static UInt32 NV_LOGICAL_GPU_DATA_V1_VER = MAKE_NVAPI_VERSION<NV_LOGICAL_GPU_DATA_V1>(1);
+        public static UInt32 NV_GET_ADAPTIVE_SYNC_DATA_V1_VER = MAKE_NVAPI_VERSION<NV_GET_ADAPTIVE_SYNC_DATA_V1>(1);
+        public static UInt32 NV_SET_ADAPTIVE_SYNC_DATA_V1_VER = MAKE_NVAPI_VERSION<NV_SET_ADAPTIVE_SYNC_DATA_V1>(1);
 
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL>(2);
         public static UInt32 NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL>(1);
@@ -2782,6 +2859,8 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_DISP_SetDisplayConfig, out DISP_SetDisplayConfigInternal);
                 GetDelegate(NvId_DISP_GetDisplayIdByDisplayName, out DISP_GetDisplayIdByDisplayNameInternal);
                 GetDelegate(NvId_DISP_EnumCustomDisplay, out Disp_EnumCustomDisplayInternal);
+                GetDelegate(NvId_DISP_GetAdaptiveSyncData, out DISP_GetAdaptiveSyncDataInternal);
+                GetDelegate(NvId_DISP_SetAdaptiveSyncData, out DISP_SetAdaptiveSyncDataInternal);
 
                 // GPUs
                 GetDelegate(NvId_EnumPhysicalGPUs, out EnumPhysicalGPUsInternal);
@@ -4910,6 +4989,49 @@ namespace DisplayMagicianShared.NVIDIA
 
             return status;
         }
+
+        //NVAPI_INTERFACE 	NvAPI_DISP_GetAdaptiveSyncData (__in NvU32 displayId, __inout NV_GET_ADAPTIVE_SYNC_DATA *pAdaptiveSyncData)
+        private delegate NVAPI_STATUS DISP_GetAdaptiveSyncDataDelegate(
+            [In] UInt32 displayId,
+            [In,Out] ref NV_GET_ADAPTIVE_SYNC_DATA_V1 adaptiveSyncData);
+        private static readonly DISP_GetAdaptiveSyncDataDelegate DISP_GetAdaptiveSyncDataInternal;
+        /// <summary>
+        ///  This function is used to get data for the Adaptive Sync Display.
+        /// </summary>
+        /// <param name="displayId"></param>
+        /// <param name="adaptiveSyncData"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DISP_GetAdaptiveSyncData(UInt32 displayId, ref NV_GET_ADAPTIVE_SYNC_DATA_V1 adaptiveSyncData)
+        {
+            NVAPI_STATUS status = NVAPI_STATUS.NVAPI_ERROR;
+            displayId = 0;
+            if (DISP_GetAdaptiveSyncDataInternal != null) { status = DISP_GetAdaptiveSyncDataInternal(displayId, ref adaptiveSyncData); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
+        //NVAPI_INTERFACE 	NvAPI_DISP_SetAdaptiveSyncData (__in NvU32 displayId, __in NV_SET_ADAPTIVE_SYNC_DATA *pAdaptiveSyncData)
+        private delegate NVAPI_STATUS DISP_SetAdaptiveSyncDataDelegate(
+            [In] UInt32 displayId,
+            [In] ref NV_SET_ADAPTIVE_SYNC_DATA_V1 adaptiveSyncData);
+        private static readonly DISP_SetAdaptiveSyncDataDelegate DISP_SetAdaptiveSyncDataInternal;
+        /// <summary>
+        ///  This function is used to set data for Adaptive Sync Display.
+        /// </summary>
+        /// <param name="displayId"></param>
+        /// <param name="adaptiveSyncData"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DISP_SetAdaptiveSyncData(UInt32 displayId, ref NV_SET_ADAPTIVE_SYNC_DATA_V1 adaptiveSyncData)
+        {
+            NVAPI_STATUS status = NVAPI_STATUS.NVAPI_ERROR;
+            displayId = 0;
+            if (DISP_SetAdaptiveSyncDataInternal != null) { status = DISP_SetAdaptiveSyncDataInternal(displayId, ref adaptiveSyncData); }
+            else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
+
+            return status;
+        }
+
 
         //NVAPI_INTERFACE NvAPI_DISP_GetGDIPrimaryDisplayId(NvU32* displayId);
         private delegate NVAPI_STATUS DISP_GetGDIPrimaryDisplayIdDelegate(

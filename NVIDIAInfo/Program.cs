@@ -74,8 +74,6 @@ namespace NVIDIAInfo
             // Update the configuration
             NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
             WinLibrary winLibrary = WinLibrary.GetLibrary();
-            /*nvidiaLibrary.UpdateActiveConfig();
-            winLibrary.UpdateActiveConfig();*/
 
             if (args.Length > 0)
             {
