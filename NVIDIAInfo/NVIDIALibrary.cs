@@ -101,12 +101,14 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NVIDIA_PER_ADAPTER_CONFIG : IEquatable<NVIDIA_PER_ADAPTER_CONFIG>
     {
         public bool IsQuadro;
+        public bool HasLogicalGPU;
         public NV_LOGICAL_GPU_DATA_V1 LogicalGPU;
         public Dictionary<UInt32, NVIDIA_PER_DISPLAY_CONFIG> DisplayConfigs;
 
         public override bool Equals(object obj) => obj is NVIDIA_PER_ADAPTER_CONFIG other && this.Equals(other);
         public bool Equals(NVIDIA_PER_ADAPTER_CONFIG other)
-        => IsQuadro.Equals(other.IsQuadro) &&
+        => IsQuadro == other.IsQuadro &&
+            HasLogicalGPU == other.HasLogicalGPU &&
             LogicalGPU.Equals(other.LogicalGPU) &&
             DisplayConfigs.SequenceEqual(other.DisplayConfigs);
 
@@ -358,6 +360,7 @@ namespace DisplayMagicianShared.NVIDIA
                     NVIDIA_PER_ADAPTER_CONFIG myAdapter = new NVIDIA_PER_ADAPTER_CONFIG();
                     myAdapter.LogicalGPU.PhysicalGPUHandles = new PhysicalGpuHandle[0];                    
                     myAdapter.IsQuadro = false;
+                    myAdapter.HasLogicalGPU = false;
                     myAdapter.DisplayConfigs = new Dictionary<uint, NVIDIA_PER_DISPLAY_CONFIG>();
 
                     //This function retrieves the Quadro status for the GPU (1 if Quadro, 0 if GeForce)
@@ -395,7 +398,8 @@ namespace DisplayMagicianShared.NVIDIA
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
                             SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Successfully got the Logical GPU information from the NVIDIA driver!");
-
+                            myAdapter.HasLogicalGPU = true;
+                            myAdapter.LogicalGPU = logicalGPUData;
                         }
                         else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_POINTER)
                         {
@@ -750,8 +754,6 @@ namespace DisplayMagicianShared.NVIDIA
                 //!                               to number of targetInfoCount(from Second Pass).
                 //! SUPPORTED OS:  Windows 7 and higher
                 // First pass: Figure out how many pathInfo objects there are
-                List<NV_DISPLAYCONFIG_PATH_INFO_V2> allDisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
-
                 uint pathInfoCount = 0;
                 NVStatus = NVImport.NvAPI_DISP_GetDisplayConfig(ref pathInfoCount);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK && pathInfoCount > 0)
@@ -779,7 +781,7 @@ namespace DisplayMagicianShared.NVIDIA
                                 }
                             }
 
-                            allDisplayConfigs = pathInfos.ToList();
+                            myDisplayConfig.DisplayConfigs = pathInfos.ToList();
                             SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_GetDisplayConfig returned OK on third pass.");
                         }
                         else if (NVStatus == NVAPI_STATUS.NVAPI_NOT_SUPPORTED)
