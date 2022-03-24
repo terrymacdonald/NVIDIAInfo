@@ -5004,7 +5004,6 @@ namespace DisplayMagicianShared.NVIDIA
         public static NVAPI_STATUS NvAPI_DISP_GetAdaptiveSyncData(UInt32 displayId, ref NV_GET_ADAPTIVE_SYNC_DATA_V1 adaptiveSyncData)
         {
             NVAPI_STATUS status = NVAPI_STATUS.NVAPI_ERROR;
-            displayId = 0;
             if (DISP_GetAdaptiveSyncDataInternal != null) { status = DISP_GetAdaptiveSyncDataInternal(displayId, ref adaptiveSyncData); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 
@@ -5025,7 +5024,6 @@ namespace DisplayMagicianShared.NVIDIA
         public static NVAPI_STATUS NvAPI_DISP_SetAdaptiveSyncData(UInt32 displayId, ref NV_SET_ADAPTIVE_SYNC_DATA_V1 adaptiveSyncData)
         {
             NVAPI_STATUS status = NVAPI_STATUS.NVAPI_ERROR;
-            displayId = 0;
             if (DISP_SetAdaptiveSyncDataInternal != null) { status = DISP_SetAdaptiveSyncDataInternal(displayId, ref adaptiveSyncData); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
 

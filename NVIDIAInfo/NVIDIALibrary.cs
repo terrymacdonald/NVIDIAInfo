@@ -973,7 +973,7 @@ namespace DisplayMagicianShared.NVIDIA
                         NVStatus = NVImport.NvAPI_GPU_GetConnectedDisplayIds(physicalGpus[physicalGpuIndex], ref displayIds, ref displayCount, 0);
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                         {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetConnectedDisplayIds returned OK on second pass. We have {displayCount} physical GPUs");
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetConnectedDisplayIds returned OK on second pass. We have {displayCount} physical displays");
                         }
                         else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
                         {
@@ -1236,27 +1236,27 @@ namespace DisplayMagicianShared.NVIDIA
                                 }
                                 else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
                                 {
-                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The input buffer is not large enough to hold it's contents. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The input buffer is not large enough to hold it's contents. NvAPI_DISP_GetAdaptiveSyncData() returned error code {NVStatus}");
                                 }
                                 else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
                                 {
-                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The input monitor is either not connected or is not a DP or HDMI panel. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The input monitor {displayIds[displayIndex].DisplayId} is either not connected or is not a DP or HDMI panel. NvAPI_DISP_GetAdaptiveSyncData() returned error code {NVStatus}");
                                 }
                                 else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
                                 {
-                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_DISP_GetAdaptiveSyncData() returned error code {NVStatus}");
                                 }
                                 else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
                                 {
-                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}");
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_DISP_GetAdaptiveSyncData() returned error code {NVStatus}");
                                 }
                                 else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
                                 {
-                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_Disp_HdrColorControl() returned error code {NVStatus}.");
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_DISP_GetAdaptiveSyncData() returned error code {NVStatus}.");
                                 }
                                 else
                                 {
-                                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting HDR color settings! NvAPI_Disp_HdrColorControl() returned error code {NVStatus}. It's most likely that your monitor {displayIds[displayIndex].DisplayId} doesn't support HDR.");
+                                    SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting HDR color settings! NvAPI_DISP_GetAdaptiveSyncData() returned error code {NVStatus}. It's most likely that your monitor {displayIds[displayIndex].DisplayId} doesn't support HDR.");
                                 }
 
 
