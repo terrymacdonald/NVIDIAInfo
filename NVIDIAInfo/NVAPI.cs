@@ -3951,10 +3951,10 @@ namespace DisplayMagicianShared.NVIDIA
                 // Get the size of the each object
                 int onePathInfoMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL));
                 int oneSourceModeMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO_V1));
-                int onePathTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2));
-                int oneAdvTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1));
-                int oneTimingMemSize = Marshal.SizeOf(typeof(NV_TIMING));
-                int oneTimingExtraMemSize = Marshal.SizeOf(typeof(NV_TIMING_EXTRA));
+                int onePathTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2_INTERNAL));
+                int oneAdvTargetMemSize = Marshal.SizeOf(typeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL));
+                int oneTimingMemSize = Marshal.SizeOf(typeof(NV_TIMING_INTERNAL));
+                int oneTimingExtraMemSize = Marshal.SizeOf(typeof(NV_TIMING_EXTRA_INTERNAL));
 
                 // Figure out the size of the memory we need to allocate
                 int allPathInfoMemSize = onePathInfoMemSize * (int)PathInfoCount;
@@ -4024,7 +4024,7 @@ namespace DisplayMagicianShared.NVIDIA
                             targetInforArray[y].Details = new IntPtr(currentAdvTargetPointer.ToInt64());
                             Marshal.StructureToPtr(targetInforArray[y], currentTargetInfoPointer, true);
                             currentTargetInfoPointer = new IntPtr(currentTargetInfoPointer.ToInt64() + onePathTargetMemSize);
-                            currentAdvTargetPointer = new IntPtr(currentAdvTargetPointer.ToInt64() + oneAdvTargetMemSize);
+                            currentAdvTargetPointer = new IntPtr(currentAdvTargetPointer.ToInt64() + oneAdvTargetMemSize + oneTimingMemSize + oneTimingExtraMemSize);
                             //currentTimingPointer = new IntPtr(currentTimingPointer.ToInt64() + oneTimingMemSize);
                             //currentTimingExtraPointer = new IntPtr(currentTimingExtraPointer.ToInt64() + oneTimingExtraMemSize);
                         }
