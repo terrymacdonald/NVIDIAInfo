@@ -52,7 +52,7 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_PER_DISPLAY_CONFIG : IEquatable<NVIDIA_PER_DISPLAY_CONFIG>
     {
-        public bool HasNvHdrEnabled; 
+        public bool HasNvHdrEnabled;
         public NV_HDR_CAPABILITIES_V2 HdrCapabilities;
         public NV_HDR_COLOR_DATA_V2 HdrColorData;
         public bool HasAdaptiveSync;
@@ -132,15 +132,15 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential)]
     public struct NVIDIA_DISPLAY_CONFIG : IEquatable<NVIDIA_DISPLAY_CONFIG>
     {
-        public bool IsCloned; 
+        public bool IsCloned;
         public NVIDIA_MOSAIC_CONFIG MosaicConfig;
-        public Dictionary<UInt32,NVIDIA_PER_ADAPTER_CONFIG> PhysicalAdapters;
+        public Dictionary<UInt32, NVIDIA_PER_ADAPTER_CONFIG> PhysicalAdapters;
         public List<NV_DISPLAYCONFIG_PATH_INFO_V2> DisplayConfigs;
         // Note: We purposely have left out the DisplayNames from the Equals as it's order keeps changing after each reboot and after each profile swap
         // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
         // generating the profile icon.
         public Dictionary<string, string> DisplayNames;
-        public List<string> DisplayIdentifiers;        
+        public List<string> DisplayIdentifiers;
 
         public override bool Equals(object obj) => obj is NVIDIA_DISPLAY_CONFIG other && this.Equals(other);
 
@@ -366,7 +366,7 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // Prepare the physicalGPU per adapter structure to use later
                     NVIDIA_PER_ADAPTER_CONFIG myAdapter = new NVIDIA_PER_ADAPTER_CONFIG();
-                    myAdapter.LogicalGPU.PhysicalGPUHandles = new PhysicalGpuHandle[0];                    
+                    myAdapter.LogicalGPU.PhysicalGPUHandles = new PhysicalGpuHandle[0];
                     myAdapter.IsQuadro = false;
                     myAdapter.HasLogicalGPU = false;
                     myAdapter.Displays = new Dictionary<uint, NVIDIA_PER_DISPLAY_CONFIG>();
@@ -396,7 +396,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     // Firstly let's get the logical GPU from the Physical handle
-                    LogicalGpuHandle logicalGPUHandle;                    
+                    LogicalGpuHandle logicalGPUHandle;
                     NVStatus = NVImport.NvAPI_GetLogicalGPUFromPhysicalGPU(physicalGpus[physicalGpuIndex], out logicalGPUHandle);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
@@ -411,7 +411,7 @@ namespace DisplayMagicianShared.NVIDIA
                         }
                         else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_POINTER)
                         {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: No Logical GPU found so no logicalGPUData available. NvAPI_GPU_GetLogicalGpuInfo() returned error code {NVStatus}");    
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: No Logical GPU found so no logicalGPUData available. NvAPI_GPU_GetLogicalGpuInfo() returned error code {NVStatus}");
                         }
                         else
                         {
@@ -421,7 +421,7 @@ namespace DisplayMagicianShared.NVIDIA
                     else
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Error getting Logical GPU handle from Physical GPU. NvAPI_GetLogicalGPUFromPhysicalGPU() returned error code {NVStatus}");
-                    }                    
+                    }
 
                     myDisplayConfig.PhysicalAdapters[physicalGpuIndex] = myAdapter;
                 }
@@ -534,19 +534,20 @@ namespace DisplayMagicianShared.NVIDIA
                             }
                             else
                             {
-                                SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: The returned Mosaic Topology Group #{m} is NOT VALID and cannot be used.");
-                            }
-                            if (mosaicTopoDetail.TopologyMissingGPU)
-                            {
-                                SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: The returned Mosaic Topology Group #{m} is MISSING THE GPU it was created with.");
-                            }
-                            if (mosaicTopoDetail.TopologyMissingDisplay)
-                            {
-                                SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: The returned Mosaic Topology Group #{m} is MISSING ONE OR MORE DISPLAYS it was created with.");
-                            }
-                            if (mosaicTopoDetail.TopologyMixedDisplayTypes)
-                            {
-                                SharedLogger.logger.Error($"NVIDIALibrary/GetNVIDIADisplayConfig: The returned Mosaic Topology Group #{m} is USING MIXED DISPLAY TYPES and NVIDIA don't support that at present.");
+                                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The returned Mosaic Topology Group #{m} is NOT VALID and cannot be used.");
+                                if (mosaicTopoDetail.TopologyMissingGPU)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The returned Mosaic Topology Group #{m} is MISSING THE GPU it was created with.");
+                                }
+                                if (mosaicTopoDetail.TopologyMissingDisplay)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The returned Mosaic Topology Group #{m} is MISSING ONE OR MORE DISPLAYS it was created with.");
+                                }
+                                if (mosaicTopoDetail.TopologyMixedDisplayTypes)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The returned Mosaic Topology Group #{m} is USING MIXED DISPLAY TYPES and NVIDIA don't support that at present.");
+                                }
+
                             }
                         }
                     }
@@ -856,7 +857,7 @@ namespace DisplayMagicianShared.NVIDIA
                     else
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting NVIDIA Display Config! NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on second pass.");
-                    }                    
+                    }
 
                 }
                 else if (NVStatus == NVAPI_STATUS.NVAPI_OK && pathInfoCount == 0)
@@ -938,7 +939,7 @@ namespace DisplayMagicianShared.NVIDIA
                     UInt32 displayCount = 0;
                     NVStatus = NVImport.NvAPI_GPU_GetConnectedDisplayIds(physicalGpus[physicalGpuIndex], ref displayCount, 0);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                    {                        
+                    {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_GPU_GetConnectedDisplayIds returned OK on first pass. We have {displayCount} physical GPUs");
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
@@ -967,7 +968,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
                     if (displayCount > 0)
-                    {                        
+                    {
                         // Now we try to get the information about the displayIDs
                         NV_GPU_DISPLAYIDS_V2[] displayIds = new NV_GPU_DISPLAYIDS_V2[displayCount];
                         NVStatus = NVImport.NvAPI_GPU_GetConnectedDisplayIds(physicalGpus[physicalGpuIndex], ref displayIds, ref displayCount, 0);
@@ -1366,7 +1367,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                 // Get the display identifiers                
                 myDisplayConfig.DisplayIdentifiers = GetCurrentDisplayIdentifiers();
-                
+
 
             }
             else
@@ -1703,7 +1704,7 @@ namespace DisplayMagicianShared.NVIDIA
                         NV_HDR_COLOR_DATA_V2 hdrColorData = myDisplay.HdrColorData;
                         try
                         {
-                            
+
                             // if it's not the same HDR we want, then we turn off HDR (and will apply it if needed later on in SetActiveOverride)
                             if (ActiveDisplayConfig.PhysicalAdapters[myAdapterIndex].Displays[displayId].HdrColorData.HdrMode != NV_HDR_MODE.OFF)
                             {
@@ -1821,7 +1822,7 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfig: Exception caused while trying to set NVIDIA Adaptive Sync settings for display {displayId}.");
                         }
-                    }                    
+                    }
 
                 }
 
@@ -2253,7 +2254,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Setting the NVIDIA Display Config! NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
                         return false;
                     }
-                }                
+                }
                 else
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Skipping setting the NVIDIA Display Config as there isn't one provided in the configuration.");
@@ -2296,7 +2297,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: We want to turn on colour if it's user set colour.");
                         // Now we try to set each display color
-                        
+
                         NV_COLOR_DATA_V5 colorData = myDisplay.ColorData;
                         try
                         {
@@ -2370,12 +2371,12 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfigOverride: Exception caused while turning on NVIDIA custom colour settings for display {displayId}.");
                         }
-                        
+
 
 
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: We want to turn on NVIDIA HDR colour if it's user wants to use NVIDIA HDR colour.");
                         // Now we try to set each display color
-                        
+
                         NV_HDR_COLOR_DATA_V2 hdrColorData = myDisplay.HdrColorData;
                         try
                         {
@@ -2432,10 +2433,10 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfigOverride: Exception caused while turning on custom NVIDIA HDR colour settings for display {displayId}.");
                         }
-                        
+
                     }
 
-                    
+
                 }
 
             }
@@ -3171,7 +3172,7 @@ namespace DisplayMagicianShared.NVIDIA
                         if (!displayIdentifiers.Contains(displayIdentifier))
                         {
                             displayIdentifiers.Add(displayIdentifier);
-                            SharedLogger.logger.Debug($"ProfileRepository/GenerateProfileDisplayIdentifiers: DisplayIdentifier: {displayIdentifier}");
+                            SharedLogger.logger.Debug($"NVIDIALibrary/GetSomeDisplayIdentifiers: DisplayIdentifier detected: {displayIdentifier}");
                         }
                     }
                 }

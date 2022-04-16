@@ -35,7 +35,7 @@ namespace DisplayMagicianShared.Windows
         DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE = 10, // Enables or disables the HDR Color for a display
         DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL = 11, // Specifies the current SDR white level for an HDR monitor. If the DisplayConfigGetDeviceInfo function is successful, DisplayConfigGetDeviceInfo return SDR white level info in the DISPLAYCONFIG_SDR_WHITE_LEVEL structure.
                                                             // Supported starting in Windows�10 Fall Creators Update (Version 1709).
-        DISPLAYCONFIG_DEVICE_INFO_GET_MONITOR_SPECIALIZATION = 12, 
+        DISPLAYCONFIG_DEVICE_INFO_GET_MONITOR_SPECIALIZATION = 12,
         DISPLAYCONFIG_DEVICE_INFO_SET_MONITOR_SPECIALIZATION = 13,
         DISPLAYCONFIG_DEVICE_INFO_FORCE_UINT32 = 0xFFFFFFFF // Only here to 
     }

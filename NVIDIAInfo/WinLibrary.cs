@@ -68,7 +68,7 @@ namespace DisplayMagicianShared.Windows
         public DISPLAYCONFIG_MODE_INFO[] DisplayConfigModes;
         public List<ADVANCED_HDR_INFO_PER_PATH> DisplayHDRStates;
         public Dictionary<string, GDI_DISPLAY_SETTING> GdiDisplaySettings;
-        public Dictionary<string,TaskBarLayout> TaskBarLayout;
+        public Dictionary<string, TaskBarLayout> TaskBarLayout;
         public TaskBarSettings TaskBarSettings;
         public bool IsCloned;
         // Note: We purposely have left out the DisplaySources from the Equals as it's order keeps changing after each reboot and after each profile swap
@@ -88,11 +88,11 @@ namespace DisplayMagicianShared.Windows
            // This still allows us to detect when refresh rates change, which will allow DisplayMagician to detect profile differences.
            GdiDisplaySettings.Values.SequenceEqual(other.GdiDisplaySettings.Values) &&
            DisplayIdentifiers.SequenceEqual(other.DisplayIdentifiers);
-           // NOTE: I have disabled the TaskBar specific matching for now due to errors I cannot fix
-           // WinLibrary will still track the location of the taskbars, but won't actually set them as the setting of the taskbars doesnt work at the moment.
-           /*&&
-           TaskBarLayout.SequenceEqual(other.TaskBarLayout) &&
-           TaskBarSettings.Equals(other.TaskBarSettings);*/
+        // NOTE: I have disabled the TaskBar specific matching for now due to errors I cannot fix
+        // WinLibrary will still track the location of the taskbars, but won't actually set them as the setting of the taskbars doesnt work at the moment.
+        /*&&
+        TaskBarLayout.SequenceEqual(other.TaskBarLayout) &&
+        TaskBarSettings.Equals(other.TaskBarSettings);*/
 
         public override int GetHashCode()
         {
@@ -344,7 +344,7 @@ namespace DisplayMagicianShared.Windows
                             ds.AdapterId = AdapterValueToLUID(newAdapterValue);
                         }
                     }
-                }                              
+                }
             }
         }
 
@@ -723,8 +723,8 @@ namespace DisplayMagicianShared.Windows
                         SharedLogger.logger.Warn($"WinLibrary/GetSomeDisplayIdentifiers: WARNING - DisplayConfigGetDeviceInfo returned WIN32STATUS {err} when trying to get the target info for display #{dsList[j].TargetId}");
                     }
                 }
-                windowsDisplayConfig.DisplaySources[key] = dsList.ToList();                
-            }            
+                windowsDisplayConfig.DisplaySources[key] = dsList.ToList();
+            }
 
 
             Dictionary<string, TaskBarLayout> taskBarStuckRectangles = new Dictionary<string, TaskBarLayout>();
@@ -2074,7 +2074,7 @@ namespace DisplayMagicianShared.Windows
             }
         }
 
-        
+
 
         public static bool RepositionMainTaskBar(TaskBarEdge edge)
         {
@@ -2140,7 +2140,7 @@ namespace DisplayMagicianShared.Windows
             return true;
         }
 
-        
+
 
         public static void RefreshTrayArea()
         {

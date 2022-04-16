@@ -195,7 +195,7 @@ namespace DisplayMagicianShared.Windows
                 SharedLogger.logger.Error($"TaskBarStuckRectangle/TaskBarStuckRectangle: A StuckRect entry was NOT found. This means we're unable to get the taskbar location, an unable to return a sensible TaskBarStuckRectangle object.");
                 return false;
             }
-            
+
         }
 
         public TaskBarLayout()
@@ -203,7 +203,7 @@ namespace DisplayMagicianShared.Windows
         }
 
         public byte[] Binary { get; set; }
-        
+
         public string RegKeyValue { get; set; }
 
         public bool MainScreen { get; set; }
@@ -486,7 +486,7 @@ namespace DisplayMagicianShared.Windows
             return true;
         }
 
-        public static Dictionary<string, TaskBarLayout> GetAllCurrentTaskBarLayouts(Dictionary<string,List<DISPLAY_SOURCE>> displaySources)
+        public static Dictionary<string, TaskBarLayout> GetAllCurrentTaskBarLayouts(Dictionary<string, List<DISPLAY_SOURCE>> displaySources)
         {
             Dictionary<string, TaskBarLayout> taskBarStuckRectangles = new Dictionary<string, TaskBarLayout>();
             int state;
@@ -501,12 +501,12 @@ namespace DisplayMagicianShared.Windows
 
             // Firstly try to get the position of the main screen and main start menu
             try
-            {                
+            {
                 // Figure out which monitor this taskbar is on
                 IntPtr mainTaskbarHwnd = Utils.FindWindow("Shell_TrayWnd", "");
                 IntPtr mainMonitorHwnd = Utils.MonitorFromWindow(mainTaskbarHwnd, Utils.MONITOR_DEFAULTTOPRIMARY);
                 //IntPtr startMenuHwnd = Utils.FindWindow("Windows.UI.Core.CoreWindow", "Start");
-                
+
                 //Utils.GetWindowRect(startMenuHwnd, out RECT lpRect);
 
                 // Figure out the monitor coordinates
@@ -552,13 +552,13 @@ namespace DisplayMagicianShared.Windows
                             // Default is bottom taskbar
                             tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcWork.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
                             break;
-                    }                    
+                    }
                     tbsr.MainScreen = true;
 
                     // Now as a LAST step we update the Binary field just before we apply it to make sure that the correct binary settings are stored
                     tbsr.PopulateBinaryFromFields();
 
-                    taskBarStuckRectangles.Add(monitorInfo.szDevice,tbsr);
+                    taskBarStuckRectangles.Add(monitorInfo.szDevice, tbsr);
 
                     // If it's a main screen, also add a duplicate so we track the main StuckRects settings separately too
                     TaskBarLayout tbsrMain = new TaskBarLayout();
@@ -621,7 +621,7 @@ namespace DisplayMagicianShared.Windows
                         tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcWork.bottom, tbWidth, tbHeight);
                         tbsr.Edge = TaskBarEdge.Bottom;
                     }
-                    else if (monitorInfo.rcMonitor.right == monitorInfo.rcWork.right && monitorInfo.rcMonitor.bottom == monitorInfo.rcWork.bottom) 
+                    else if (monitorInfo.rcMonitor.right == monitorInfo.rcWork.right && monitorInfo.rcMonitor.bottom == monitorInfo.rcWork.bottom)
                     {
                         // Taskbar on top
                         tbWidth = monWidth;
@@ -651,7 +651,7 @@ namespace DisplayMagicianShared.Windows
                     {
                         // Taskbar on right
                         tbWidth = monWidth - wrkWidth;
-                        tbHeight = monHeight; 
+                        tbHeight = monHeight;
                         tbsr.TaskBarLocation = new System.Drawing.Rectangle(monitorInfo.rcWork.right, monitorInfo.rcMonitor.top, tbWidth, tbHeight);
                         tbsr.Edge = TaskBarEdge.Right;
                     }
@@ -676,7 +676,7 @@ namespace DisplayMagicianShared.Windows
                 if (!taskBarStuckRectangles.ContainsKey(monitorInfo.szDevice))
                 {
                     taskBarStuckRectangles.Add(monitorInfo.szDevice, tbsr);
-                }                
+                }
                 else
                 {
                     SharedLogger.logger.Error($"WinLibrary/GetAllCurrentTaskBarPositions: Skipping grabbing Taskbar position from a cloned display {monitorInfo.szDevice}");
@@ -720,7 +720,7 @@ namespace DisplayMagicianShared.Windows
                 // We also save the taskbar position for the monitor in registry, so that Windows will actually properly update the position 
                 // after 5 seconds (and this one will stick between reboots too!).
                 WriteToRegistry();
-                            
+
             }
             else if (MainScreen && !RegKeyValue.Equals("Settings"))
             {
@@ -772,7 +772,7 @@ namespace DisplayMagicianShared.Windows
                         Utils.SendMessageTimeout(nextTaskBarWindowHwnd, Utils.WM_ENTERSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
                         // Move the taskbar window
                         Utils.MoveWindow(nextTaskBarWindowHwnd, TaskBarLocation.X, TaskBarLocation.Y, TaskBarLocation.Width, TaskBarLocation.Height, true);
-                        
+
                         // ===== LOCK THE MAIN TASKBAR WINDOW BACK DOWN =====
                         // Tell the taskbar we've stopped moving it now
                         //Utils.SendMessageTimeout(nextTaskBarWindowHwnd, Utils.WM_EXITSIZEMOVE, IntPtr.Zero, IntPtr.Zero, SendMessageTimeoutFlag.SMTO_NORMAL, 10, out result);
@@ -794,13 +794,13 @@ namespace DisplayMagicianShared.Windows
                     // Prep the next taskbar window so we continue through them
                     lastTaskBarWindowHwnd = nextTaskBarWindowHwnd;
                 }
-            }                       
+            }
 
             return true;
         }
 
 
-        public static string GetRegKeyValueFromDevicePath (string devicePath)
+        public static string GetRegKeyValueFromDevicePath(string devicePath)
         {
             string regKeyValue = "";
             // e.g. "\\\\?\\DISPLAY#NVS10DE#5&2b46c695&0&UID185344#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}"
