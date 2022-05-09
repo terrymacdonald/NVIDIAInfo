@@ -6054,7 +6054,7 @@ namespace DisplayMagicianShared.NVIDIA
         private delegate NVAPI_STATUS NvAPI_DRS_EnumProfilesDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] UInt32 drsIndex,
-            [Out] out NVDRS_PROFILE_V1 drsProfileInfo);
+            [Out] out NVDRS_PROFILE_V1[] drsProfileInfo);
         private static readonly NvAPI_DRS_EnumProfilesDelegate NvAPI_DRS_EnumProfilesInternal;
         /// <summary>
         /// This API enumerates through all the profiles in the session.
@@ -6063,7 +6063,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="drsIndex"></param>
         /// <param name="drsProfileInfo"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_DRS_EnumProfiles(NvDRSSessionHandle drsSessionHandle, UInt32 drsIndex, out NVDRS_PROFILE_V1 drsProfileInfo)
+        public static NVAPI_STATUS NvAPI_DRS_EnumProfiles(NvDRSSessionHandle drsSessionHandle, UInt32 drsIndex, out NVDRS_PROFILE_V1[] drsProfileInfo)
         {
             NVAPI_STATUS status;
 
@@ -6074,7 +6074,7 @@ namespace DisplayMagicianShared.NVIDIA
             else
             {
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
-                drsProfileInfo = new NVDRS_PROFILE_V1();
+                drsProfileInfo = new NVDRS_PROFILE_V1[0];
             }
 
             return status;
@@ -6165,7 +6165,15 @@ namespace DisplayMagicianShared.NVIDIA
 
             if (NvAPI_DRS_EnumSettingsInternal != null)
             {
-                status = NvAPI_DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, out drsSettings);
+                NVDRS_SETTING_V1[] drsReturnedDriverSettings = new NVDRS_SETTING_V1[NVImport.NVAPI_SETTING_MAX_VALUES];
+                UInt32 drsNumSettings = NVImport.NVAPI_SETTING_MAX_VALUES;
+                status = NvAPI_DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsNumSettings, out drsReturnedDriverSettings);
+                drsSettings = new NVDRS_SETTING_V1[drsNumSettings];
+                for (int i = 0; i < drsNumSettings; i++)
+                {
+                    drsSettings[i] = drsReturnedDriverSettings[i];
+                }
+                drsSettingCount = drsNumSettings;
             }
             else
             {
