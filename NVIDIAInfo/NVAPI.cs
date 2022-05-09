@@ -779,6 +779,59 @@ namespace DisplayMagicianShared.NVIDIA
     // STRUCTS
     // ==================================
 
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NvDRSSessionHandle : IEquatable<NvDRSSessionHandle>, ICloneable
+    {
+        public IntPtr Ptr;
+
+        public override bool Equals(object obj) => obj is NvDRSSessionHandle other && this.Equals(other);
+
+        public bool Equals(NvDRSSessionHandle other)
+        => Ptr == other.Ptr;
+
+        public override Int32 GetHashCode()
+        {
+            return (Ptr).GetHashCode();
+        }
+
+        public static bool operator ==(NvDRSSessionHandle lhs, NvDRSSessionHandle rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NvDRSSessionHandle lhs, NvDRSSessionHandle rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NvDRSSessionHandle other = (NvDRSSessionHandle)MemberwiseClone();
+            return other;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NvDRSProfileHandle : IEquatable<NvDRSProfileHandle>, ICloneable
+    {
+        public IntPtr Ptr;
+
+        public override bool Equals(object obj) => obj is NvDRSProfileHandle other && this.Equals(other);
+
+        public bool Equals(NvDRSProfileHandle other)
+        => Ptr == other.Ptr;
+
+        public override Int32 GetHashCode()
+        {
+            return (Ptr).GetHashCode();
+        }
+
+        public static bool operator ==(NvDRSProfileHandle lhs, NvDRSProfileHandle rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NvDRSProfileHandle lhs, NvDRSProfileHandle rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NvDRSProfileHandle other = (NvDRSProfileHandle)MemberwiseClone();
+            return other;
+        }
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct DisplayHandle : IEquatable<DisplayHandle>, ICloneable
     {
@@ -955,6 +1008,44 @@ namespace DisplayMagicianShared.NVIDIA
             return other;
         }
     }
+
+    //NVDRS_SETTINGS_VALUES
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NVDRS_SETTINGS_VALUES_V1 : IEquatable<NVDRS_SETTINGS_VALUES_V1>, ICloneable // Note: Version 1 of NVDRS_SETTING_V1 structure
+    {
+        public UInt32 Version;        //!< Structure version
+        public UInt32 NumSettingValues;
+        public NVDRS_SETTING_TYPE SettingType;
+        public NVDRS_SETTING_LOCATION SettingLocation;
+        public UInt32 IsCurrentPredefined;
+        public UInt32 IsPredefinedValid;
+
+        public override bool Equals(object obj) => obj is NVDRS_SETTINGS_VALUES_V1 other && this.Equals(other);
+
+        public bool Equals(NVDRS_SETTINGS_VALUES_V1 other)
+        => Version == other.Version &&
+           SettingName == other.SettingName &&
+           SettingId == other.SettingId &&
+           SettingType == other.SettingType &&
+           SettingLocation == other.SettingLocation &&
+           IsCurrentPredefined == other.IsCurrentPredefined &&
+           IsPredefinedValid == other.IsPredefinedValid;
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, SettingName, SettingId, SettingType, SettingLocation, IsCurrentPredefined, IsPredefinedValid).GetHashCode();
+        }
+        public static bool operator ==(NVDRS_SETTINGS_VALUES_V1 lhs, NVDRS_SETTINGS_VALUES_V1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NVDRS_SETTINGS_VALUES_V1 lhs, NVDRS_SETTINGS_VALUES_V1 rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NVDRS_SETTINGS_VALUES_V1 other = (NVDRS_SETTINGS_VALUES_V1)MemberwiseClone();
+            return other;
+        }
+    }
+
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -5715,7 +5806,7 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (GPU_GetEDIDInternal != null)
+            if (GetLogicalGPUFromPhysicalGPUInternal != null)
             {
                 status = GetLogicalGPUFromPhysicalGPUInternal(physicalGPUHandle, out LogicalGpuHandle lgpu);
                 logicalGPUHandle = lgpu;
@@ -5728,6 +5819,369 @@ namespace DisplayMagicianShared.NVIDIA
 
             return status;
         }
+
+        //NVAPI_INTERFACE NvAPI_DRS_CreateSession (NvDRSSessionHandle* phSession)	
+        private delegate NVAPI_STATUS DRS_CreateSessionDelegate(
+            [Out] out NvDRSSessionHandle drsSessionHandle);
+        private static readonly DRS_CreateSessionDelegate DRS_CreateSessionInternal;
+        /// <summary>
+        /// This API allocates memory and initializes the session.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_CreateSession(out NvDRSSessionHandle drsSessionHandle)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_CreateSessionInternal != null)
+            {
+                status = DRS_CreateSessionInternal(out NvDRSSessionHandle drsSession);
+                drsSessionHandle = drsSession;
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsSessionHandle = new NvDRSSessionHandle();
+            }
+
+            return status;
+        }
+
+
+        //NVAPI_INTERFACE NvAPI_DRS_DestroySession (NvDRSSessionHandle* phSession)	
+        private delegate NVAPI_STATUS DRS_DestroySessionDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle);
+        private static readonly DRS_DestroySessionDelegate DRS_DestroySessionInternal;
+        /// <summary>
+        /// This API frees the allocation: cleanup of NvDrsSession.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_DestroySession(NvDRSSessionHandle drsSessionHandle)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_DestroySessionInternal != null)
+            {
+                status = DRS_DestroySessionInternal(drsSessionHandle);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_GetCurrentGlobalProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle* phProfile )
+        private delegate NVAPI_STATUS DRS_GetCurrentGlobalProfileDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [Out] out NvDRSProfileHandle drsProfileHandle);
+        private static readonly DRS_GetCurrentGlobalProfileDelegate DRS_GetCurrentGlobalProfileInternal;
+        /// <summary>
+        /// This API returns the handle to the current global profile.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_GetCurrentGlobalProfile(NvDRSSessionHandle drsSessionHandle, out NvDRSProfileHandle drsProfileHandle)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_GetCurrentGlobalProfileInternal != null)
+            {
+                status = DRS_GetCurrentGlobalProfileInternal(drsSessionHandle, out drsProfileHandle);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsProfileHandle = new NvDRSProfileHandle();
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_SetCurrentGlobalProfile(NvDRSSessionHandle hSession, NvAPI_UnicodeString wszGlobalProfileName)		
+        private delegate NVAPI_STATUS DRS_SetCurrentGlobalProfileDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [In] string drsProfileName);
+        private static readonly DRS_SetCurrentGlobalProfileDelegate DRS_SetCurrentGlobalProfileInternal;
+        /// <summary>
+        /// This API returns the handle to the current global profile.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileName"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_SetCurrentGlobalProfile(NvDRSSessionHandle drsSessionHandle, string drsProfileName)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_SetCurrentGlobalProfileInternal != null)
+            {
+                status = DRS_SetCurrentGlobalProfileInternal(drsSessionHandle, drsProfileName);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_GetProfileInfo(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_PROFILE* pProfileInfo )
+        private delegate NVAPI_STATUS NvAPI_DRS_GetProfileInfoDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [In] NvDRSProfileHandle drsProfileHandle,
+            [Out] out NVDRS_PROFILE_V1 drsProfileInfo);
+        private static readonly NvAPI_DRS_GetProfileInfoDelegate NvAPI_DRS_GetProfileInfoInternal;
+        /// <summary>
+        /// This API gets information about the given profile. User needs to specify the name of the Profile.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileHandle"></param>
+        /// <param name="drsProfileInfo"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_GetProfileInfo(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, out NVDRS_PROFILE_V1 drsProfileInfo)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_GetProfileInfoInternal != null)
+            {
+                status = NvAPI_DRS_GetProfileInfoInternal(drsSessionHandle, drsProfileHandle, out drsProfileInfo);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsProfileInfo = new NVDRS_PROFILE_V1();
+            }
+
+            return status;
+        }
+
+
+        // NVAPI_INTERFACE NvAPI_DRS_SetProfileInfo(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_PROFILE* pProfileInfo )
+        private delegate NVAPI_STATUS NvAPI_DRS_SetProfileInfoDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [In] NvDRSProfileHandle drsProfileHandle,
+            [In] NVDRS_PROFILE_V1 drsProfileInfo);
+        private static readonly NvAPI_DRS_SetProfileInfoDelegate NvAPI_DRS_SetProfileInfoInternal;
+        /// <summary>
+        /// This API gets information about the given profile. User needs to specify the name of the Profile.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileHandle"></param>
+        /// <param name="drsProfileInfo"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_SetProfileInfo(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, NVDRS_PROFILE_V1 drsProfileInfo)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_SetProfileInfoInternal != null)
+            {
+                status = NvAPI_DRS_SetProfileInfoInternal(drsSessionHandle, drsProfileHandle, drsProfileInfo);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_EnumProfiles(NvDRSSessionHandle hSession, NvU32 index, NvDRSProfileHandle* phProfile)
+        private delegate NVAPI_STATUS NvAPI_DRS_EnumProfilesDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [In] UInt32 drsIndex,
+            [Out] out NVDRS_PROFILE_V1 drsProfileInfo);
+        private static readonly NvAPI_DRS_EnumProfilesDelegate NvAPI_DRS_EnumProfilesInternal;
+        /// <summary>
+        /// This API enumerates through all the profiles in the session.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsIndex"></param>
+        /// <param name="drsProfileInfo"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_EnumProfiles(NvDRSSessionHandle drsSessionHandle, UInt32 drsIndex, out NVDRS_PROFILE_V1 drsProfileInfo)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_EnumProfilesInternal != null)
+            {
+                status = NvAPI_DRS_EnumProfilesInternal(drsSessionHandle, drsIndex, out drsProfileInfo);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsProfileInfo = new NVDRS_PROFILE_V1();
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_SetSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_SETTING* pSetting)
+        private delegate NVAPI_STATUS NvAPI_DRS_SetSettingDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [In] NvDRSProfileHandle drsProfileHandle,
+            [In] NVDRS_SETTING_V1 drsSetting);
+        private static readonly NvAPI_DRS_SetSettingDelegate NvAPI_DRS_SetSettingInternal;
+        /// <summary>
+        /// This API adds/modifies a setting to a profile.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileHandle"></param>
+        /// <param name="drsSetting"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_SetSetting(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, NVDRS_SETTING_V1 drsSetting)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_SetSettingInternal != null)
+            {
+                status = NvAPI_DRS_SetSettingInternal(drsSessionHandle, drsProfileHandle, drsSetting);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsSetting = new NVDRS_SETTING_V1();
+            }
+
+            return status;
+        }
+
+
+        // NVAPI_INTERFACE NvAPI_DRS_GetSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 settingId, NVDRS_SETTING* pSetting)
+        private delegate NVAPI_STATUS NvAPI_DRS_GetSettingDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [In] NvDRSProfileHandle drsProfileHandle,
+            [In] UInt32 drsSettingId,
+            [Out] out NVDRS_SETTING_V1 drsSetting);
+        private static readonly NvAPI_DRS_GetSettingDelegate NvAPI_DRS_GetSettingInternal;
+        /// <summary>
+        /// This API gets information about the given setting.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileHandle"></param>
+        /// <param name="drsSetting"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_GetSetting(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, UInt32 drsSettingId, out NVDRS_SETTING_V1 drsSetting)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_GetSettingInternal != null)
+            {
+                status = NvAPI_DRS_GetSettingInternal(drsSessionHandle, drsProfileHandle, drsSettingId, out drsSetting);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsSetting = new NVDRS_SETTING_V1();
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_EnumSettings(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 startIndex, NvU32* settingsCount, NVDRS_SETTING* pSetting)
+        private delegate NVAPI_STATUS NvAPI_DRS_EnumSettingsDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [In] NvDRSProfileHandle drsProfileHandle,
+            [In] UInt32 drsStartIndex,
+            [In,Out] ref UInt32 drsSettingCount,
+            [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTING_V1[] drsSettings);
+        private static readonly NvAPI_DRS_EnumSettingsDelegate NvAPI_DRS_EnumSettingsInternal;
+        /// <summary>
+        /// This API gets information about the given setting.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileHandle"></param>
+        /// <param name="drsStartIndex"></param>
+        /// <param name="drsSettingCount"></param>
+        /// <param name="drsSettings"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_EnumSettings(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, UInt32 drsStartIndex, ref UInt32 drsSettingCount, out NVDRS_SETTING_V1[] drsSettings)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_EnumSettingsInternal != null)
+            {
+                status = NvAPI_DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, out drsSettings);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsSettings = new NVDRS_SETTING_V1[0];
+            }
+
+            return status;
+        }
+
+
+        // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingIds(NvU32* pSettingIds, NvU32* pMaxCount)
+        private delegate NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingIdsDelegate(
+            [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out UInt32[] drsSettingsIds,
+            [In, Out] ref UInt32 drsSettingCount);
+        private static readonly NvAPI_DRS_EnumAvailableSettingIdsDelegate NvAPI_DRS_EnumAvailableSettingIdsInternal;
+        /// <summary>
+        /// This API gets information about the given setting.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSettingsIds"></param>
+        /// <param name="drsSettingCount"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingIds(out UInt32[] drsSettingsIds, ref UInt32 drsSettingCount)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_EnumAvailableSettingIdsInternal != null)
+            {
+                status = NvAPI_DRS_EnumAvailableSettingIdsInternal(out drsSettingsIds, ref drsSettingCount);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsSettingsIds = new UInt32[0];
+                drsSettingCount = 0;
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingValues(NvU32 settingId, NvU32* pMaxNumValues, NVDRS_SETTING_VALUES* pSettingValues)
+        private delegate NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingValuesDelegate(
+            [In] UInt32 drsSettingId, 
+            [In, Out] ref UInt32 drsMaxNumValues,
+            [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTINGS_VALUES[] drsSettingsValues);
+        private static readonly NvAPI_DRS_EnumAvailableSettingValuesDelegate NvAPI_DRS_EnumAvailableSettingValuesInternal;
+        /// <summary>
+        /// This API gets information about the given setting.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSettingId"></param>
+        /// <param name="drsMaxNumValues"></param>
+        /// <param name="drsSettingsValues"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingValues(UInt32 drsSettingId, ref UInt32 drsMaxNumValues, out NVDRS_SETTINGS_VALUES[] drsSettingsValues)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_EnumAvailableSettingValuesInternal != null)
+            {
+                status = NvAPI_DRS_EnumAvailableSettingValuesInternal(drsSettingId, ref drsMaxNumValues, out drsSettingsValues);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsSettingsValues = new NVDRS_SETTINGS_VALUES[0];
+                drsMaxNumValues = 0;
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_GetSettingIdFromName(NvAPI_UnicodeString settingName, NvU32* pSettingId)
+
+        // NVAPI_INTERFACE NvAPI_DRS_GetSettingNameFromId(NvU32 settingId, NvAPI_UnicodeString* pSettingName)
+
+        // NVAPI_INTERFACE NvAPI_DRS_CreateProfile(NvDRSSessionHandle hSession, NVDRS_PROFILE* pProfileInfo, NvDRSProfileHandle* phProfile)
+
+        // NVAPI_INTERFACE NvAPI_DRS_DeleteProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile)
 
     }
 }
