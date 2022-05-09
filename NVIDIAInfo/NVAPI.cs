@@ -2972,6 +2972,10 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL>(2);
         public static UInt32 NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL>(1);
 
+        public static UInt32 NVDRS_PROFILE_V1_VER = MAKE_NVAPI_VERSION<NVDRS_PROFILE_V1>(1); 
+        public static UInt32 NVDRS_SETTING_V1_VER = MAKE_NVAPI_VERSION<NVDRS_SETTING_V1>(1);
+        public static UInt32 NVDRS_SETTING_VALUES_V1_VER = MAKE_NVAPI_VERSION<NVDRS_SETTING_VALUES_V1>(1);
+
 
 
 
@@ -3146,6 +3150,23 @@ namespace DisplayMagicianShared.NVIDIA
 
                 // System
                 GetDelegate(NvId_SYS_GetGpuAndOutputIdFromDisplayId, out SYS_GetGpuAndOutputIdFromDisplayIdInternal);
+
+                // DRS
+                GetDelegate(NvId_DRS_SetProfileInfo, out DRS_SetProfileInfoInternal);
+                GetDelegate(NvId_DRS_SetSetting, out DRS_SetSettingInternal);
+                GetDelegate(NvId_DRS_GetCurrentGlobalProfile, out DRS_GetCurrentGlobalProfileInternal);
+                GetDelegate(NvId_DRS_EnumSettings, out DRS_EnumSettingsInternal);
+                GetDelegate(NvId_DRS_GetSetting, out DRS_GetSettingInternal);
+                GetDelegate(NvId_DRS_GetProfileInfo, out DRS_GetProfileInfoInternal);
+                GetDelegate(NvId_DRS_GetSettingIdFromName, out DRS_GetSettingIdFromNameInternal);
+                GetDelegate(NvId_DRS_EnumAvailableSettingIds, out DRS_EnumAvailableSettingIdsInternal);
+                GetDelegate(NvId_DRS_CreateSession, out DRS_CreateSessionInternal);
+                GetDelegate(NvId_DRS_GetSettingNameFromId, out DRS_GetSettingNameFromIdInternal);
+                GetDelegate(NvId_DRS_EnumAvailableSettingValues, out DRS_EnumAvailableSettingValuesInternal);
+                GetDelegate(NvId_DRS_EnumProfiles, out DRS_EnumProfilesInternal);
+                GetDelegate(NvId_DRS_SetCurrentGlobalProfile, out DRS_SetCurrentGlobalProfileInternal);
+                GetDelegate(NvId_DRS_DestroySession, out DRS_DestroySessionInternal);
+                
 
                 // Set the availability
                 available = true;
@@ -5991,11 +6012,11 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         // NVAPI_INTERFACE NvAPI_DRS_GetProfileInfo(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_PROFILE* pProfileInfo )
-        private delegate NVAPI_STATUS NvAPI_DRS_GetProfileInfoDelegate(
+        private delegate NVAPI_STATUS DRS_GetProfileInfoDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] NvDRSProfileHandle drsProfileHandle,
             [Out] out NVDRS_PROFILE_V1 drsProfileInfo);
-        private static readonly NvAPI_DRS_GetProfileInfoDelegate NvAPI_DRS_GetProfileInfoInternal;
+        private static readonly DRS_GetProfileInfoDelegate DRS_GetProfileInfoInternal;
         /// <summary>
         /// This API gets information about the given profile. User needs to specify the name of the Profile.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6007,9 +6028,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_GetProfileInfoInternal != null)
+            if (DRS_GetProfileInfoInternal != null)
             {
-                status = NvAPI_DRS_GetProfileInfoInternal(drsSessionHandle, drsProfileHandle, out drsProfileInfo);
+                status = DRS_GetProfileInfoInternal(drsSessionHandle, drsProfileHandle, out drsProfileInfo);
             }
             else
             {
@@ -6022,11 +6043,11 @@ namespace DisplayMagicianShared.NVIDIA
 
 
         // NVAPI_INTERFACE NvAPI_DRS_SetProfileInfo(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_PROFILE* pProfileInfo )
-        private delegate NVAPI_STATUS NvAPI_DRS_SetProfileInfoDelegate(
+        private delegate NVAPI_STATUS DRS_SetProfileInfoDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] NvDRSProfileHandle drsProfileHandle,
             [In] NVDRS_PROFILE_V1 drsProfileInfo);
-        private static readonly NvAPI_DRS_SetProfileInfoDelegate NvAPI_DRS_SetProfileInfoInternal;
+        private static readonly DRS_SetProfileInfoDelegate DRS_SetProfileInfoInternal;
         /// <summary>
         /// This API gets information about the given profile. User needs to specify the name of the Profile.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6038,9 +6059,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_SetProfileInfoInternal != null)
+            if (DRS_SetProfileInfoInternal != null)
             {
-                status = NvAPI_DRS_SetProfileInfoInternal(drsSessionHandle, drsProfileHandle, drsProfileInfo);
+                status = DRS_SetProfileInfoInternal(drsSessionHandle, drsProfileHandle, drsProfileInfo);
             }
             else
             {
@@ -6051,11 +6072,11 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         // NVAPI_INTERFACE NvAPI_DRS_EnumProfiles(NvDRSSessionHandle hSession, NvU32 index, NvDRSProfileHandle* phProfile)
-        private delegate NVAPI_STATUS NvAPI_DRS_EnumProfilesDelegate(
+        private delegate NVAPI_STATUS DRS_EnumProfilesDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] UInt32 drsIndex,
             [Out] out NVDRS_PROFILE_V1[] drsProfileInfo);
-        private static readonly NvAPI_DRS_EnumProfilesDelegate NvAPI_DRS_EnumProfilesInternal;
+        private static readonly DRS_EnumProfilesDelegate DRS_EnumProfilesInternal;
         /// <summary>
         /// This API enumerates through all the profiles in the session.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6067,9 +6088,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_EnumProfilesInternal != null)
+            if (DRS_EnumProfilesInternal != null)
             {
-                status = NvAPI_DRS_EnumProfilesInternal(drsSessionHandle, drsIndex, out drsProfileInfo);
+                status = DRS_EnumProfilesInternal(drsSessionHandle, drsIndex, out drsProfileInfo);
             }
             else
             {
@@ -6081,11 +6102,11 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         // NVAPI_INTERFACE NvAPI_DRS_SetSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NVDRS_SETTING* pSetting)
-        private delegate NVAPI_STATUS NvAPI_DRS_SetSettingDelegate(
+        private delegate NVAPI_STATUS DRS_SetSettingDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] NvDRSProfileHandle drsProfileHandle,
             [In] NVDRS_SETTING_V1 drsSetting);
-        private static readonly NvAPI_DRS_SetSettingDelegate NvAPI_DRS_SetSettingInternal;
+        private static readonly DRS_SetSettingDelegate DRS_SetSettingInternal;
         /// <summary>
         /// This API adds/modifies a setting to a profile.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6097,9 +6118,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_SetSettingInternal != null)
+            if (DRS_SetSettingInternal != null)
             {
-                status = NvAPI_DRS_SetSettingInternal(drsSessionHandle, drsProfileHandle, drsSetting);
+                status = DRS_SetSettingInternal(drsSessionHandle, drsProfileHandle, drsSetting);
             }
             else
             {
@@ -6112,12 +6133,12 @@ namespace DisplayMagicianShared.NVIDIA
 
 
         // NVAPI_INTERFACE NvAPI_DRS_GetSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 settingId, NVDRS_SETTING* pSetting)
-        private delegate NVAPI_STATUS NvAPI_DRS_GetSettingDelegate(
+        private delegate NVAPI_STATUS DRS_GetSettingDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] NvDRSProfileHandle drsProfileHandle,
             [In] UInt32 drsSettingId,
             [Out] out NVDRS_SETTING_V1 drsSetting);
-        private static readonly NvAPI_DRS_GetSettingDelegate NvAPI_DRS_GetSettingInternal;
+        private static readonly DRS_GetSettingDelegate DRS_GetSettingInternal;
         /// <summary>
         /// This API gets information about the given setting.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6129,9 +6150,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_GetSettingInternal != null)
+            if (DRS_GetSettingInternal != null)
             {
-                status = NvAPI_DRS_GetSettingInternal(drsSessionHandle, drsProfileHandle, drsSettingId, out drsSetting);
+                status = DRS_GetSettingInternal(drsSessionHandle, drsProfileHandle, drsSettingId, out drsSetting);
             }
             else
             {
@@ -6143,13 +6164,13 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         // NVAPI_INTERFACE NvAPI_DRS_EnumSettings(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 startIndex, NvU32* settingsCount, NVDRS_SETTING* pSetting)
-        private delegate NVAPI_STATUS NvAPI_DRS_EnumSettingsDelegate(
+        private delegate NVAPI_STATUS DRS_EnumSettingsDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] NvDRSProfileHandle drsProfileHandle,
             [In] UInt32 drsStartIndex,
             [In,Out] ref UInt32 drsSettingCount,
             [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTING_V1[] drsSettings);
-        private static readonly NvAPI_DRS_EnumSettingsDelegate NvAPI_DRS_EnumSettingsInternal;
+        private static readonly DRS_EnumSettingsDelegate DRS_EnumSettingsInternal;
         /// <summary>
         /// This API enumerates all the settings of a given profile from startIndex to the maximum length.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6163,11 +6184,11 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_EnumSettingsInternal != null)
+            if (DRS_EnumSettingsInternal != null)
             {
                 NVDRS_SETTING_V1[] drsReturnedDriverSettings = new NVDRS_SETTING_V1[NVImport.NVAPI_SETTING_MAX_VALUES];
                 UInt32 drsNumSettings = NVImport.NVAPI_SETTING_MAX_VALUES;
-                status = NvAPI_DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsNumSettings, out drsReturnedDriverSettings);
+                status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsNumSettings, out drsReturnedDriverSettings);
                 drsSettings = new NVDRS_SETTING_V1[drsNumSettings];
                 for (int i = 0; i < drsNumSettings; i++)
                 {
@@ -6186,23 +6207,23 @@ namespace DisplayMagicianShared.NVIDIA
 
 
         // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingIds(NvU32* pSettingIds, NvU32* pMaxCount)
-        private delegate NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingIdsDelegate(
+        private delegate NVAPI_STATUS DRS_EnumAvailableSettingIdsDelegate(
             [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out UInt32[] drsSettingsIds,
             [In, Out] ref UInt32 drsSettingCount);
-        private static readonly NvAPI_DRS_EnumAvailableSettingIdsDelegate NvAPI_DRS_EnumAvailableSettingIdsInternal;
+        private static readonly DRS_EnumAvailableSettingIdsDelegate DRS_EnumAvailableSettingIdsInternal;
         /// <summary>
         /// This API enumerates all the Ids of all the settings recognized by NVAPI.
         /// SUPPORTED OS: Windows 7 and higher
         /// <param name="drsSettingsIds"></param>
         /// <param name="drsSettingCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingIds(out UInt32[] drsSettingsIds, ref UInt32 drsSettingCount)
+        public static NVAPI_STATUS DRS_EnumAvailableSettingIds(out UInt32[] drsSettingsIds, ref UInt32 drsSettingCount)
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_EnumAvailableSettingIdsInternal != null)
+            if (DRS_EnumAvailableSettingIdsInternal != null)
             {
-                status = NvAPI_DRS_EnumAvailableSettingIdsInternal(out drsSettingsIds, ref drsSettingCount);
+                status = DRS_EnumAvailableSettingIdsInternal(out drsSettingsIds, ref drsSettingCount);
             }
             else
             {
@@ -6215,11 +6236,11 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingValues(NvU32 settingId, NvU32* pMaxNumValues, NVDRS_SETTING_VALUES* pSettingValues)
-        private delegate NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingValuesDelegate(
+        private delegate NVAPI_STATUS DRS_EnumAvailableSettingValuesDelegate(
             [In] UInt32 drsSettingId, 
             [In, Out] ref UInt32 drsMaxNumValues,
             [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTING_VALUES_V1[] drsSettingsValues);
-        private static readonly NvAPI_DRS_EnumAvailableSettingValuesDelegate NvAPI_DRS_EnumAvailableSettingValuesInternal;
+        private static readonly DRS_EnumAvailableSettingValuesDelegate DRS_EnumAvailableSettingValuesInternal;
         /// <summary>
         /// This API enumerates all available setting values for a given setting.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6231,9 +6252,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_EnumAvailableSettingValuesInternal != null)
+            if (DRS_EnumAvailableSettingValuesInternal != null)
             {
-                status = NvAPI_DRS_EnumAvailableSettingValuesInternal(drsSettingId, ref drsMaxNumValues, out drsSettingsValues);
+                status = DRS_EnumAvailableSettingValuesInternal(drsSettingId, ref drsMaxNumValues, out drsSettingsValues);
             }
             else
             {
@@ -6246,10 +6267,10 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         // NVAPI_INTERFACE NvAPI_DRS_GetSettingIdFromName(NvAPI_UnicodeString settingName, NvU32* pSettingId)
-        private delegate NVAPI_STATUS NvAPI_DRS_GetSettingIdFromNameDelegate(
+        private delegate NVAPI_STATUS DRS_GetSettingIdFromNameDelegate(
             [In] string drsSettingName,
             [Out] out UInt32 drsSettingId);
-        private static readonly NvAPI_DRS_GetSettingIdFromNameDelegate NvAPI_DRS_GetSettingIdFromNameInternal;
+        private static readonly DRS_GetSettingIdFromNameDelegate DRS_GetSettingIdFromNameInternal;
         /// <summary>
         /// This API gets the binary ID of a setting given the setting name.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6260,9 +6281,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_GetSettingIdFromNameInternal != null)
+            if (DRS_GetSettingIdFromNameInternal != null)
             {
-                status = NvAPI_DRS_GetSettingIdFromNameInternal(drsSettingName, out drsSettingId);
+                status = DRS_GetSettingIdFromNameInternal(drsSettingName, out drsSettingId);
             }
             else
             {
@@ -6274,10 +6295,10 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         // NVAPI_INTERFACE NvAPI_DRS_GetSettingNameFromId(NvU32 settingId, NvAPI_UnicodeString* pSettingName)
-        private delegate NVAPI_STATUS NvAPI_DRS_GetSettingNameFromIdDelegate(
+        private delegate NVAPI_STATUS DRS_GetSettingNameFromIdDelegate(
             [In] UInt32 drsSettingId,
             [Out] out string drsSettingName);
-        private static readonly NvAPI_DRS_GetSettingNameFromIdDelegate NvAPI_DRS_GetSettingNameFromIdInternal;
+        private static readonly DRS_GetSettingNameFromIdDelegate DRS_GetSettingNameFromIdInternal;
         /// <summary>
         /// This API gets the setting name given the binary ID.
         /// SUPPORTED OS: Windows 7 and higher
@@ -6288,9 +6309,9 @@ namespace DisplayMagicianShared.NVIDIA
         {
             NVAPI_STATUS status;
 
-            if (NvAPI_DRS_GetSettingNameFromIdInternal != null)
+            if (DRS_GetSettingNameFromIdInternal != null)
             {
-                status = NvAPI_DRS_GetSettingNameFromIdInternal(drsSettingId, out drsSettingName);
+                status = DRS_GetSettingNameFromIdInternal(drsSettingId, out drsSettingName);
             }
             else
             {
