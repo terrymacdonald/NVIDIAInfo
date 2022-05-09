@@ -186,6 +186,14 @@ namespace DisplayMagicianShared.NVIDIA
         EXCLUDE_MST = 0x10, //!< Excludes devices that are part of the multi stream topology.
     }
 
+    public enum NVDRS_SETTING_TYPE : UInt32
+    {
+        NVDRS_DWORD_TYPE = 0,
+        NVDRS_BINARY_TYPE = 1,
+        NVDRS_STRING_TYPE = 2,
+        NVDRS_WSTRING_TYPE = 3,
+    }
+
     public enum NV_STATIC_METADATA_DESCRIPTOR_ID : UInt32
     {
         NV_STATIC_METADATA_TYPE_1 = 0                   //!< Tells the type of structure used to define the Static Metadata Descriptor block.
@@ -685,15 +693,8 @@ namespace DisplayMagicianShared.NVIDIA
         NV_DESKTOP_COLOR_DEPTH_MAX_VALUE = NV_DESKTOP_COLOR_DEPTH_16BPC_FLOAT_HDR, // must be set to highest enum value
     }
 
-    public enum NVDRS_SETTING_TYPE
-    {
-        NVDRS_DWORD_TYPE = 0x0,
-        NVDRS_BINARY_TYPE = 0x1,
-        NVDRS_STRING_TYPE = 0x2,
-        NVDRS_WSTRING_TYPE = 0x3,
-    }
-
-    public enum NVDRS_SETTING_LOCATION
+    
+    public enum NVDRS_SETTING_LOCATION : UInt32
     {
         NVDRS_CURRENT_PROFILE_LOCATION = 0x0,
         NVDRS_GLOBAL_PROFILE_LOCATION = 0x1,
@@ -701,6 +702,7 @@ namespace DisplayMagicianShared.NVIDIA
         NVDRS_DEFAULT_PROFILE_LOCATION = 0x3,
     }
 
+    
     [Flags]
     public enum NV_HDR_CAPABILITIES_V2_FLAGS : UInt32
     {
@@ -1009,39 +1011,99 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
-    //NVDRS_SETTINGS_VALUES
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct NVDRS_SETTINGS_VALUES_V1 : IEquatable<NVDRS_SETTINGS_VALUES_V1>, ICloneable // Note: Version 1 of NVDRS_SETTING_V1 structure
+    public struct NVDRS_BINARY_SETTING : IEquatable<NVDRS_BINARY_SETTING>, ICloneable 
+    {
+        public UInt32 ValueLength;        
+        [MarshalAs(UnmanagedType.U8, SizeConst = (Int32)NVImport.NVAPI_BINARY_DATA_MAX)]
+        public byte[] ValueData;    // EDID_Data[NV_EDID_DATA_SIZE];
+        
+        public override bool Equals(object obj) => obj is NVDRS_BINARY_SETTING other && this.Equals(other);
+
+        public bool Equals(NVDRS_BINARY_SETTING other)
+        => ValueLength == other.ValueLength &&
+           ValueData.SequenceEqual(other.ValueData);
+
+        public override Int32 GetHashCode()
+        {
+            return (ValueLength, ValueData).GetHashCode();
+        }
+        public static bool operator ==(NVDRS_BINARY_SETTING lhs, NVDRS_BINARY_SETTING rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NVDRS_BINARY_SETTING lhs, NVDRS_BINARY_SETTING rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NVDRS_BINARY_SETTING other = (NVDRS_BINARY_SETTING)MemberwiseClone();
+            return other;
+        }
+    }
+
+    //NVDRS_SETTING_VALUE_UNION
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    public struct NVDRS_SETTING_VALUE_UNION : IEquatable<NVDRS_SETTING_VALUE_UNION>, ICloneable // Note: Version 1 of NVDRS_SETTINGS_VALUE structure
+    {
+        // Value union
+        [FieldOffset((0))]
+        public UInt32 U32Value;
+        [FieldOffset((0))]
+        public NVDRS_BINARY_SETTING BinaryValue;
+        [FieldOffset((0))]
+        public string StringValue;
+
+        public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUE_UNION other && this.Equals(other);
+
+        public bool Equals(NVDRS_SETTING_VALUE_UNION other)
+        => U32Value == other.U32Value;
+
+        public override Int32 GetHashCode()
+        {
+            return (U32Value).GetHashCode();
+        }
+        public static bool operator ==(NVDRS_SETTING_VALUE_UNION lhs, NVDRS_SETTING_VALUE_UNION rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(NVDRS_SETTING_VALUE_UNION lhs, NVDRS_SETTING_VALUE_UNION rhs) => !(lhs == rhs);
+
+        public object Clone()
+        {
+            NVDRS_SETTING_VALUE_UNION other = (NVDRS_SETTING_VALUE_UNION)MemberwiseClone();
+            return other;
+        }
+    }
+
+    //NVDRS_SETTING_VALUES
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NVDRS_SETTING_VALUES_V1 : IEquatable<NVDRS_SETTING_VALUES_V1>, ICloneable // Note: Version 1 of NVDRS_SETTING_VALUES_V1 structure
     {
         public UInt32 Version;        //!< Structure version
         public UInt32 NumSettingValues;
         public NVDRS_SETTING_TYPE SettingType;
-        public NVDRS_SETTING_LOCATION SettingLocation;
-        public UInt32 IsCurrentPredefined;
-        public UInt32 IsPredefinedValid;
+        // Default Value union
+        public NVDRS_SETTING_VALUE_UNION DefaultValue;
+        // Setting Values array of unions
+        [MarshalAs(UnmanagedType.LPArray, SizeConst = (Int32)NVImport.NVAPI_SETTING_MAX_VALUES)]
+        public NVDRS_SETTING_VALUE_UNION[] SettingsValues;
+        
+        public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUES_V1 other && this.Equals(other);
 
-        public override bool Equals(object obj) => obj is NVDRS_SETTINGS_VALUES_V1 other && this.Equals(other);
-
-        public bool Equals(NVDRS_SETTINGS_VALUES_V1 other)
+        public bool Equals(NVDRS_SETTING_VALUES_V1 other)
         => Version == other.Version &&
-           SettingName == other.SettingName &&
-           SettingId == other.SettingId &&
+           NumSettingValues == other.NumSettingValues &&
            SettingType == other.SettingType &&
-           SettingLocation == other.SettingLocation &&
-           IsCurrentPredefined == other.IsCurrentPredefined &&
-           IsPredefinedValid == other.IsPredefinedValid;
+           DefaultValue == other.DefaultValue &&
+           SettingsValues.SequenceEqual(other.SettingsValues);
 
         public override Int32 GetHashCode()
         {
-            return (Version, SettingName, SettingId, SettingType, SettingLocation, IsCurrentPredefined, IsPredefinedValid).GetHashCode();
+            return (Version, NumSettingValues, SettingType, DefaultValue, SettingsValues).GetHashCode();
         }
-        public static bool operator ==(NVDRS_SETTINGS_VALUES_V1 lhs, NVDRS_SETTINGS_VALUES_V1 rhs) => lhs.Equals(rhs);
+        public static bool operator ==(NVDRS_SETTING_VALUES_V1 lhs, NVDRS_SETTING_VALUES_V1 rhs) => lhs.Equals(rhs);
 
-        public static bool operator !=(NVDRS_SETTINGS_VALUES_V1 lhs, NVDRS_SETTINGS_VALUES_V1 rhs) => !(lhs == rhs);
+        public static bool operator !=(NVDRS_SETTING_VALUES_V1 lhs, NVDRS_SETTING_VALUES_V1 rhs) => !(lhs == rhs);
 
         public object Clone()
         {
-            NVDRS_SETTINGS_VALUES_V1 other = (NVDRS_SETTINGS_VALUES_V1)MemberwiseClone();
+            NVDRS_SETTING_VALUES_V1 other = (NVDRS_SETTING_VALUES_V1)MemberwiseClone();
             return other;
         }
     }
@@ -6089,7 +6151,7 @@ namespace DisplayMagicianShared.NVIDIA
             [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTING_V1[] drsSettings);
         private static readonly NvAPI_DRS_EnumSettingsDelegate NvAPI_DRS_EnumSettingsInternal;
         /// <summary>
-        /// This API gets information about the given setting.
+        /// This API enumerates all the settings of a given profile from startIndex to the maximum length.
         /// SUPPORTED OS: Windows 7 and higher
         /// <param name="drsSessionHandle"></param>
         /// <param name="drsProfileHandle"></param>
@@ -6121,7 +6183,7 @@ namespace DisplayMagicianShared.NVIDIA
             [In, Out] ref UInt32 drsSettingCount);
         private static readonly NvAPI_DRS_EnumAvailableSettingIdsDelegate NvAPI_DRS_EnumAvailableSettingIdsInternal;
         /// <summary>
-        /// This API gets information about the given setting.
+        /// This API enumerates all the Ids of all the settings recognized by NVAPI.
         /// SUPPORTED OS: Windows 7 and higher
         /// <param name="drsSettingsIds"></param>
         /// <param name="drsSettingCount"></param>
@@ -6148,16 +6210,16 @@ namespace DisplayMagicianShared.NVIDIA
         private delegate NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingValuesDelegate(
             [In] UInt32 drsSettingId, 
             [In, Out] ref UInt32 drsMaxNumValues,
-            [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTINGS_VALUES[] drsSettingsValues);
+            [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTING_VALUES_V1[] drsSettingsValues);
         private static readonly NvAPI_DRS_EnumAvailableSettingValuesDelegate NvAPI_DRS_EnumAvailableSettingValuesInternal;
         /// <summary>
-        /// This API gets information about the given setting.
+        /// This API enumerates all available setting values for a given setting.
         /// SUPPORTED OS: Windows 7 and higher
         /// <param name="drsSettingId"></param>
         /// <param name="drsMaxNumValues"></param>
         /// <param name="drsSettingsValues"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingValues(UInt32 drsSettingId, ref UInt32 drsMaxNumValues, out NVDRS_SETTINGS_VALUES[] drsSettingsValues)
+        public static NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingValues(UInt32 drsSettingId, ref UInt32 drsMaxNumValues, out NVDRS_SETTING_VALUES_V1[] drsSettingsValues)
         {
             NVAPI_STATUS status;
 
@@ -6168,7 +6230,7 @@ namespace DisplayMagicianShared.NVIDIA
             else
             {
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
-                drsSettingsValues = new NVDRS_SETTINGS_VALUES[0];
+                drsSettingsValues = new NVDRS_SETTING_VALUES_V1[0];
                 drsMaxNumValues = 0;
             }
 
@@ -6176,9 +6238,60 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         // NVAPI_INTERFACE NvAPI_DRS_GetSettingIdFromName(NvAPI_UnicodeString settingName, NvU32* pSettingId)
+        private delegate NVAPI_STATUS NvAPI_DRS_GetSettingIdFromNameDelegate(
+            [In] string drsSettingName,
+            [Out] out UInt32 drsSettingId);
+        private static readonly NvAPI_DRS_GetSettingIdFromNameDelegate NvAPI_DRS_GetSettingIdFromNameInternal;
+        /// <summary>
+        /// This API gets the binary ID of a setting given the setting name.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSettingName"></param>
+        /// <param name="drsSettingId"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_GetSettingIdFromName(string drsSettingName, out UInt32 drsSettingId)
+        {
+            NVAPI_STATUS status;
+
+            if (NvAPI_DRS_GetSettingIdFromNameInternal != null)
+            {
+                status = NvAPI_DRS_GetSettingIdFromNameInternal(drsSettingName, out drsSettingId);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsSettingId = 0;
+            }
+
+            return status;
+        }
 
         // NVAPI_INTERFACE NvAPI_DRS_GetSettingNameFromId(NvU32 settingId, NvAPI_UnicodeString* pSettingName)
+        private delegate NVAPI_STATUS NvAPI_DRS_GetSettingNameFromIdDelegate(
+            [In] UInt32 drsSettingId,
+            [Out] out string drsSettingName);
+        private static readonly NvAPI_DRS_GetSettingNameFromIdDelegate NvAPI_DRS_GetSettingNameFromIdInternal;
+        /// <summary>
+        /// This API gets the setting name given the binary ID.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSettingId"></param>
+        /// <param name="drsSettingName"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_GetSettingNameFromId(UInt32 drsSettingId, out string drsSettingName)
+        {
+            NVAPI_STATUS status;
 
+            if (NvAPI_DRS_GetSettingNameFromIdInternal != null)
+            {
+                status = NvAPI_DRS_GetSettingNameFromIdInternal(drsSettingId, out drsSettingName);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsSettingName = "";
+            }
+
+            return status;
+        }
         // NVAPI_INTERFACE NvAPI_DRS_CreateProfile(NvDRSSessionHandle hSession, NVDRS_PROFILE* pProfileInfo, NvDRSProfileHandle* phProfile)
 
         // NVAPI_INTERFACE NvAPI_DRS_DeleteProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile)
