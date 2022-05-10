@@ -937,7 +937,7 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct NVDRS_PROFILE_V1 : IEquatable<NVDRS_PROFILE_V1>, ICloneable // Note: Version 3 of NV_EDID_V3 structure
     {
         public UInt32 Version;        //!< Structure version
@@ -973,7 +973,7 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct NVDRS_SETTING_V1 : IEquatable<NVDRS_SETTING_V1>, ICloneable // Note: Version 1 of NVDRS_SETTING_V1 structure
     {
         public UInt32 Version;        //!< Structure version
@@ -1011,12 +1011,12 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct NVDRS_BINARY_SETTING : IEquatable<NVDRS_BINARY_SETTING>, ICloneable 
     {
         public UInt32 ValueLength;        
-        [MarshalAs(UnmanagedType.U8, SizeConst = (Int32)NVImport.NVAPI_BINARY_DATA_MAX)]
-        public byte[] ValueData;    // EDID_Data[NV_EDID_DATA_SIZE];
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (Int32)NVImport.NVAPI_UNICODE_STRING_MAX)]
+        public string ValueData;
         
         public override bool Equals(object obj) => obj is NVDRS_BINARY_SETTING other && this.Equals(other);
 
@@ -1039,17 +1039,19 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
+    /*
     //NVDRS_SETTING_VALUE_UNION
-    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Pack = 2)]
     public struct NVDRS_SETTING_VALUE_UNION : IEquatable<NVDRS_SETTING_VALUE_UNION>, ICloneable // Note: Version 1 of NVDRS_SETTINGS_VALUE structure
     {
         // Value union
-        [FieldOffset((0))]
+        [FieldOffset(0)]
         public UInt32 U32Value;
-        [FieldOffset((0))]
+        [FieldOffset(0)]
         public NVDRS_BINARY_SETTING BinaryValue;
-        [FieldOffset((0))]
-        public string StringValue;
+        [FieldOffset(0)]
+        [MarshalAs(UnmanagedType.LPStr, SizeConst = (Int32)NVImport.NVAPI_BINARY_DATA_MAX)]
+        public char[] StringValue;
 
         public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUE_UNION other && this.Equals(other);
 
@@ -1072,15 +1074,20 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     //NVDRS_SETTING_VALUES
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
     public struct NVDRS_SETTING_VALUES_V1 : IEquatable<NVDRS_SETTING_VALUES_V1>, ICloneable // Note: Version 1 of NVDRS_SETTING_VALUES_V1 structure
     {
+        [FieldOffset(0)]
         public UInt32 Version;        //!< Structure version
+        [FieldOffset(4)]
         public UInt32 NumSettingValues;
+        [FieldOffset(8)]
         public NVDRS_SETTING_TYPE SettingType;
         // Default Value union
+        [FieldOffset(12)]
         public NVDRS_SETTING_VALUE_UNION DefaultValue;
         // Setting Values array of unions
+        [FieldOffset(12)]
         [MarshalAs(UnmanagedType.LPArray, SizeConst = (Int32)NVImport.NVAPI_SETTING_MAX_VALUES)]
         public NVDRS_SETTING_VALUE_UNION[] SettingsValues;
         
@@ -1106,8 +1113,7 @@ namespace DisplayMagicianShared.NVIDIA
             NVDRS_SETTING_VALUES_V1 other = (NVDRS_SETTING_VALUES_V1)MemberwiseClone();
             return other;
         }
-    }
-
+    }*/
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -2974,7 +2980,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         public static UInt32 NVDRS_PROFILE_V1_VER = MAKE_NVAPI_VERSION<NVDRS_PROFILE_V1>(1); 
         public static UInt32 NVDRS_SETTING_V1_VER = MAKE_NVAPI_VERSION<NVDRS_SETTING_V1>(1);
-        public static UInt32 NVDRS_SETTING_VALUES_V1_VER = MAKE_NVAPI_VERSION<NVDRS_SETTING_VALUES_V1>(1);
+        //public static UInt32 NVDRS_SETTING_VALUES_V1_VER = MAKE_NVAPI_VERSION<NVDRS_SETTING_VALUES_V1>(1);
 
 
 
@@ -3162,10 +3168,14 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_DRS_EnumAvailableSettingIds, out DRS_EnumAvailableSettingIdsInternal);
                 GetDelegate(NvId_DRS_CreateSession, out DRS_CreateSessionInternal);
                 GetDelegate(NvId_DRS_GetSettingNameFromId, out DRS_GetSettingNameFromIdInternal);
-                GetDelegate(NvId_DRS_EnumAvailableSettingValues, out DRS_EnumAvailableSettingValuesInternal);
+                //GetDelegate(NvId_DRS_EnumAvailableSettingValues, out DRS_EnumAvailableSettingValuesInternal);
                 GetDelegate(NvId_DRS_EnumProfiles, out DRS_EnumProfilesInternal);
                 GetDelegate(NvId_DRS_SetCurrentGlobalProfile, out DRS_SetCurrentGlobalProfileInternal);
                 GetDelegate(NvId_DRS_DestroySession, out DRS_DestroySessionInternal);
+                GetDelegate(NvId_DRS_LoadSettings, out DRS_LoadSettingsInternal);
+                GetDelegate(NvId_DRS_SaveSettings, out DRS_SaveSettingsInternal);
+                GetDelegate(NvId_DRS_GetBaseProfile, out DRS_GetBaseProfileInternal);
+                GetDelegate(NvId_DRS_GetNumProfiles, out DRS_GetNumProfilesInternal);
                 
 
                 // Set the availability
@@ -5956,6 +5966,85 @@ namespace DisplayMagicianShared.NVIDIA
             return status;
         }
 
+        //NVAPI_INTERFACE NvAPI_DRS_LoadSettings(NvDRSSessionHandle hSession);
+        private delegate NVAPI_STATUS DRS_LoadSettingsDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle);
+        private static readonly DRS_LoadSettingsDelegate DRS_LoadSettingsInternal;
+        /// <summary>
+        /// This API loads and parses the settings data.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_LoadSettings(NvDRSSessionHandle drsSessionHandle)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_LoadSettingsInternal != null)
+            {
+                status = DRS_LoadSettingsInternal(drsSessionHandle);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
+
+            return status;
+        }
+
+        //NVAPI_INTERFACE NvAPI_DRS_SaveSettings(NvDRSSessionHandle hSession);
+        private delegate NVAPI_STATUS DRS_SaveSettingsDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle);
+        private static readonly DRS_SaveSettingsDelegate DRS_SaveSettingsInternal;
+        /// <summary>
+        /// This API saves the settings data to the system.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_SaveSettings(NvDRSSessionHandle drsSessionHandle)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_SaveSettingsInternal != null)
+            {
+                status = DRS_SaveSettingsInternal(drsSessionHandle);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
+
+            return status;
+        }
+
+
+        // NVAPI_INTERFACE NvAPI_DRS_GetCurrentGlobalProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle* phProfile )
+        private delegate NVAPI_STATUS DRS_GetBaseProfileDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [Out] out NvDRSProfileHandle drsProfileHandle);
+        private static readonly DRS_GetBaseProfileDelegate DRS_GetBaseProfileInternal;
+        /// <summary>
+        /// This API returns the handle to the current global profile.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_GetBaseProfile(NvDRSSessionHandle drsSessionHandle, out NvDRSProfileHandle drsProfileHandle)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_GetBaseProfileInternal != null)
+            {
+                status = DRS_GetBaseProfileInternal(drsSessionHandle, out drsProfileHandle);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsProfileHandle = new NvDRSProfileHandle();
+            }
+
+            return status;
+        }
+
         // NVAPI_INTERFACE NvAPI_DRS_GetCurrentGlobalProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle* phProfile )
         private delegate NVAPI_STATUS DRS_GetCurrentGlobalProfileDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
@@ -6015,7 +6104,7 @@ namespace DisplayMagicianShared.NVIDIA
         private delegate NVAPI_STATUS DRS_GetProfileInfoDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] NvDRSProfileHandle drsProfileHandle,
-            [Out] out NVDRS_PROFILE_V1 drsProfileInfo);
+            [In,Out] ref NVDRS_PROFILE_V1 drsProfileInfo);
         private static readonly DRS_GetProfileInfoDelegate DRS_GetProfileInfoInternal;
         /// <summary>
         /// This API gets information about the given profile. User needs to specify the name of the Profile.
@@ -6024,13 +6113,14 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="drsProfileHandle"></param>
         /// <param name="drsProfileInfo"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_DRS_GetProfileInfo(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, out NVDRS_PROFILE_V1 drsProfileInfo)
+        public static NVAPI_STATUS NvAPI_DRS_GetProfileInfo(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, ref NVDRS_PROFILE_V1 drsProfileInfo)
         {
             NVAPI_STATUS status;
 
             if (DRS_GetProfileInfoInternal != null)
             {
-                status = DRS_GetProfileInfoInternal(drsSessionHandle, drsProfileHandle, out drsProfileInfo);
+                drsProfileInfo.Version = NVImport.NVDRS_PROFILE_V1_VER;
+                status = DRS_GetProfileInfoInternal(drsSessionHandle, drsProfileHandle, ref drsProfileInfo);
             }
             else
             {
@@ -6075,7 +6165,7 @@ namespace DisplayMagicianShared.NVIDIA
         private delegate NVAPI_STATUS DRS_EnumProfilesDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] UInt32 drsIndex,
-            [Out] out NVDRS_PROFILE_V1[] drsProfileInfo);
+            [Out] out NvDRSProfileHandle drsProfileHandle);
         private static readonly DRS_EnumProfilesDelegate DRS_EnumProfilesInternal;
         /// <summary>
         /// This API enumerates through all the profiles in the session.
@@ -6084,18 +6174,46 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="drsIndex"></param>
         /// <param name="drsProfileInfo"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_DRS_EnumProfiles(NvDRSSessionHandle drsSessionHandle, UInt32 drsIndex, out NVDRS_PROFILE_V1[] drsProfileInfo)
+        public static NVAPI_STATUS NvAPI_DRS_EnumProfiles(NvDRSSessionHandle drsSessionHandle, UInt32 drsIndex, out NvDRSProfileHandle drsProfileHandle)
         {
             NVAPI_STATUS status;
 
             if (DRS_EnumProfilesInternal != null)
             {
-                status = DRS_EnumProfilesInternal(drsSessionHandle, drsIndex, out drsProfileInfo);
+                status = DRS_EnumProfilesInternal(drsSessionHandle, drsIndex, out drsProfileHandle);
             }
             else
             {
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
-                drsProfileInfo = new NVDRS_PROFILE_V1[0];
+                drsProfileHandle = new NvDRSProfileHandle();
+            }
+
+            return status;
+        }
+
+        // NVAPI_INTERFACE NvAPI_DRS_GetNumProfiles(NvDRSSessionHandle hSession, NvU32 *numProfiles);
+        private delegate NVAPI_STATUS DRS_GetNumProfilesDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [Out] out UInt32 drsNumProfiles);
+        private static readonly DRS_GetNumProfilesDelegate DRS_GetNumProfilesInternal;
+        /// <summary>
+        /// This API obtains the number of profiles in the current session object.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsNumProfiles"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_GetNumProfiles(NvDRSSessionHandle drsSessionHandle, out UInt32 drsNumProfiles)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_GetNumProfilesInternal != null)
+            {
+                status = DRS_GetNumProfilesInternal(drsSessionHandle, out drsNumProfiles);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+                drsNumProfiles = 0;
             }
 
             return status;
@@ -6169,7 +6287,7 @@ namespace DisplayMagicianShared.NVIDIA
             [In] NvDRSProfileHandle drsProfileHandle,
             [In] UInt32 drsStartIndex,
             [In,Out] ref UInt32 drsSettingCount,
-            [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTING_V1[] drsSettings);
+            [In,Out] ref NVDRS_SETTING_V1 drsSetting);
         private static readonly DRS_EnumSettingsDelegate DRS_EnumSettingsInternal;
         /// <summary>
         /// This API enumerates all the settings of a given profile from startIndex to the maximum length.
@@ -6178,28 +6296,28 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="drsProfileHandle"></param>
         /// <param name="drsStartIndex"></param>
         /// <param name="drsSettingCount"></param>
-        /// <param name="drsSettings"></param>
+        /// <param name="drsSetting"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_DRS_EnumSettings(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, UInt32 drsStartIndex, ref UInt32 drsSettingCount, out NVDRS_SETTING_V1[] drsSettings)
+        public static NVAPI_STATUS NvAPI_DRS_EnumSettings(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, UInt32 drsStartIndex, ref UInt32 drsSettingCount, ref NVDRS_SETTING_V1 drsSetting)
         {
             NVAPI_STATUS status;
 
             if (DRS_EnumSettingsInternal != null)
             {
-                NVDRS_SETTING_V1[] drsReturnedDriverSettings = new NVDRS_SETTING_V1[NVImport.NVAPI_SETTING_MAX_VALUES];
-                UInt32 drsNumSettings = NVImport.NVAPI_SETTING_MAX_VALUES;
-                status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsNumSettings, out drsReturnedDriverSettings);
-                drsSettings = new NVDRS_SETTING_V1[drsNumSettings];
+                drsSetting.Version = NVImport.NVDRS_SETTING_V1_VER;                
+                status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, ref drsSetting);
+                /*drsSettings = new NVDRS_SETTING_V1[drsNumSettings];
                 for (int i = 0; i < drsNumSettings; i++)
                 {
                     drsSettings[i] = drsReturnedDriverSettings[i];
                 }
-                drsSettingCount = drsNumSettings;
+                drsSettingCount = drsNumSettings;*/
             }
             else
             {
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
-                drsSettings = new NVDRS_SETTING_V1[0];
+                drsSetting = new NVDRS_SETTING_V1();
+                drsSettingCount = 0;
             }
 
             return status;
@@ -6235,7 +6353,7 @@ namespace DisplayMagicianShared.NVIDIA
             return status;
         }
 
-        // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingValues(NvU32 settingId, NvU32* pMaxNumValues, NVDRS_SETTING_VALUES* pSettingValues)
+        /*// NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingValues(NvU32 settingId, NvU32* pMaxNumValues, NVDRS_SETTING_VALUES* pSettingValues)
         private delegate NVAPI_STATUS DRS_EnumAvailableSettingValuesDelegate(
             [In] UInt32 drsSettingId, 
             [In, Out] ref UInt32 drsMaxNumValues,
@@ -6264,7 +6382,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
             return status;
-        }
+        }*/
 
         // NVAPI_INTERFACE NvAPI_DRS_GetSettingIdFromName(NvAPI_UnicodeString settingName, NvU32* pSettingId)
         private delegate NVAPI_STATUS DRS_GetSettingIdFromNameDelegate(
