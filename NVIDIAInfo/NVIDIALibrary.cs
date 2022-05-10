@@ -1538,8 +1538,8 @@ namespace DisplayMagicianShared.NVIDIA
                                 // Next we grab the Profile Settings and store them
                                 NVDRS_SETTING_V1[] drsDriverSettings = new NVDRS_SETTING_V1[NVImport.NVAPI_SETTING_MAX_VALUES];
                                 UInt32 drsNumSettings = NVImport.NVAPI_SETTING_MAX_VALUES;
-                                NVDRS_SETTING_V1 drsDriverSetting = new NVDRS_SETTING_V1();
-                                NVStatus = NVImport.NvAPI_DRS_EnumSettings(drsSessionHandle, drsProfileHandle, 0, ref drsNumSettings, ref drsDriverSetting);
+                                //NVDRS_SETTING_V1 drsDriverSetting = new NVDRS_SETTING_V1();
+                                NVStatus = NVImport.NvAPI_DRS_EnumSettings(drsSessionHandle, drsProfileHandle, 0, ref drsNumSettings, ref drsDriverSettings);
                                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                                 {
                                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DRS_EnumSettings returned OK. We found {drsNumSettings} settings in the DRS Profile {drsProfileInfo.ProfileName}.");

@@ -984,6 +984,8 @@ namespace DisplayMagicianShared.NVIDIA
         public NVDRS_SETTING_LOCATION SettingLocation;
         public UInt32 IsCurrentPredefined;
         public UInt32 IsPredefinedValid;
+        public NVDRS_SETTING_VALUE_UNION PredefinedValue;
+        public NVDRS_SETTING_VALUE_UNION CurrentValue;
 
         public override bool Equals(object obj) => obj is NVDRS_SETTING_V1 other && this.Equals(other);
 
@@ -994,11 +996,13 @@ namespace DisplayMagicianShared.NVIDIA
            SettingType == other.SettingType &&
            SettingLocation == other.SettingLocation &&
            IsCurrentPredefined == other.IsCurrentPredefined &&
-           IsPredefinedValid == other.IsPredefinedValid;
+           IsPredefinedValid == other.IsPredefinedValid &&
+           PredefinedValue == other.PredefinedValue &&
+           CurrentValue == other.CurrentValue;
 
         public override Int32 GetHashCode()
         {
-            return (Version, SettingName, SettingId, SettingType, SettingLocation, IsCurrentPredefined, IsPredefinedValid).GetHashCode();
+            return (Version, SettingName, SettingId, SettingType, SettingLocation, IsCurrentPredefined, IsPredefinedValid, PredefinedValue, CurrentValue).GetHashCode();
         }
         public static bool operator ==(NVDRS_SETTING_V1 lhs, NVDRS_SETTING_V1 rhs) => lhs.Equals(rhs);
 
@@ -1039,9 +1043,9 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
-    /*
+    
     //NVDRS_SETTING_VALUE_UNION
-    [StructLayout(LayoutKind.Explicit, Pack = 2)]
+    [StructLayout(LayoutKind.Explicit, Pack = 2, CharSet = CharSet.Unicode)]
     public struct NVDRS_SETTING_VALUE_UNION : IEquatable<NVDRS_SETTING_VALUE_UNION>, ICloneable // Note: Version 1 of NVDRS_SETTINGS_VALUE structure
     {
         // Value union
@@ -1051,7 +1055,7 @@ namespace DisplayMagicianShared.NVIDIA
         public NVDRS_BINARY_SETTING BinaryValue;
         [FieldOffset(0)]
         [MarshalAs(UnmanagedType.LPStr, SizeConst = (Int32)NVImport.NVAPI_BINARY_DATA_MAX)]
-        public char[] StringValue;
+        public string StringValue;
 
         public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUE_UNION other && this.Equals(other);
 
@@ -1113,7 +1117,7 @@ namespace DisplayMagicianShared.NVIDIA
             NVDRS_SETTING_VALUES_V1 other = (NVDRS_SETTING_VALUES_V1)MemberwiseClone();
             return other;
         }
-    }*/
+    }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -6287,7 +6291,7 @@ namespace DisplayMagicianShared.NVIDIA
             [In] NvDRSProfileHandle drsProfileHandle,
             [In] UInt32 drsStartIndex,
             [In,Out] ref UInt32 drsSettingCount,
-            [In,Out] ref NVDRS_SETTING_V1 drsSetting);
+            [In,Out] ref NVDRS_SETTING_V1[] drsSettings);
         private static readonly DRS_EnumSettingsDelegate DRS_EnumSettingsInternal;
         /// <summary>
         /// This API enumerates all the settings of a given profile from startIndex to the maximum length.
@@ -6296,27 +6300,31 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="drsProfileHandle"></param>
         /// <param name="drsStartIndex"></param>
         /// <param name="drsSettingCount"></param>
-        /// <param name="drsSetting"></param>
+        /// <param name="drsSettings"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_DRS_EnumSettings(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, UInt32 drsStartIndex, ref UInt32 drsSettingCount, ref NVDRS_SETTING_V1 drsSetting)
+        public static NVAPI_STATUS NvAPI_DRS_EnumSettings(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, UInt32 drsStartIndex, ref UInt32 drsSettingCount, ref NVDRS_SETTING_V1[] drsSettings)
         {
             NVAPI_STATUS status;
 
             if (DRS_EnumSettingsInternal != null)
             {
-                drsSetting.Version = NVImport.NVDRS_SETTING_V1_VER;                
-                status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, ref drsSetting);
-                /*drsSettings = new NVDRS_SETTING_V1[drsNumSettings];
-                for (int i = 0; i < drsNumSettings; i++)
+                drsSettingCount = NVImport.NVAPI_SETTING_MAX_VALUES;
+                drsSettings = new NVDRS_SETTING_V1[drsSettingCount];
+                for (int i = 0; i < drsSettingCount; i++)
                 {
-                    drsSettings[i] = drsReturnedDriverSettings[i];
+                    drsSettings[i].Version = NVImport.NVDRS_SETTING_V1_VER;
+                }                
+                status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, ref drsSettings);
+                NVDRS_SETTING_V1[] drsSettingsToReturn = new NVDRS_SETTING_V1[drsSettingCount];
+                for (int i = 0; i < drsSettingCount; i++)
+                {
+                    drsSettings[i] = drsSettingsToReturn[i];
                 }
-                drsSettingCount = drsNumSettings;*/
             }
             else
             {
                 status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
-                drsSetting = new NVDRS_SETTING_V1();
+                drsSettings = new NVDRS_SETTING_V1[0];
                 drsSettingCount = 0;
             }
 
