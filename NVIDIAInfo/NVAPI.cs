@@ -976,33 +976,365 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct NVDRS_SETTING_V1 : IEquatable<NVDRS_SETTING_V1>, ICloneable // Note: Version 1 of NVDRS_SETTING_V1 structure
     {
-        public UInt32 Version;        //!< Structure version
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (Int32)NVImport.NVAPI_UNICODE_STRING_MAX)]
-        public string SettingName;    // EDID_Data[NV_EDID_DATA_SIZE];
-        public UInt32 SettingId;
-        public NVDRS_SETTING_TYPE SettingType;
-        public NVDRS_SETTING_LOCATION SettingLocation;
-        public UInt32 IsCurrentPredefined;
-        public UInt32 IsPredefinedValid;
-        public NVDRS_SETTING_VALUE_UNION PredefinedValue;
-        public NVDRS_SETTING_VALUE_UNION CurrentValue;
+        internal UInt32 _Version;
+        internal UnicodeString _SettingName;
+        internal UInt32 _SettingId;
+        internal NVDRS_SETTING_TYPE _SettingType;
+        internal NVDRS_SETTING_LOCATION _SettingLocation;
+        internal UInt32 _IsCurrentPredefined;
+        internal UInt32 _IsPredefinedValid;
+        internal NVDRS_SETTING_VALUE _PredefinedValue;
+        internal NVDRS_SETTING_VALUE _CurrentValue;
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="DRSSettingV1" /> containing the passed value.
+        /// </summary>
+        /// <param name="id">The setting identification number.</param>
+        /// <param name="settingType">The type of the setting's value</param>
+        /// <param name="value">The setting's value</param>
+        public NVDRS_SETTING_V1(uint id, NVDRS_SETTING_TYPE settingType, object value)
+        {
+            _Version = NVImport.NVDRS_SETTING_V1_VER;
+            _SettingId = id;
+            _IsPredefinedValid = (UInt32)0;
+            _SettingName = new UnicodeString("");
+            _SettingId = 0;
+            _SettingType = settingType;
+            _SettingLocation = NVDRS_SETTING_LOCATION.NVDRS_BASE_PROFILE_LOCATION;
+            _IsCurrentPredefined = 0;
+            _IsPredefinedValid = 0;
+            _PredefinedValue = new NVDRS_SETTING_VALUE();
+            _CurrentValue = new NVDRS_SETTING_VALUE(0);
+
+            CurrentValue = value;
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="NVDRS_SETTING_V1" /> containing the passed value.
+        /// </summary>
+        /// <param name="id">The setting identification number.</param>
+        /// <param name="value">The setting's value</param>
+        public NVDRS_SETTING_V1(uint id, string value) : this(id, NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE, value)
+        {
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="NVDRS_SETTING_V1" /> containing the passed value.
+        /// </summary>
+        /// <param name="id">The setting identification number.</param>
+        /// <param name="value">The setting's value</param>
+        public NVDRS_SETTING_V1(uint id, uint value) : this(id, NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE, value)
+        {
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="NVDRS_SETTING_V1" /> containing the passed value.
+        /// </summary>
+        /// <param name="id">The setting identification number.</param>
+        /// <param name="value">The setting's value</param>
+        public NVDRS_SETTING_V1(uint id, byte[] value) : this(id, NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE, value)
+        {
+        }
+
+        /// <summary>
+        ///     Gets the name of the setting
+        /// </summary>
+        public string Name
+        {
+            get => _SettingName.Value;
+        }
+
+        /// <summary>
+        ///     Gets the identification number of the setting
+        /// </summary>
+        public UInt32 SettingId
+        {
+            get => _SettingId;
+            private set => _SettingId = value;
+        }
+
+        /// <summary>
+        ///     Gets the setting's value type
+        /// </summary>
+        public NVDRS_SETTING_TYPE SettingType
+        {
+            get => _SettingType;
+            private set => _SettingType = value;
+        }
+
+        /// <summary>
+        ///     Gets the setting location
+        /// </summary>
+        public NVDRS_SETTING_LOCATION SettingLocation
+        {
+            get => _SettingLocation;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the current value is the predefined value
+        /// </summary>
+        public bool IsCurrentPredefined
+        {
+            get => _IsCurrentPredefined > 0;
+            internal set => _IsCurrentPredefined = value ? 1u : 0u;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the predefined value is available and valid
+        /// </summary>
+        public bool IsPredefinedValid
+        {
+            get => _IsPredefinedValid > 0;
+            internal set => _IsPredefinedValid = value ? 1u : 0u;
+        }
+
+        /// <summary>
+        ///     Returns the predefined value as an integer
+        /// </summary>
+        /// <returns>An integer representing the predefined value</returns>
+        public uint GetPredefinedValueAsInteger()
+        {
+            return _PredefinedValue.AsInteger();
+        }
+
+        /// <summary>
+        ///     Returns the predefined value as an array of bytes
+        /// </summary>
+        /// <returns>An byte array representing the predefined value</returns>
+        public byte[] GetPredefinedValueAsBinary()
+        {
+            return _PredefinedValue.AsBinary();
+        }
+
+        /// <summary>
+        ///     Returns the predefined value as an unicode string
+        /// </summary>
+        /// <returns>An unicode string representing the predefined value</returns>
+        public string GetPredefinedValueAsUnicodeString()
+        {
+            return _PredefinedValue.AsUnicodeString();
+        }
+
+        /// <summary>
+        ///     Gets the setting's predefined value
+        /// </summary>
+        public object PredefinedValue
+        {
+            get
+            {
+                if (!IsPredefinedValid)
+                {
+                    return null;
+                }
+
+                switch (_SettingType)
+                {
+                    case NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE:
+
+                        return GetPredefinedValueAsInteger();
+                    case NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE:
+
+                        return GetPredefinedValueAsBinary();
+                    case NVDRS_SETTING_TYPE.NVDRS_STRING_TYPE:
+                    case NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE:
+
+                        return GetPredefinedValueAsUnicodeString();
+                    default:
+
+                        throw new ArgumentOutOfRangeException(nameof(SettingType));
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Returns the current value as an integer
+        /// </summary>
+        /// <returns>An integer representing the current value</returns>
+        public uint GetCurrentValueAsInteger()
+        {
+            return _CurrentValue.AsInteger();
+        }
+
+        /// <summary>
+        ///     Returns the current value as an array of bytes
+        /// </summary>
+        /// <returns>An byte array representing the current value</returns>
+        public byte[] GetCurrentValueAsBinary()
+        {
+            return _CurrentValue.AsBinary();
+        }
+
+        /// <summary>
+        ///     Returns the current value as an unicode string
+        /// </summary>
+        /// <returns>An unicode string representing the current value</returns>
+        public string GetCurrentValueAsUnicodeString()
+        {
+            return _CurrentValue.AsUnicodeString();
+        }
+
+        /// <summary>
+        ///     Sets the passed value as the current value
+        /// </summary>
+        /// <param name="value">The new value for the setting</param>
+        public void SetCurrentValueAsInteger(uint value)
+        {
+            if (SettingType != NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Passed argument is invalid for this setting.");
+            }
+
+            _CurrentValue = new NVDRS_SETTING_VALUE(value);
+            IsCurrentPredefined = IsPredefinedValid && (uint)CurrentValue == (uint)PredefinedValue;
+        }
+
+        /// <summary>
+        ///     Sets the passed value as the current value
+        /// </summary>
+        /// <param name="value">The new value for the setting</param>
+        public void SetCurrentValueAsBinary(byte[] value)
+        {
+            if (SettingType != NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Passed argument is invalid for this setting.");
+            }
+
+            _CurrentValue = new NVDRS_SETTING_VALUE(value);
+            IsCurrentPredefined =
+                IsPredefinedValid &&
+                ((byte[])CurrentValue)?.SequenceEqual((byte[])PredefinedValue ?? new byte[0]) == true;
+        }
+
+        /// <summary>
+        ///     Sets the passed value as the current value
+        /// </summary>
+        /// <param name="value">The new value for the setting</param>
+        public void SetCurrentValueAsUnicodeString(string value)
+        {
+            if (SettingType != NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Passed argument is invalid for this setting.");
+            }
+
+            _CurrentValue = new NVDRS_SETTING_VALUE(value);
+            IsCurrentPredefined =
+                IsPredefinedValid &&
+                string.Equals(
+                    (string)CurrentValue,
+                    (string)PredefinedValue,
+                    StringComparison.InvariantCulture
+                );
+        }
+
+        /// <summary>
+        ///     Gets or sets the setting's current value
+        /// </summary>
+        public object CurrentValue
+        {
+            get
+            {
+                switch (_SettingType)
+                {
+                    case NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE:
+
+                        return GetCurrentValueAsInteger();
+                    case NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE:
+
+                        return GetCurrentValueAsBinary();
+                    case NVDRS_SETTING_TYPE.NVDRS_STRING_TYPE:
+                    case NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE:
+
+                        return GetCurrentValueAsUnicodeString();
+                    default:
+
+                        throw new ArgumentOutOfRangeException(nameof(SettingType));
+                }
+            }
+            internal set
+            {
+                if (value is int intValue)
+                {
+                    SetCurrentValueAsInteger((uint)intValue);
+                }
+                else if (value is uint unsignedIntValue)
+                {
+                    SetCurrentValueAsInteger(unsignedIntValue);
+                }
+                else if (value is short shortValue)
+                {
+                    SetCurrentValueAsInteger((uint)shortValue);
+                }
+                else if (value is ushort unsignedShortValue)
+                {
+                    SetCurrentValueAsInteger(unsignedShortValue);
+                }
+                else if (value is long longValue)
+                {
+                    SetCurrentValueAsInteger((uint)longValue);
+                }
+                else if (value is ulong unsignedLongValue)
+                {
+                    SetCurrentValueAsInteger((uint)unsignedLongValue);
+                }
+                else if (value is byte byteValue)
+                {
+                    SetCurrentValueAsInteger(byteValue);
+                }
+                else if (value is string stringValue)
+                {
+                    SetCurrentValueAsUnicodeString(stringValue);
+                }
+                else if (value is byte[] binaryValue)
+                {
+                    SetCurrentValueAsBinary(binaryValue);
+                }
+                else
+                {
+                    throw new ArgumentException("Unacceptable argument type.", nameof(value));
+                }
+            }
+        }
 
         public override bool Equals(object obj) => obj is NVDRS_SETTING_V1 other && this.Equals(other);
 
         public bool Equals(NVDRS_SETTING_V1 other)
-        => Version == other.Version &&
-           SettingName == other.SettingName &&
-           SettingId == other.SettingId &&
-           SettingType == other.SettingType &&
-           SettingLocation == other.SettingLocation &&
-           IsCurrentPredefined == other.IsCurrentPredefined &&
-           IsPredefinedValid == other.IsPredefinedValid &&
-           PredefinedValue == other.PredefinedValue &&
-           CurrentValue == other.CurrentValue;
+        {
+            if (!(_Version == other._Version &&
+            _SettingName.Equals(other._SettingName) &&
+            _SettingId == other._SettingId &&
+            _SettingType == other._SettingType &&
+            _SettingLocation == other._SettingLocation &&
+            _IsCurrentPredefined == other._IsCurrentPredefined &&
+            _IsPredefinedValid == other._IsPredefinedValid &&
+            _PredefinedValue == other._PredefinedValue))
+            {
+                return false;
+            }
+            if (_SettingType == NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE &&
+                _CurrentValue.AsInteger() == other._CurrentValue.AsInteger())
+            {
+                return true;
+            }
+            else if (_SettingType == NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE &&
+                _CurrentValue.AsBinary() == other._CurrentValue.AsBinary())
+            {
+                return true;
+            }
+            else if ((_SettingType == NVDRS_SETTING_TYPE.NVDRS_STRING_TYPE || _SettingType == NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE) &&
+                _CurrentValue.AsUnicodeString() == other._CurrentValue.AsUnicodeString())
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }       
+
 
         public override Int32 GetHashCode()
         {
-            return (Version, SettingName, SettingId, SettingType, SettingLocation, IsCurrentPredefined, IsPredefinedValid, PredefinedValue, CurrentValue).GetHashCode();
+            return (_Version, _SettingName, _SettingId, _SettingType, _SettingLocation, _IsCurrentPredefined, _IsPredefinedValid, _PredefinedValue, _CurrentValue).GetHashCode();
         }
         public static bool operator ==(NVDRS_SETTING_V1 lhs, NVDRS_SETTING_V1 rhs) => lhs.Equals(rhs);
 
@@ -1045,68 +1377,248 @@ namespace DisplayMagicianShared.NVIDIA
 
     
     //NVDRS_SETTING_VALUE_UNION
-    [StructLayout(LayoutKind.Explicit, Pack = 2, CharSet = CharSet.Unicode)]
-    public struct NVDRS_SETTING_VALUE_UNION : IEquatable<NVDRS_SETTING_VALUE_UNION>, ICloneable // Note: Version 1 of NVDRS_SETTINGS_VALUE structure
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct NVDRS_SETTING_VALUE : IEquatable<NVDRS_SETTING_VALUE>, ICloneable // Note: Version 1 of NVDRS_SETTINGS_VALUE structure
     {
-        // Value union
-        [FieldOffset(0)]
-        public UInt32 U32Value;
-        [FieldOffset(0)]
-        public NVDRS_BINARY_SETTING BinaryValue;
-        [FieldOffset(0)]
-        [MarshalAs(UnmanagedType.LPStr, SizeConst = (Int32)NVImport.NVAPI_BINARY_DATA_MAX)]
-        public string StringValue;
+        private const int UnicodeStringLength = UnicodeString.UnicodeStringLength;
+        private const int BinaryDataMax = 4096;
 
-        public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUE_UNION other && this.Equals(other);
+        // Math.Max(BinaryDataMax + sizeof(uint), UnicodeStringLength * sizeof(ushort))
+        private const int FullStructureSize = 4100;
 
-        public bool Equals(NVDRS_SETTING_VALUE_UNION other)
-        => U32Value == other.U32Value;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FullStructureSize, ArraySubType = UnmanagedType.U1)]
+        internal byte[] _BinaryValue;
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="NVDRS_SETTING_VALUE" /> containing the passed unicode string as the value
+        /// </summary>
+        /// <param name="value">The unicode string value</param>
+        public NVDRS_SETTING_VALUE(string value)
+        {
+            if (value?.Length > UnicodeStringLength)
+            {
+                value = value.Substring(0, UnicodeStringLength);
+            }
+
+            _BinaryValue = new byte[FullStructureSize];
+
+            var stringBytes = Encoding.Unicode.GetBytes(value ?? string.Empty);
+            Array.Copy(stringBytes, 0, _BinaryValue, 0, Math.Min(stringBytes.Length, _BinaryValue.Length));
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="NVDRS_SETTING_VALUE" /> containing the passed byte array as the value
+        /// </summary>
+        /// <param name="value">The byte array value</param>
+        public NVDRS_SETTING_VALUE(byte[] value)
+        {
+            _BinaryValue = new byte[FullStructureSize];
+
+            if (value?.Length > 0)
+            {
+                var arrayLength = Math.Min(value.Length, BinaryDataMax);
+                var arrayLengthBytes = BitConverter.GetBytes((uint)arrayLength);
+                Array.Copy(arrayLengthBytes, 0, _BinaryValue, 0, arrayLengthBytes.Length);
+                Array.Copy(value, 0, _BinaryValue, arrayLengthBytes.Length, arrayLength);
+            }
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="NVDRS_SETTING_VALUE" /> containing the passed integer as the value
+        /// </summary>
+        /// <param name="value">The integer value</param>
+        public NVDRS_SETTING_VALUE(uint value)
+        {
+            _BinaryValue = new byte[FullStructureSize];
+            var arrayLengthBytes = BitConverter.GetBytes(value);
+            Array.Copy(arrayLengthBytes, 0, _BinaryValue, 0, arrayLengthBytes.Length);
+        }
+
+        /// <summary>
+        ///     Returns the value as an integer
+        /// </summary>
+        /// <returns>An integer representing the value</returns>
+        public uint AsInteger()
+        {
+            return BitConverter.ToUInt32(_BinaryValue, 0);
+        }
+
+        /// <summary>
+        ///     Returns the value as an array of bytes
+        /// </summary>
+        /// <returns>An array of bytes representing the value</returns>
+        public byte[] AsBinary()
+        {
+            return _BinaryValue.Skip(sizeof(uint)).Take((int)AsInteger()).ToArray();
+        }
+
+        /// <summary>
+        ///     Returns the value as an unicode string
+        /// </summary>
+        /// <returns>An unicode string representing the value</returns>
+        public string AsUnicodeString()
+        {
+            return Encoding.Unicode.GetString(_BinaryValue).TrimEnd('\0');
+        }
+
+        public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUE other && this.Equals(other);
+
+        public bool Equals(NVDRS_SETTING_VALUE other)
+        => _BinaryValue == other._BinaryValue;
 
         public override Int32 GetHashCode()
         {
-            return (U32Value).GetHashCode();
+            return (_BinaryValue).GetHashCode();
         }
-        public static bool operator ==(NVDRS_SETTING_VALUE_UNION lhs, NVDRS_SETTING_VALUE_UNION rhs) => lhs.Equals(rhs);
+        public static bool operator ==(NVDRS_SETTING_VALUE lhs, NVDRS_SETTING_VALUE rhs) => lhs.Equals(rhs);
 
-        public static bool operator !=(NVDRS_SETTING_VALUE_UNION lhs, NVDRS_SETTING_VALUE_UNION rhs) => !(lhs == rhs);
+        public static bool operator !=(NVDRS_SETTING_VALUE lhs, NVDRS_SETTING_VALUE rhs) => !(lhs == rhs);
 
         public object Clone()
         {
-            NVDRS_SETTING_VALUE_UNION other = (NVDRS_SETTING_VALUE_UNION)MemberwiseClone();
+            NVDRS_SETTING_VALUE other = (NVDRS_SETTING_VALUE)MemberwiseClone();
             return other;
         }
     }
 
     //NVDRS_SETTING_VALUES
-    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NVDRS_SETTING_VALUES_V1 : IEquatable<NVDRS_SETTING_VALUES_V1>, ICloneable // Note: Version 1 of NVDRS_SETTING_VALUES_V1 structure
     {
-        [FieldOffset(0)]
-        public UInt32 Version;        //!< Structure version
-        [FieldOffset(4)]
-        public UInt32 NumSettingValues;
-        [FieldOffset(8)]
-        public NVDRS_SETTING_TYPE SettingType;
-        // Default Value union
-        [FieldOffset(12)]
-        public NVDRS_SETTING_VALUE_UNION DefaultValue;
-        // Setting Values array of unions
-        [FieldOffset(12)]
-        [MarshalAs(UnmanagedType.LPArray, SizeConst = (Int32)NVImport.NVAPI_SETTING_MAX_VALUES)]
-        public NVDRS_SETTING_VALUE_UNION[] SettingsValues;
-        
+        internal const int MaximumNumberOfValues = (int)NVImport.NVAPI_SETTING_MAX_VALUES;
+
+        public UInt32 Version;
+        public UInt32 NumberOfValues;
+        public NVDRS_SETTING_TYPE _SettingType;
+        internal NVDRS_SETTING_VALUE _DefaultValue;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaximumNumberOfValues)]
+        internal NVDRS_SETTING_VALUE[] _Values;
+
+        /// <summary>
+        ///     Gets the setting's value type
+        /// </summary>
+        public NVDRS_SETTING_TYPE SettingType
+        {
+            get => _SettingType;
+        }
+
+        /// <summary>
+        ///     Gets a list of possible values for the setting
+        /// </summary>
+        public object[] Values
+        {
+            get
+            {
+                switch (_SettingType)
+                {
+                    case NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE:
+                        return ValuesAsInteger().Cast<object>().ToArray();
+
+                    case NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE:
+                        return ValuesAsBinary().Cast<object>().ToArray();
+
+                    case NVDRS_SETTING_TYPE.NVDRS_STRING_TYPE:
+                    case NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE:
+                        return ValuesAsUnicodeString().Cast<object>().ToArray();
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(SettingType));
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Gets the default value of the setting
+        /// </summary>
+        public object DefaultValue
+        {
+            get
+            {
+                switch (_SettingType)
+                {
+                    case NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE:
+                        return DefaultValueAsInteger();
+
+                    case NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE:
+                        return DefaultValueAsBinary();
+
+                    case NVDRS_SETTING_TYPE.NVDRS_STRING_TYPE:
+                    case NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE:
+                        return DefaultValueAsUnicodeString();
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(SettingType));
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Returns the default value as an integer
+        /// </summary>
+        /// <returns>An integer representing the default value</returns>
+        public uint DefaultValueAsInteger()
+        {
+            return _DefaultValue.AsInteger();
+        }
+
+        /// <summary>
+        ///     Returns the default value as a byte array
+        /// </summary>
+        /// <returns>An array of bytes representing the default value</returns>
+        public byte[] DefaultValueAsBinary()
+        {
+            return _DefaultValue.AsBinary();
+        }
+
+        /// <summary>
+        ///     Returns the default value as an unicode string
+        /// </summary>
+        /// <returns>A string representing the default value</returns>
+        public string DefaultValueAsUnicodeString()
+        {
+            return _DefaultValue.AsUnicodeString();
+        }
+
+        /// <summary>
+        ///     Returns the setting's possible values as an array of integers
+        /// </summary>
+        /// <returns>An array of integers representing the possible values</returns>
+        public uint[] ValuesAsInteger()
+        {
+            return _Values.Take((int)NumberOfValues).Select(value => value.AsInteger()).ToArray();
+        }
+
+        /// <summary>
+        ///     Returns the setting's possible values as an array of byte arrays
+        /// </summary>
+        /// <returns>An array of byte arrays representing the possible values</returns>
+        public byte[][] ValuesAsBinary()
+        {
+            return _Values.Take((int)NumberOfValues).Select(value => value.AsBinary()).ToArray();
+        }
+
+        /// <summary>
+        ///     Returns the setting's possible values as an array of unicode strings
+        /// </summary>
+        /// <returns>An array of unicode strings representing the possible values</returns>
+        public string[] ValuesAsUnicodeString()
+        {
+            return _Values.Take((int)NumberOfValues).Select(value => value.AsUnicodeString()).ToArray();
+        }
+
         public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUES_V1 other && this.Equals(other);
 
         public bool Equals(NVDRS_SETTING_VALUES_V1 other)
         => Version == other.Version &&
-           NumSettingValues == other.NumSettingValues &&
-           SettingType == other.SettingType &&
-           DefaultValue == other.DefaultValue &&
-           SettingsValues.SequenceEqual(other.SettingsValues);
+            NumberOfValues == other.NumberOfValues &&
+            _SettingType == other._SettingType &&
+            _DefaultValue == other._DefaultValue &&
+            _Values == other._Values;
+
 
         public override Int32 GetHashCode()
         {
-            return (Version, NumSettingValues, SettingType, DefaultValue, SettingsValues).GetHashCode();
+            return (Version, NumberOfValues, _SettingType, _DefaultValue, _Values).GetHashCode();
         }
         public static bool operator ==(NVDRS_SETTING_VALUES_V1 lhs, NVDRS_SETTING_VALUES_V1 rhs) => lhs.Equals(rhs);
 
@@ -1119,6 +1631,29 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct UnicodeString 
+    {
+        public const int UnicodeStringLength = 2048;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = UnicodeStringLength)]
+        private readonly string _Value;
+
+        public string Value
+        {
+            get => _Value;
+        }
+
+        public UnicodeString(string value)
+        {
+            _Value = value ?? string.Empty;
+        }
+
+        public override string ToString()
+        {
+            return Value;
+        }
+    }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NV_LOGICAL_GPU_DATA_V1 : IEquatable<NV_LOGICAL_GPU_DATA_V1>, ICloneable // Note: Version 1 of NV_BOARD_INFO_V1 structure
@@ -6108,7 +6643,7 @@ namespace DisplayMagicianShared.NVIDIA
         private delegate NVAPI_STATUS DRS_GetProfileInfoDelegate(
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] NvDRSProfileHandle drsProfileHandle,
-            [In,Out] ref NVDRS_PROFILE_V1 drsProfileInfo);
+            [In][Out] ref NVDRS_PROFILE_V1 drsProfileInfo);
         private static readonly DRS_GetProfileInfoDelegate DRS_GetProfileInfoInternal;
         /// <summary>
         /// This API gets information about the given profile. User needs to specify the name of the Profile.
@@ -6290,8 +6825,8 @@ namespace DisplayMagicianShared.NVIDIA
             [In] NvDRSSessionHandle drsSessionHandle,
             [In] NvDRSProfileHandle drsProfileHandle,
             [In] UInt32 drsStartIndex,
-            [In,Out] ref UInt32 drsSettingCount,
-            [In,Out] ref NVDRS_SETTING_V1[] drsSettings);
+            [In][Out] ref UInt32 drsSettingCount,
+            [In][Out] NVDRS_SETTING_V1[] drsSettings);
         private static readonly DRS_EnumSettingsDelegate DRS_EnumSettingsInternal;
         /// <summary>
         /// This API enumerates all the settings of a given profile from startIndex to the maximum length.
@@ -6308,18 +6843,24 @@ namespace DisplayMagicianShared.NVIDIA
 
             if (DRS_EnumSettingsInternal != null)
             {
-                drsSettingCount = NVImport.NVAPI_SETTING_MAX_VALUES;
-                drsSettings = new NVDRS_SETTING_V1[drsSettingCount];
-                for (int i = 0; i < drsSettingCount; i++)
+                if (drsSettingCount == 0)
                 {
-                    drsSettings[i].Version = NVImport.NVDRS_SETTING_V1_VER;
-                }                
-                status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, ref drsSettings);
-                NVDRS_SETTING_V1[] drsSettingsToReturn = new NVDRS_SETTING_V1[drsSettingCount];
-                for (int i = 0; i < drsSettingCount; i++)
-                {
-                    drsSettings[i] = drsSettingsToReturn[i];
+                    drsSettingCount = NVImport.NVAPI_SETTING_MAX_VALUES;
                 }
+                NVDRS_SETTING_V1[] drsSettingsInternal = new NVDRS_SETTING_V1[drsSettingCount];
+                for (int i = 0; i < drsSettingCount; i++)
+                {
+                    drsSettingsInternal[i]._Version = NVImport.NVDRS_SETTING_V1_VER;
+                    
+                }
+                status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, drsSettingsInternal);
+                drsSettings = new NVDRS_SETTING_V1[drsSettingCount];
+                Array.Copy(drsSettingsInternal, drsSettings, drsSettingCount);
+                /*for (int i = 0; i < drsSettingCount; i++)
+                {
+                    drsSettings[i] = drsSettingsInternal[i].Clone();
+                }*/
+
             }
             else
             {
@@ -6335,7 +6876,7 @@ namespace DisplayMagicianShared.NVIDIA
         // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingIds(NvU32* pSettingIds, NvU32* pMaxCount)
         private delegate NVAPI_STATUS DRS_EnumAvailableSettingIdsDelegate(
             [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out UInt32[] drsSettingsIds,
-            [In, Out] ref UInt32 drsSettingCount);
+            [In][Out] ref UInt32 drsSettingCount);
         private static readonly DRS_EnumAvailableSettingIdsDelegate DRS_EnumAvailableSettingIdsInternal;
         /// <summary>
         /// This API enumerates all the Ids of all the settings recognized by NVAPI.
