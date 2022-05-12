@@ -1490,9 +1490,9 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 Version;
         public UInt32 NumberOfValues;
         public NVDRS_SETTING_TYPE _SettingType;
-        internal NVDRS_SETTING_VALUE _DefaultValue;
+        public NVDRS_SETTING_VALUE _DefaultValue;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaximumNumberOfValues)]
-        internal NVDRS_SETTING_VALUE[] _Values;
+        public NVDRS_SETTING_VALUE[] _Values;
 
         /// <summary>
         ///     Gets the setting's value type
