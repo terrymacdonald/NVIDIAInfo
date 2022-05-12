@@ -3715,7 +3715,7 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_DRS_SaveSettings, out DRS_SaveSettingsInternal);
                 GetDelegate(NvId_DRS_GetBaseProfile, out DRS_GetBaseProfileInternal);
                 GetDelegate(NvId_DRS_GetNumProfiles, out DRS_GetNumProfilesInternal);
-                
+                GetDelegate(NvId_DRS_RestoreProfileDefaultSetting, out DRS_RestoreProfileDefaultSettingInternal);               
 
                 // Set the availability
                 available = true;
@@ -6884,7 +6884,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="drsSettingsIds"></param>
         /// <param name="drsSettingCount"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS DRS_EnumAvailableSettingIds(out UInt32[] drsSettingsIds, ref UInt32 drsSettingCount)
+        public static NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingIds(out UInt32[] drsSettingsIds, ref UInt32 drsSettingCount)
         {
             NVAPI_STATUS status;
 
@@ -6988,6 +6988,35 @@ namespace DisplayMagicianShared.NVIDIA
 
             return status;
         }
+
+        // NVAPI_INTERFACE NvAPI_DRS_RestoreProfileDefaultSetting(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile, NvU32 settingId);
+        private delegate NVAPI_STATUS DRS_RestoreProfileDefaultSettingDelegate(
+            [In] NvDRSSessionHandle drsSessionHandle,
+            [In] NvDRSProfileHandle drsProfileHandle,
+            [In] UInt32 drsSettingId);
+        private static readonly DRS_RestoreProfileDefaultSettingDelegate DRS_RestoreProfileDefaultSettingInternal;
+        /// <summary>
+        /// This API gets information about the given setting.
+        /// SUPPORTED OS: Windows 7 and higher
+        /// <param name="drsSessionHandle"></param>
+        /// <param name="drsProfileHandle"></param>
+        /// <returns></returns>
+        public static NVAPI_STATUS NvAPI_DRS_RestoreProfileDefaultSetting(NvDRSSessionHandle drsSessionHandle, NvDRSProfileHandle drsProfileHandle, UInt32 drsSettingId)
+        {
+            NVAPI_STATUS status;
+
+            if (DRS_RestoreProfileDefaultSettingInternal != null)
+            {
+                status = DRS_RestoreProfileDefaultSettingInternal(drsSessionHandle, drsProfileHandle, drsSettingId);
+            }
+            else
+            {
+                status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND;
+            }
+
+            return status;
+        }
+
         // NVAPI_INTERFACE NvAPI_DRS_CreateProfile(NvDRSSessionHandle hSession, NVDRS_PROFILE* pProfileInfo, NvDRSProfileHandle* phProfile)
 
         // NVAPI_INTERFACE NvAPI_DRS_DeleteProfile(NvDRSSessionHandle hSession, NvDRSProfileHandle hProfile)
