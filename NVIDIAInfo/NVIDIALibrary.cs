@@ -156,6 +156,7 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NVIDIA_DISPLAY_CONFIG : IEquatable<NVIDIA_DISPLAY_CONFIG>
     {
         public bool IsCloned;
+        public bool IsOptimus;
         public NVIDIA_MOSAIC_CONFIG MosaicConfig;
         public Dictionary<UInt32, NVIDIA_PER_ADAPTER_CONFIG> PhysicalAdapters;
         public List<NV_DISPLAYCONFIG_PATH_INFO_V2> DisplayConfigs;
@@ -170,6 +171,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         public bool Equals(NVIDIA_DISPLAY_CONFIG other)
            => IsCloned == other.IsCloned &&
+            IsOptimus == other.IsOptimus &&
             PhysicalAdapters.SequenceEqual(other.PhysicalAdapters) &&
             MosaicConfig.Equals(other.MosaicConfig) &&
             DisplayConfigs.SequenceEqual(other.DisplayConfigs) &&
@@ -179,7 +181,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         public override int GetHashCode()
         {
-            return (IsCloned, MosaicConfig, PhysicalAdapters, DisplayConfigs, DisplayIdentifiers, DRSSettings).GetHashCode();
+            return (IsCloned, IsOptimus, MosaicConfig, PhysicalAdapters, DisplayConfigs, DisplayIdentifiers, DRSSettings).GetHashCode();
         }
         public static bool operator ==(NVIDIA_DISPLAY_CONFIG lhs, NVIDIA_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
 
@@ -337,6 +339,7 @@ namespace DisplayMagicianShared.NVIDIA
             myDefaultConfig.DisplayNames = new Dictionary<string, string>();
             myDefaultConfig.DisplayIdentifiers = new List<string>();
             myDefaultConfig.IsCloned = false;
+            myDefaultConfig.IsOptimus = false;
 
             return myDefaultConfig;
         }
@@ -1526,6 +1529,16 @@ namespace DisplayMagicianShared.NVIDIA
 
                                     // And then we save the DRS Config to the main config so it gets saved
                                     myDisplayConfig.DRSSettings.Add(drsConfig);
+
+                                    // Now we do a specific check for NVIDIA Optimus. We need to do this as we want to figure out if we have to set the IsOptimus setting.
+                                    foreach (var drsSetting in drsDriverSettings)
+                                    {
+                                        // Look specifically for the Optimus enabled setting
+                                        if (drsSetting.SettingId == 33333)
+                                        {
+                                            myDisplayConfig.IsOptimus = true;
+                                        }
+                                    }
                                 }                                
 
                             }

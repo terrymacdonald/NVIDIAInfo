@@ -976,15 +976,15 @@ namespace DisplayMagicianShared.NVIDIA
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct NVDRS_SETTING_V1 : IEquatable<NVDRS_SETTING_V1>, ICloneable // Note: Version 1 of NVDRS_SETTING_V1 structure
     {
-        internal UInt32 _Version;
-        internal UnicodeString _SettingName;
-        internal UInt32 _SettingId;
-        internal NVDRS_SETTING_TYPE _SettingType;
-        internal NVDRS_SETTING_LOCATION _SettingLocation;
-        internal UInt32 _IsCurrentPredefined;
-        internal UInt32 _IsPredefinedValid;
-        internal NVDRS_SETTING_VALUE _PredefinedValue;
-        internal NVDRS_SETTING_VALUE _CurrentValue;
+        public UInt32 InternalVersion;
+        public UnicodeString InternalSettingName;
+        public UInt32 InternalSettingId;
+        public NVDRS_SETTING_TYPE InternalSettingType;
+        public NVDRS_SETTING_LOCATION InternalSettingLocation;
+        public UInt32 InternalIsCurrentPredefined;
+        public UInt32 InternalIsPredefinedValid;
+        public NVDRS_SETTING_VALUE InternalPredefinedValue;
+        public NVDRS_SETTING_VALUE InternalCurrentValue;
 
         /// <summary>
         ///     Creates a new instance of <see cref="DRSSettingV1" /> containing the passed value.
@@ -994,17 +994,17 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="value">The setting's value</param>
         public NVDRS_SETTING_V1(uint id, NVDRS_SETTING_TYPE settingType, object value)
         {
-            _Version = NVImport.NVDRS_SETTING_V1_VER;
-            _SettingId = id;
-            _IsPredefinedValid = (UInt32)0;
-            _SettingName = new UnicodeString("");
-            _SettingId = 0;
-            _SettingType = settingType;
-            _SettingLocation = NVDRS_SETTING_LOCATION.NVDRS_BASE_PROFILE_LOCATION;
-            _IsCurrentPredefined = 0;
-            _IsPredefinedValid = 0;
-            _PredefinedValue = new NVDRS_SETTING_VALUE();
-            _CurrentValue = new NVDRS_SETTING_VALUE(0);
+            InternalVersion = NVImport.NVDRS_SETTING_V1_VER;
+            InternalSettingId = id;
+            InternalIsPredefinedValid = (UInt32)0;
+            InternalSettingName = new UnicodeString("");
+            InternalSettingId = 0;
+            InternalSettingType = settingType;
+            InternalSettingLocation = NVDRS_SETTING_LOCATION.NVDRS_BASE_PROFILE_LOCATION;
+            InternalIsCurrentPredefined = 0;
+            InternalIsPredefinedValid = 0;
+            InternalPredefinedValue = new NVDRS_SETTING_VALUE();
+            InternalCurrentValue = new NVDRS_SETTING_VALUE(0);
 
             CurrentValue = value;
         }
@@ -1041,7 +1041,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// </summary>
         public string Name
         {
-            get => _SettingName.Value;
+            get => InternalSettingName.Value;
         }
 
         /// <summary>
@@ -1049,8 +1049,8 @@ namespace DisplayMagicianShared.NVIDIA
         /// </summary>
         public UInt32 SettingId
         {
-            get => _SettingId;
-            private set => _SettingId = value;
+            get => InternalSettingId;
+            private set => InternalSettingId = value;
         }
 
         /// <summary>
@@ -1058,8 +1058,8 @@ namespace DisplayMagicianShared.NVIDIA
         /// </summary>
         public NVDRS_SETTING_TYPE SettingType
         {
-            get => _SettingType;
-            private set => _SettingType = value;
+            get => InternalSettingType;
+            private set => InternalSettingType = value;
         }
 
         /// <summary>
@@ -1067,7 +1067,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// </summary>
         public NVDRS_SETTING_LOCATION SettingLocation
         {
-            get => _SettingLocation;
+            get => InternalSettingLocation;
         }
 
         /// <summary>
@@ -1075,8 +1075,8 @@ namespace DisplayMagicianShared.NVIDIA
         /// </summary>
         public bool IsCurrentPredefined
         {
-            get => _IsCurrentPredefined > 0;
-            internal set => _IsCurrentPredefined = value ? 1u : 0u;
+            get => InternalIsCurrentPredefined > 0;
+            internal set => InternalIsCurrentPredefined = value ? 1u : 0u;
         }
 
         /// <summary>
@@ -1084,8 +1084,8 @@ namespace DisplayMagicianShared.NVIDIA
         /// </summary>
         public bool IsPredefinedValid
         {
-            get => _IsPredefinedValid > 0;
-            internal set => _IsPredefinedValid = value ? 1u : 0u;
+            get => InternalIsPredefinedValid > 0;
+            internal set => InternalIsPredefinedValid = value ? 1u : 0u;
         }
 
         /// <summary>
@@ -1094,7 +1094,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An integer representing the predefined value</returns>
         public uint GetPredefinedValueAsInteger()
         {
-            return _PredefinedValue.AsInteger();
+            return InternalPredefinedValue.AsInteger();
         }
 
         /// <summary>
@@ -1103,7 +1103,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An byte array representing the predefined value</returns>
         public byte[] GetPredefinedValueAsBinary()
         {
-            return _PredefinedValue.AsBinary();
+            return InternalPredefinedValue.AsBinary();
         }
 
         /// <summary>
@@ -1112,7 +1112,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An unicode string representing the predefined value</returns>
         public string GetPredefinedValueAsUnicodeString()
         {
-            return _PredefinedValue.AsUnicodeString();
+            return InternalPredefinedValue.AsUnicodeString();
         }
 
         /// <summary>
@@ -1127,7 +1127,7 @@ namespace DisplayMagicianShared.NVIDIA
                     return null;
                 }
 
-                switch (_SettingType)
+                switch (InternalSettingType)
                 {
                     case NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE:
 
@@ -1152,7 +1152,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An integer representing the current value</returns>
         public uint GetCurrentValueAsInteger()
         {
-            return _CurrentValue.AsInteger();
+            return InternalCurrentValue.AsInteger();
         }
 
         /// <summary>
@@ -1161,7 +1161,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An byte array representing the current value</returns>
         public byte[] GetCurrentValueAsBinary()
         {
-            return _CurrentValue.AsBinary();
+            return InternalCurrentValue.AsBinary();
         }
 
         /// <summary>
@@ -1170,7 +1170,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An unicode string representing the current value</returns>
         public string GetCurrentValueAsUnicodeString()
         {
-            return _CurrentValue.AsUnicodeString();
+            return InternalCurrentValue.AsUnicodeString();
         }
 
         /// <summary>
@@ -1184,7 +1184,7 @@ namespace DisplayMagicianShared.NVIDIA
                 throw new ArgumentOutOfRangeException(nameof(value), "Passed argument is invalid for this setting.");
             }
 
-            _CurrentValue = new NVDRS_SETTING_VALUE(value);
+            InternalCurrentValue = new NVDRS_SETTING_VALUE(value);
             IsCurrentPredefined = IsPredefinedValid && (uint)CurrentValue == (uint)PredefinedValue;
         }
 
@@ -1199,7 +1199,7 @@ namespace DisplayMagicianShared.NVIDIA
                 throw new ArgumentOutOfRangeException(nameof(value), "Passed argument is invalid for this setting.");
             }
 
-            _CurrentValue = new NVDRS_SETTING_VALUE(value);
+            InternalCurrentValue = new NVDRS_SETTING_VALUE(value);
             IsCurrentPredefined =
                 IsPredefinedValid &&
                 ((byte[])CurrentValue)?.SequenceEqual((byte[])PredefinedValue ?? new byte[0]) == true;
@@ -1216,7 +1216,7 @@ namespace DisplayMagicianShared.NVIDIA
                 throw new ArgumentOutOfRangeException(nameof(value), "Passed argument is invalid for this setting.");
             }
 
-            _CurrentValue = new NVDRS_SETTING_VALUE(value);
+            InternalCurrentValue = new NVDRS_SETTING_VALUE(value);
             IsCurrentPredefined =
                 IsPredefinedValid &&
                 string.Equals(
@@ -1233,7 +1233,7 @@ namespace DisplayMagicianShared.NVIDIA
         {
             get
             {
-                switch (_SettingType)
+                switch (InternalSettingType)
                 {
                     case NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE:
 
@@ -1299,29 +1299,29 @@ namespace DisplayMagicianShared.NVIDIA
 
         public bool Equals(NVDRS_SETTING_V1 other)
         {
-            if (!(_Version == other._Version &&
-            _SettingName.Equals(other._SettingName) &&
-            _SettingId == other._SettingId &&
-            _SettingType == other._SettingType &&
-            _SettingLocation == other._SettingLocation &&
-            _IsCurrentPredefined == other._IsCurrentPredefined &&
-            _IsPredefinedValid == other._IsPredefinedValid &&
-            _PredefinedValue == other._PredefinedValue))
+            if (!(InternalVersion == other.InternalVersion &&
+            InternalSettingName.Equals(other.InternalSettingName) &&
+            InternalSettingId == other.InternalSettingId &&
+            InternalSettingType == other.InternalSettingType &&
+            InternalSettingLocation == other.InternalSettingLocation &&
+            InternalIsCurrentPredefined == other.InternalIsCurrentPredefined &&
+            InternalIsPredefinedValid == other.InternalIsPredefinedValid &&
+            InternalPredefinedValue == other.InternalPredefinedValue))
             {
                 return false;
             }
-            if (_SettingType == NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE &&
-                _CurrentValue.AsInteger() == other._CurrentValue.AsInteger())
+            if (InternalSettingType == NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE &&
+                InternalCurrentValue.AsInteger() == other.InternalCurrentValue.AsInteger())
             {
                 return true;
             }
-            else if (_SettingType == NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE &&
-                _CurrentValue.AsBinary() == other._CurrentValue.AsBinary())
+            else if (InternalSettingType == NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE &&
+                InternalCurrentValue.AsBinary() == other.InternalCurrentValue.AsBinary())
             {
                 return true;
             }
-            else if ((_SettingType == NVDRS_SETTING_TYPE.NVDRS_STRING_TYPE || _SettingType == NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE) &&
-                _CurrentValue.AsUnicodeString() == other._CurrentValue.AsUnicodeString())
+            else if ((InternalSettingType == NVDRS_SETTING_TYPE.NVDRS_STRING_TYPE || InternalSettingType == NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE) &&
+                InternalCurrentValue.AsUnicodeString() == other.InternalCurrentValue.AsUnicodeString())
             {
                 return true;
             }
@@ -1334,7 +1334,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         public override Int32 GetHashCode()
         {
-            return (_Version, _SettingName, _SettingId, _SettingType, _SettingLocation, _IsCurrentPredefined, _IsPredefinedValid, _PredefinedValue, _CurrentValue).GetHashCode();
+            return (InternalVersion, InternalSettingName, InternalSettingId, InternalSettingType, InternalSettingLocation, InternalIsCurrentPredefined, InternalIsPredefinedValid, InternalPredefinedValue, InternalCurrentValue).GetHashCode();
         }
         public static bool operator ==(NVDRS_SETTING_V1 lhs, NVDRS_SETTING_V1 rhs) => lhs.Equals(rhs);
 
@@ -1387,7 +1387,7 @@ namespace DisplayMagicianShared.NVIDIA
         private const int FullStructureSize = 4100;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FullStructureSize, ArraySubType = UnmanagedType.U1)]
-        internal byte[] _BinaryValue;
+        public byte[] InternalBinaryValue;
 
         /// <summary>
         ///     Creates a new instance of <see cref="NVDRS_SETTING_VALUE" /> containing the passed unicode string as the value
@@ -1400,10 +1400,10 @@ namespace DisplayMagicianShared.NVIDIA
                 value = value.Substring(0, UnicodeStringLength);
             }
 
-            _BinaryValue = new byte[FullStructureSize];
+            InternalBinaryValue = new byte[FullStructureSize];
 
             var stringBytes = Encoding.Unicode.GetBytes(value ?? string.Empty);
-            Array.Copy(stringBytes, 0, _BinaryValue, 0, Math.Min(stringBytes.Length, _BinaryValue.Length));
+            Array.Copy(stringBytes, 0, InternalBinaryValue, 0, Math.Min(stringBytes.Length, InternalBinaryValue.Length));
         }
 
         /// <summary>
@@ -1412,14 +1412,14 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="value">The byte array value</param>
         public NVDRS_SETTING_VALUE(byte[] value)
         {
-            _BinaryValue = new byte[FullStructureSize];
+            InternalBinaryValue = new byte[FullStructureSize];
 
             if (value?.Length > 0)
             {
                 var arrayLength = Math.Min(value.Length, BinaryDataMax);
                 var arrayLengthBytes = BitConverter.GetBytes((uint)arrayLength);
-                Array.Copy(arrayLengthBytes, 0, _BinaryValue, 0, arrayLengthBytes.Length);
-                Array.Copy(value, 0, _BinaryValue, arrayLengthBytes.Length, arrayLength);
+                Array.Copy(arrayLengthBytes, 0, InternalBinaryValue, 0, arrayLengthBytes.Length);
+                Array.Copy(value, 0, InternalBinaryValue, arrayLengthBytes.Length, arrayLength);
             }
         }
 
@@ -1429,9 +1429,9 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="value">The integer value</param>
         public NVDRS_SETTING_VALUE(uint value)
         {
-            _BinaryValue = new byte[FullStructureSize];
+            InternalBinaryValue = new byte[FullStructureSize];
             var arrayLengthBytes = BitConverter.GetBytes(value);
-            Array.Copy(arrayLengthBytes, 0, _BinaryValue, 0, arrayLengthBytes.Length);
+            Array.Copy(arrayLengthBytes, 0, InternalBinaryValue, 0, arrayLengthBytes.Length);
         }
 
         /// <summary>
@@ -1440,7 +1440,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An integer representing the value</returns>
         public uint AsInteger()
         {
-            return BitConverter.ToUInt32(_BinaryValue, 0);
+            return BitConverter.ToUInt32(InternalBinaryValue, 0);
         }
 
         /// <summary>
@@ -1449,7 +1449,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An array of bytes representing the value</returns>
         public byte[] AsBinary()
         {
-            return _BinaryValue.Skip(sizeof(uint)).Take((int)AsInteger()).ToArray();
+            return InternalBinaryValue.Skip(sizeof(uint)).Take((int)AsInteger()).ToArray();
         }
 
         /// <summary>
@@ -1458,17 +1458,17 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An unicode string representing the value</returns>
         public string AsUnicodeString()
         {
-            return Encoding.Unicode.GetString(_BinaryValue).TrimEnd('\0');
+            return Encoding.Unicode.GetString(InternalBinaryValue).TrimEnd('\0');
         }
 
         public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUE other && this.Equals(other);
 
         public bool Equals(NVDRS_SETTING_VALUE other)
-        => _BinaryValue == other._BinaryValue;
+        => InternalBinaryValue == other.InternalBinaryValue;
 
         public override Int32 GetHashCode()
         {
-            return (_BinaryValue).GetHashCode();
+            return (InternalBinaryValue).GetHashCode();
         }
         public static bool operator ==(NVDRS_SETTING_VALUE lhs, NVDRS_SETTING_VALUE rhs) => lhs.Equals(rhs);
 
@@ -1490,9 +1490,9 @@ namespace DisplayMagicianShared.NVIDIA
         public UInt32 Version;
         public UInt32 NumberOfValues;
         public NVDRS_SETTING_TYPE _SettingType;
-        public NVDRS_SETTING_VALUE _DefaultValue;
+        public NVDRS_SETTING_VALUE InternalDefaultValue;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaximumNumberOfValues)]
-        public NVDRS_SETTING_VALUE[] _Values;
+        public NVDRS_SETTING_VALUE[] InternalValues;
 
         /// <summary>
         ///     Gets the setting's value type
@@ -1558,7 +1558,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An integer representing the default value</returns>
         public uint DefaultValueAsInteger()
         {
-            return _DefaultValue.AsInteger();
+            return InternalDefaultValue.AsInteger();
         }
 
         /// <summary>
@@ -1567,7 +1567,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An array of bytes representing the default value</returns>
         public byte[] DefaultValueAsBinary()
         {
-            return _DefaultValue.AsBinary();
+            return InternalDefaultValue.AsBinary();
         }
 
         /// <summary>
@@ -1576,7 +1576,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>A string representing the default value</returns>
         public string DefaultValueAsUnicodeString()
         {
-            return _DefaultValue.AsUnicodeString();
+            return InternalDefaultValue.AsUnicodeString();
         }
 
         /// <summary>
@@ -1585,7 +1585,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An array of integers representing the possible values</returns>
         public uint[] ValuesAsInteger()
         {
-            return _Values.Take((int)NumberOfValues).Select(value => value.AsInteger()).ToArray();
+            return InternalValues.Take((int)NumberOfValues).Select(value => value.AsInteger()).ToArray();
         }
 
         /// <summary>
@@ -1594,7 +1594,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An array of byte arrays representing the possible values</returns>
         public byte[][] ValuesAsBinary()
         {
-            return _Values.Take((int)NumberOfValues).Select(value => value.AsBinary()).ToArray();
+            return InternalValues.Take((int)NumberOfValues).Select(value => value.AsBinary()).ToArray();
         }
 
         /// <summary>
@@ -1603,7 +1603,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <returns>An array of unicode strings representing the possible values</returns>
         public string[] ValuesAsUnicodeString()
         {
-            return _Values.Take((int)NumberOfValues).Select(value => value.AsUnicodeString()).ToArray();
+            return InternalValues.Take((int)NumberOfValues).Select(value => value.AsUnicodeString()).ToArray();
         }
 
         public override bool Equals(object obj) => obj is NVDRS_SETTING_VALUES_V1 other && this.Equals(other);
@@ -1612,13 +1612,13 @@ namespace DisplayMagicianShared.NVIDIA
         => Version == other.Version &&
             NumberOfValues == other.NumberOfValues &&
             _SettingType == other._SettingType &&
-            _DefaultValue == other._DefaultValue &&
-            _Values == other._Values;
+            InternalDefaultValue == other.InternalDefaultValue &&
+            InternalValues == other.InternalValues;
 
 
         public override Int32 GetHashCode()
         {
-            return (Version, NumberOfValues, _SettingType, _DefaultValue, _Values).GetHashCode();
+            return (Version, NumberOfValues, _SettingType, InternalDefaultValue, InternalValues).GetHashCode();
         }
         public static bool operator ==(NVDRS_SETTING_VALUES_V1 lhs, NVDRS_SETTING_VALUES_V1 rhs) => lhs.Equals(rhs);
 
@@ -1632,21 +1632,21 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct UnicodeString 
+    public struct UnicodeString 
     {
         public const int UnicodeStringLength = 2048;
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = UnicodeStringLength)]
-        private readonly string _Value;
+        public readonly string InternalValue;
 
         public string Value
         {
-            get => _Value;
+            get => InternalValue;
         }
 
         public UnicodeString(string value)
         {
-            _Value = value ?? string.Empty;
+            InternalValue = value ?? string.Empty;
         }
 
         public override string ToString()
@@ -6850,7 +6850,7 @@ namespace DisplayMagicianShared.NVIDIA
                 NVDRS_SETTING_V1[] drsSettingsInternal = new NVDRS_SETTING_V1[drsSettingCount];
                 for (int i = 0; i < drsSettingCount; i++)
                 {
-                    drsSettingsInternal[i]._Version = NVImport.NVDRS_SETTING_V1_VER;
+                    drsSettingsInternal[i].InternalVersion = NVImport.NVDRS_SETTING_V1_VER;
                     
                 }
                 status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, drsSettingsInternal);
