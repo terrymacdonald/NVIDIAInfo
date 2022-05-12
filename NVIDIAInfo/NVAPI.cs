@@ -3707,7 +3707,7 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_DRS_EnumAvailableSettingIds, out DRS_EnumAvailableSettingIdsInternal);
                 GetDelegate(NvId_DRS_CreateSession, out DRS_CreateSessionInternal);
                 GetDelegate(NvId_DRS_GetSettingNameFromId, out DRS_GetSettingNameFromIdInternal);
-                //GetDelegate(NvId_DRS_EnumAvailableSettingValues, out DRS_EnumAvailableSettingValuesInternal);
+                GetDelegate(NvId_DRS_EnumAvailableSettingValues, out DRS_EnumAvailableSettingValuesInternal);
                 GetDelegate(NvId_DRS_EnumProfiles, out DRS_EnumProfilesInternal);
                 GetDelegate(NvId_DRS_SetCurrentGlobalProfile, out DRS_SetCurrentGlobalProfileInternal);
                 GetDelegate(NvId_DRS_DestroySession, out DRS_DestroySessionInternal);
@@ -6902,11 +6902,11 @@ namespace DisplayMagicianShared.NVIDIA
             return status;
         }
 
-        /*// NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingValues(NvU32 settingId, NvU32* pMaxNumValues, NVDRS_SETTING_VALUES* pSettingValues)
+        // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingValues(NvU32 settingId, NvU32* pMaxNumValues, NVDRS_SETTING_VALUES* pSettingValues)
         private delegate NVAPI_STATUS DRS_EnumAvailableSettingValuesDelegate(
             [In] UInt32 drsSettingId, 
             [In, Out] ref UInt32 drsMaxNumValues,
-            [Out][MarshalAs(UnmanagedType.LPArray, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] out NVDRS_SETTING_VALUES_V1[] drsSettingsValues);
+            [In][Out] NVDRS_SETTING_VALUES_V1[] drsSettingsValues);
         private static readonly DRS_EnumAvailableSettingValuesDelegate DRS_EnumAvailableSettingValuesInternal;
         /// <summary>
         /// This API enumerates all available setting values for a given setting.
@@ -6915,13 +6915,13 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="drsMaxNumValues"></param>
         /// <param name="drsSettingsValues"></param>
         /// <returns></returns>
-        public static NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingValues(UInt32 drsSettingId, ref UInt32 drsMaxNumValues, out NVDRS_SETTING_VALUES_V1[] drsSettingsValues)
+        public static NVAPI_STATUS NvAPI_DRS_EnumAvailableSettingValues(UInt32 drsSettingId, ref UInt32 drsMaxNumValues, ref NVDRS_SETTING_VALUES_V1[] drsSettingsValues)
         {
             NVAPI_STATUS status;
 
             if (DRS_EnumAvailableSettingValuesInternal != null)
             {
-                status = DRS_EnumAvailableSettingValuesInternal(drsSettingId, ref drsMaxNumValues, out drsSettingsValues);
+                status = DRS_EnumAvailableSettingValuesInternal(drsSettingId, ref drsMaxNumValues, drsSettingsValues);
             }
             else
             {
@@ -6931,7 +6931,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
             return status;
-        }*/
+        }
 
         // NVAPI_INTERFACE NvAPI_DRS_GetSettingIdFromName(NvAPI_UnicodeString settingName, NvU32* pSettingId)
         private delegate NVAPI_STATUS DRS_GetSettingIdFromNameDelegate(
