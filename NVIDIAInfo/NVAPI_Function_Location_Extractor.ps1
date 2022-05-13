@@ -1,6 +1,6 @@
 # Written by Soroush Falahati
-$filename = "..\..\..\video-driver-sdks\NVIDIA\R470-developer\amd64\nvapi64.lib"
-$dumpbinAddress = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\bin\Hostx64\x64\dumpbin.exe"
+$filename = "..\..\..\video-driver-sdks\NVIDIA\R510-developer\amd64\nvapi64.lib"
+$dumpbinAddress = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\Hostx64\x64\dumpbin.exe"
 $dumpbinParameter = "/DISASM $filename"
 Start-Process $dumpbinAddress $dumpbinParameter -Wait -WindowStyle Hidden -RedirectStandardOutput "$filename.asm"
 $content = Get-Content "$filename.asm"
