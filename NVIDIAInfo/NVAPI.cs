@@ -6882,7 +6882,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingIds(NvU32* pSettingIds, NvU32* pMaxCount)
         private delegate NVAPI_STATUS DRS_EnumAvailableSettingIdsDelegate(
-            [In][Out][MarshalAs(UnmanagedType.SysUInt, SizeConst = (int)NVAPI_SETTING_MAX_VALUES)] ref UInt32[] drsSettingsIds,
+            [In][Out][MarshalAs(UnmanagedType.SysUInt, SizeConst = (int)Int32.MaxValue)] UInt32[] drsSettingsIds,
             [In][Out] ref UInt32 drsSettingCount);
         private static readonly DRS_EnumAvailableSettingIdsDelegate DRS_EnumAvailableSettingIdsInternal;
         /// <summary>
@@ -6897,7 +6897,9 @@ namespace DisplayMagicianShared.NVIDIA
 
             if (DRS_EnumAvailableSettingIdsInternal != null)
             {
-                status = DRS_EnumAvailableSettingIdsInternal(ref drsSettingsIds, ref drsSettingCount);
+                UInt32 drsSettingInternal = Int32.MaxValue;
+
+                status = DRS_EnumAvailableSettingIdsInternal(drsSettingsIds, ref drsSettingCount);
             }
             else
             {

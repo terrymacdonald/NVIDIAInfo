@@ -1840,7 +1840,10 @@ namespace DisplayMagicianShared.NVIDIA
                 }
             }
 
-            stringToReturn += DumpAllDRSSettings();
+            // I have to disable this as NvAPI_DRS_EnumAvailableSettingIds function can't be found within the NVAPI.DLL
+            // It's looking like it is a problem with the NVAPI.DLL rather than with my code, but I need to do more testing to be sure.
+            // Disabling this for now.
+            //stringToReturn += DumpAllDRSSettings();
 
             stringToReturn += $"\n\n";
             // Now we also get the Windows CCD Library info, and add it to the above
@@ -2163,7 +2166,7 @@ namespace DisplayMagicianShared.NVIDIA
                                                 // If the setting is also in the active base profile (it should be!), then we set it.
                                                 if (drsSetting.SettingId == currentSetting.SettingId)
                                                 {
-                                                    if (drsSetting.CurrentValue == currentSetting.CurrentValue)
+                                                    if (drsSetting.CurrentValue.Equals(currentSetting.CurrentValue))
                                                     {
                                                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: '{currentSetting.Name}' ({currentSetting.SettingId}) is set to the same value as the one we want, so skipping changing it.");
                                                     }
@@ -2211,7 +2214,7 @@ namespace DisplayMagicianShared.NVIDIA
                                         foreach (var currentSetting in activeBaseProfile.DriverSettings)
                                         {
                                             // Skip any settings that we've already set
-                                            if (storedBaseProfile.DriverSettings.Contains(currentSetting))
+                                            if (storedBaseProfile.DriverSettings.Exists(ds => ds.SettingId == currentSetting.SettingId))
                                             {
                                                 continue;
                                             }
