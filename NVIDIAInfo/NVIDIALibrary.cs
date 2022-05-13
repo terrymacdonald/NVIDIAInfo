@@ -1534,7 +1534,7 @@ namespace DisplayMagicianShared.NVIDIA
                                     foreach (var drsSetting in drsDriverSettings)
                                     {
                                         // Look specifically for the Optimus enabled setting
-                                        if (drsSetting.SettingId == 33333)
+                                        if (drsSetting.SettingId == 33333 && drsSetting.GetCurrentValueAsInteger() == 0)
                                         {
                                             myDisplayConfig.IsOptimus = true;
                                         }
@@ -3781,7 +3781,7 @@ namespace DisplayMagicianShared.NVIDIA
                     }
 
 
-                    // Get number of profiles
+                    /*// Get number of profiles
                     NvDRSProfileHandle drsProfileHandle = new NvDRSProfileHandle();
                     UInt32 drsNumProfiles = 0;
                     NVStatus = NVImport.NvAPI_DRS_GetNumProfiles(drsSessionHandle, out drsNumProfiles);
@@ -3793,97 +3793,133 @@ namespace DisplayMagicianShared.NVIDIA
                         {
                             //NvDRSProfileHandle drsProfileHandle = new NvDRSProfileHandle();
                             NVStatus = NVImport.NvAPI_DRS_EnumProfiles(drsSessionHandle, p, out drsProfileHandle);
-                            // Next we grab the Profile Info and store it
-                            NVDRS_PROFILE_V1 drsProfileInfo = new NVDRS_PROFILE_V1();
-                            NVStatus = NVImport.NvAPI_DRS_GetProfileInfo(drsSessionHandle, drsProfileHandle, ref drsProfileInfo);
                             if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                             {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: NvAPI_DRS_GetProfileInfo returned OK. We got the DRS Profile info for the current global profile. Profile Name is {drsProfileInfo.ProfileName}.");
-                                if (drsProfileInfo.NumofSettings > 0)
+
+                                // Next we grab the Profile Info and store it
+                                NVDRS_PROFILE_V1 drsProfileInfo = new NVDRS_PROFILE_V1();
+                                NVStatus = NVImport.NvAPI_DRS_GetProfileInfo(drsSessionHandle, drsProfileHandle, ref drsProfileInfo);
+                                if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                                 {
-                                    stringToReturn += $"\nDRS Profile Name: {drsProfileInfo.ProfileName}\n";
-                                    stringToReturn += $"\nDRS Profile GPU Support: {drsProfileInfo.GpuSupport}\n";
-                                    stringToReturn += $"\nDRS Profile is Predefined: {drsProfileInfo.IsPredefined}\n";
-                                    stringToReturn += $"\nNumber of applications using this DRS Profile: {drsProfileInfo.NumofApps}\n";
-                                    stringToReturn += $"\nNumber of settings within this DRS Profile: {drsProfileInfo.NumofSettings}\n";
-
-                                    // Next we grab the Profile Settings and store them
-                                    NVDRS_SETTING_V1[] drsDriverSettings = new NVDRS_SETTING_V1[drsProfileInfo.NumofSettings];
-                                    UInt32 drsNumSettings = drsProfileInfo.NumofSettings;
-                                    //NVDRS_SETTING_V1 drsDriverSetting = new NVDRS_SETTING_V1();
-                                    NVStatus = NVImport.NvAPI_DRS_EnumSettings(drsSessionHandle, drsProfileHandle, 0, ref drsNumSettings, ref drsDriverSettings);
-                                    if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                                    SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: NvAPI_DRS_GetProfileInfo returned OK. We got the DRS Profile info for the current global profile. Profile Name is {drsProfileInfo.ProfileName}.");
+                                    if (drsProfileInfo.NumofSettings > 0)
                                     {
-                                        SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: NvAPI_DRS_EnumSettings returned OK. We found {drsNumSettings} settings in the DRS Profile {drsProfileInfo.ProfileName}.");
-                                        foreach (var drsDriverSetting in drsDriverSettings)
+                                        stringToReturn += $"\nDRS Profile Name: {drsProfileInfo.ProfileName}\n";
+                                        stringToReturn += $"\nDRS Profile GPU Support: {drsProfileInfo.GpuSupport}\n";
+                                        stringToReturn += $"\nDRS Profile is Predefined: {drsProfileInfo.IsPredefined}\n";
+                                        stringToReturn += $"\nNumber of applications using this DRS Profile: {drsProfileInfo.NumofApps}\n";
+                                        stringToReturn += $"\nNumber of settings within this DRS Profile: {drsProfileInfo.NumofSettings}\n";
+
+                                        // Next we grab the Profile Settings and store them
+                                        NVDRS_SETTING_V1[] drsDriverSettings = new NVDRS_SETTING_V1[drsProfileInfo.NumofSettings];
+                                        UInt32 drsNumSettings = drsProfileInfo.NumofSettings;
+                                        //NVDRS_SETTING_V1 drsDriverSetting = new NVDRS_SETTING_V1();
+                                        NVStatus = NVImport.NvAPI_DRS_EnumSettings(drsSessionHandle, drsProfileHandle, 0, ref drsNumSettings, ref drsDriverSettings);
+                                        if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                                         {
-                                            SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: DRS Driver Setting: {drsDriverSetting.Name} ({drsDriverSetting.SettingId}): {drsDriverSetting.CurrentValue} ({drsDriverSetting.SettingLocation} : {drsDriverSetting.IsCurrentPredefined} : {drsDriverSetting.IsPredefinedValid})");
-                                            stringToReturn += $"    Setting Name: {drsDriverSetting.Name}\n";
-                                            stringToReturn += $"    Setting Id: {drsDriverSetting.SettingId}\n";
-                                            stringToReturn += $"    Setting Type: {drsDriverSetting.SettingType.ToString("G")}\n";
-                                            stringToReturn += $"    Setting Location: {drsDriverSetting.SettingLocation.ToString("G")}\n";
-                                            stringToReturn += $"    Setting is a Current Predefined Setting: {drsDriverSetting.IsCurrentPredefined}\n";
-                                            stringToReturn += $"    Setting is a Valid Predefined Setting: {drsDriverSetting.IsPredefinedValid}\n";
-                                            stringToReturn += $"    Setting Current Value: {drsDriverSetting.CurrentValue}\n";
-                                            stringToReturn += $"    Setting Default Value: {drsDriverSetting.PredefinedValue}\n";
+                                            SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: NvAPI_DRS_EnumSettings returned OK. We found {drsNumSettings} settings in the DRS Profile {drsProfileInfo.ProfileName}.");
+                                            foreach (var drsDriverSetting in drsDriverSettings)
+                                            {
+                                                SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: DRS Driver Setting: {drsDriverSetting.Name} ({drsDriverSetting.SettingId}): {drsDriverSetting.CurrentValue} ({drsDriverSetting.SettingLocation} : {drsDriverSetting.IsCurrentPredefined} : {drsDriverSetting.IsPredefinedValid})");
+                                                stringToReturn += $"    Setting Name: {drsDriverSetting.Name}\n";
+                                                stringToReturn += $"    Setting Id: {drsDriverSetting.SettingId}\n";
+                                                stringToReturn += $"    Setting Type: {drsDriverSetting.SettingType.ToString("G")}\n";
+                                                stringToReturn += $"    Setting Location: {drsDriverSetting.SettingLocation.ToString("G")}\n";
+                                                stringToReturn += $"    Setting is a Current Predefined Setting: {drsDriverSetting.IsCurrentPredefined}\n";
+                                                stringToReturn += $"    Setting is a Valid Predefined Setting: {drsDriverSetting.IsPredefinedValid}\n";
+                                                stringToReturn += $"    Setting Current Value: {drsDriverSetting.CurrentValue}\n";
+                                                stringToReturn += $"    Setting Default Value: {drsDriverSetting.PredefinedValue}\n";
+                                            }
                                         }
-                                    }
-                                    else if (NVStatus == NVAPI_STATUS.NVAPI_NVIDIA_DEVICE_NOT_FOUND)
-                                    {
-                                        SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: GDI Primary not on an NVIDIA GPU. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
-                                    }
-                                    else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
-                                    {
-                                        SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: One or more args passed in are invalid. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
-                                    }
-                                    else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
-                                    {
-                                        SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The NvAPI API needs to be initialized first. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
-                                    }
-                                    else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
-                                    {
-                                        SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: This entry point not available in this NVIDIA Driver. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
-                                    }
-                                    else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
-                                    {
-                                        SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: A miscellaneous error occurred whist destroying our DRS Session Handle. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
-                                    }
-                                    else
-                                    {
-                                        SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: Some non standard error occurred while destroying our DRS Session Handle! NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
-                                    }
+                                        else if (NVStatus == NVAPI_STATUS.NVAPI_END_ENUMERATION)
+                                        {
+                                            SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The startIndex exceeds the total number of available settings in DB. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
+                                            continue;
+                                        }
+                                        else if (NVStatus == NVAPI_STATUS.NVAPI_NVIDIA_DEVICE_NOT_FOUND)
+                                        {
+                                            SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: GDI Primary not on an NVIDIA GPU. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
+                                        }
+                                        else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                                        {
+                                            SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: One or more args passed in are invalid. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
+                                        }
+                                        else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                                        {
+                                            SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The NvAPI API needs to be initialized first. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
+                                        }
+                                        else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                                        {
+                                            SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: This entry point not available in this NVIDIA Driver. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
+                                        }
+                                        else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                                        {
+                                            SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: A miscellaneous error occurred whist destroying our DRS Session Handle. NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
+                                        }
+                                        else
+                                        {
+                                            SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: Some non standard error occurred while destroying our DRS Session Handle! NvAPI_DRS_EnumSettings() returned error code {NVStatus}");
+                                        }
 
-                                    // And then we save the DRS Config to the main config so it gets saved                                   
-
+                                    }
                                 }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_NVIDIA_DEVICE_NOT_FOUND)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: GDI Primary not on an NVIDIA GPU. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: One or more args passed in are invalid. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The NvAPI API needs to be initialized first. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: This entry point not available in this NVIDIA Driver. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: A miscellaneous error occurred. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                }
+                                else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
+                                {
+                                    SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The function was passed an incompatible struct version. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                }
+                                else
+                                {
+                                    SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: Some non standard error occurred while getting the profile info! NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                }
+                            }
+                            else if (NVStatus == NVAPI_STATUS.NVAPI_END_ENUMERATION)
+                            {
+                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The index exceeds the total number of available Profiles in DB. NvAPI_DRS_EnumProfiles() returned error code {NVStatus}");
+                                break;
                             }
                             else if (NVStatus == NVAPI_STATUS.NVAPI_NVIDIA_DEVICE_NOT_FOUND)
                             {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: GDI Primary not on an NVIDIA GPU. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: GDI Primary not on an NVIDIA GPU. NvAPI_DRS_EnumProfiles() returned error code {NVStatus}");
                             }
                             else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
                             {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: One or more args passed in are invalid. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: One or more args passed in are invalid. NvAPI_DRS_EnumProfiles() returned error code {NVStatus}");
                             }
                             else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
                             {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The NvAPI API needs to be initialized first. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The NvAPI API needs to be initialized first. NvAPI_DRS_EnumProfiles() returned error code {NVStatus}");
                             }
                             else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
                             {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: This entry point not available in this NVIDIA Driver. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: This entry point not available in this NVIDIA Driver. NvAPI_DRS_EnumProfiles() returned error code {NVStatus}");
                             }
                             else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
                             {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: A miscellaneous error occurred. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
-                            }
-                            else if (NVStatus == NVAPI_STATUS.NVAPI_INCOMPATIBLE_STRUCT_VERSION)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: The function was passed an incompatible struct version. NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                SharedLogger.logger.Warn($"NVIDIALibrary/DumpAllDRSSettings: A miscellaneous error occurred whilst enumerating the profiles. NvAPI_DRS_EnumProfiles() returned error code {NVStatus}");
                             }
                             else
                             {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: Some non standard error occurred while getting the profile info! NvAPI_DRS_GetProfileInfo() returned error code {NVStatus}");
+                                SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: Some non standard error occurred while enumerating the profiles! NvAPI_DRS_EnumProfiles() returned error code {NVStatus}");
                             }
                         }
                     }
@@ -3910,12 +3946,12 @@ namespace DisplayMagicianShared.NVIDIA
                     else
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: Some non standard error occurred while destroying our DRS Session Handle! NvAPI_DRS_GetCurrentGlobalProfile() returned error code {NVStatus}");
-                    }
+                    }*/
 
                     // Get ALL available settings
-                    UInt32 drsNumAvailableSettingIds = 1024;
+                    UInt32 drsNumAvailableSettingIds = NVImport.NVAPI_SETTING_MAX_VALUES;
                     UInt32[] drsSettingIds = new UInt32[drsNumAvailableSettingIds];
-                    NVStatus = NVImport.NvAPI_DRS_EnumAvailableSettingIds(out drsSettingIds, ref drsNumAvailableSettingIds);
+                    NVStatus = NVImport.NvAPI_DRS_EnumAvailableSettingIds(ref drsSettingIds, ref drsNumAvailableSettingIds);
                     if (NVStatus == NVAPI_STATUS.NVAPI_OK)
                     {
                         int settingCount = 1;
