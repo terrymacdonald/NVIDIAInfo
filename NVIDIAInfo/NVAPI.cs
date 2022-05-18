@@ -6897,9 +6897,12 @@ namespace DisplayMagicianShared.NVIDIA
 
             if (DRS_EnumAvailableSettingIdsInternal != null)
             {
-                UInt32 drsSettingInternal = Int32.MaxValue;
-
-                status = DRS_EnumAvailableSettingIdsInternal(drsSettingsIds, ref drsSettingCount);
+                UInt32 drsSettingCountInternal = Int32.MaxValue;
+                UInt32[] drsSettingIdsInternal = new UInt32[drsSettingCountInternal];
+                status = DRS_EnumAvailableSettingIdsInternal(drsSettingIdsInternal, ref drsSettingCountInternal);
+                drsSettingCount = drsSettingCountInternal;
+                drsSettingsIds = new UInt32[drsSettingCount];
+                Array.Copy(drsSettingIdsInternal, drsSettingsIds, drsSettingCount);
             }
             else
             {
