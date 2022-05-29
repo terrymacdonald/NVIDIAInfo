@@ -199,6 +199,7 @@ namespace DisplayMagicianShared.NVIDIA
         private bool _initialised = false;
         private NVIDIA_DISPLAY_CONFIG _activeDisplayConfig;
         public List<NV_MONITOR_CONN_TYPE> SkippedColorConnectionTypes;
+        public List<string> _allConnectedDisplayIdentifiers;
 
         // To detect redundant calls
         private bool _disposed = false;
@@ -237,6 +238,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was initialised successfully");
                         SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: Running UpdateActiveConfig to ensure there is a config to use later");
                         _activeDisplayConfig = GetActiveConfig();
+                        _allConnectedDisplayIdentifiers = GetAllConnectedDisplayIdentifiers();
                     }
                     else
                     {
@@ -2139,7 +2141,7 @@ namespace DisplayMagicianShared.NVIDIA
                             if (drsProfileHandle.Ptr == IntPtr.Zero)
                             {
                                 // There isn't a custom global profile set yet, so we ignore it
-                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: NvAPI_DRS_GetCurrentGlobalProfile returned OK, but there was no process handle set. THe DRS Settings may not have been loaded.");
+                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: NvAPI_DRS_GetCurrentGlobalProfile returned OK, but there was no process handle set. The DRS Settings may not have been loaded.");
                             }
                             else
                             {
@@ -3228,11 +3230,8 @@ namespace DisplayMagicianShared.NVIDIA
             // We want to check the NVIDIA profile can be used now
             SharedLogger.logger.Trace($"NVIDIALibrary/IsPossibleConfig: Testing whether the NVIDIA display configuration is possible to be used now");
 
-            // check what the currently available displays are (include the ones not active)
-            List<string> currentAllIds = GetAllConnectedDisplayIdentifiers();
-
             // CHeck that we have all the displayConfig DisplayIdentifiers we need available now
-            if (displayConfig.DisplayIdentifiers.All(value => currentAllIds.Contains(value)))
+            if (displayConfig.DisplayIdentifiers.All(value => _allConnectedDisplayIdentifiers.Contains(value)))
             //if (currentAllIds.Intersect(displayConfig.DisplayIdentifiers).Count() == displayConfig.DisplayIdentifiers.Count)
             {
                 SharedLogger.logger.Trace($"NVIDIALibrary/IsPossibleConfig: Success! The NVIDIA display configuration is possible to be used now");
@@ -3358,7 +3357,9 @@ namespace DisplayMagicianShared.NVIDIA
         public List<string> GetAllConnectedDisplayIdentifiers()
         {
             SharedLogger.logger.Trace($"NVIDIALibrary/GetAllConnectedDisplayIdentifiers: Getting all the display identifiers that can possibly be used");
-            return GetSomeDisplayIdentifiers(true);
+            _allConnectedDisplayIdentifiers = GetSomeDisplayIdentifiers(true);
+
+            return _allConnectedDisplayIdentifiers;
         }
 
         private List<string> GetSomeDisplayIdentifiers(bool allDisplays = true)

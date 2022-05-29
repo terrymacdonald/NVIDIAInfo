@@ -91,12 +91,14 @@ namespace DisplayMagicianShared.Windows
         // NOTE: I have disabled the TaskBar specific matching for now due to errors I cannot fix
         // WinLibrary will still track the location of the taskbars, but won't actually set them as the setting of the taskbars doesnt work at the moment.
         /*&&
-        TaskBarLayout.SequenceEqual(other.TaskBarLayout) &&
+        TaskBarLayout.Values.SequenceEqual(other.TaskBarLayout.Values) &&
         TaskBarSettings.Equals(other.TaskBarSettings);*/
 
         public override int GetHashCode()
         {
-            return (DisplayConfigPaths, DisplayConfigModes, DisplayHDRStates, IsCloned, DisplayIdentifiers, TaskBarLayout, TaskBarSettings).GetHashCode();
+            // Temporarily disabled this to make sure that the hashcode generation matched the equality tests.
+            //return (DisplayConfigPaths, DisplayConfigModes, DisplayHDRStates, IsCloned, DisplayIdentifiers, TaskBarLayout, TaskBarSettings).GetHashCode();
+            return (DisplayConfigPaths, DisplayConfigModes, DisplayHDRStates, IsCloned, DisplayIdentifiers).GetHashCode();
         }
         public static bool operator ==(WINDOWS_DISPLAY_CONFIG lhs, WINDOWS_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
 
@@ -114,6 +116,7 @@ namespace DisplayMagicianShared.Windows
         private bool _initialised = false;
         private WINDOWS_DISPLAY_CONFIG _activeDisplayConfig;
         public List<DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY> SkippedColorConnectionTypes;
+        public List<string> _allConnectedDisplayIdentifiers;
 
         // To detect redundant calls
         private bool _disposed = false;
@@ -136,7 +139,8 @@ namespace DisplayMagicianShared.Windows
             SharedLogger.logger.Trace("WinLibrary/WinLibrary: Intialising Windows CCD library interface");
             _initialised = true;
             _activeDisplayConfig = GetActiveConfig();
-        }
+            _allConnectedDisplayIdentifiers = GetAllConnectedDisplayIdentifiers();
+    }
 
         ~WinLibrary()
         {
@@ -1668,14 +1672,11 @@ namespace DisplayMagicianShared.Windows
         public bool IsPossibleConfig(WINDOWS_DISPLAY_CONFIG displayConfig)
         {
             // We want to check the Windows Display profile can be used now
-            SharedLogger.logger.Trace($"WinLibrary/IsPossibleConfig: Testing whether the Windows display configuration is possible to be used now");
-
-            // check what the currently available displays are (include the ones not active)
-            List<string> currentAllIds = GetAllConnectedDisplayIdentifiers();
+            SharedLogger.logger.Trace($"WinLibrary/IsPossibleConfig: Testing whether the Windows display configuration is possible to be used now");            
 
             // CHeck that we have all the displayConfig DisplayIdentifiers we need available now
             //if (currentAllIds.Intersect(displayConfig.DisplayIdentifiers).Count() == displayConfig.DisplayIdentifiers.Count)
-            if (displayConfig.DisplayIdentifiers.All(value => currentAllIds.Contains(value)))
+            if (displayConfig.DisplayIdentifiers.All(value => _allConnectedDisplayIdentifiers.Contains(value)))
             {
                 SharedLogger.logger.Trace($"WinLibrary/IsPossibleConfig: Success! THe Windows display configuration is possible to be used now");
                 return true;
@@ -1697,7 +1698,9 @@ namespace DisplayMagicianShared.Windows
         public List<string> GetAllConnectedDisplayIdentifiers()
         {
             SharedLogger.logger.Trace($"WinLibrary/GetAllConnectedDisplayIdentifiers: Getting all the display identifiers that can possibly be used");
-            return GetSomeDisplayIdentifiers(QDC.QDC_ALL_PATHS | QDC.QDC_INCLUDE_HMD);
+            _allConnectedDisplayIdentifiers = GetSomeDisplayIdentifiers(QDC.QDC_ALL_PATHS | QDC.QDC_INCLUDE_HMD);
+
+            return _allConnectedDisplayIdentifiers;            
         }
 
         private List<string> GetSomeDisplayIdentifiers(QDC selector = QDC.QDC_ONLY_ACTIVE_PATHS | QDC.QDC_INCLUDE_HMD)
