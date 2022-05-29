@@ -19,8 +19,14 @@ namespace DisplayMagicianShared.Windows
         ERROR_BAD_CONFIGURATION = 1610,
     }
 
-    public enum DISPLAYCONFIG_DEVICE_INFO_TYPE : UInt32
+    public enum DISPLAYCONFIG_DEVICE_INFO_TYPE : Int32
     {
+        // MS Private API (which seems to use negative numbers)
+        // See https://github.com/lihas/windows-DPI-scaling-sample/blob/master/DPIHelper/DpiHelper.h from Sahil Singh
+        DISPLAYCONFIG_DEVICE_INFO_SET_DPI_SCALE = -4, // Set current dpi scaling value for a display
+        DISPLAYCONFIG_DEVICE_INFO_GET_DPI_SCALE = -3, // Returns min, max, suggested, and currently applied DPI scaling values.
+
+        // MS Public API
         Zero = 0,
         DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME = 1, // Specifies the source name of the display device. If the DisplayConfigGetDeviceInfo function is successful, DisplayConfigGetDeviceInfo returns the source name in the DISPLAYCONFIG_SOURCE_DEVICE_NAME structure.
         DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME = 2, // Specifies information about the monitor. If the DisplayConfigGetDeviceInfo function is successful, DisplayConfigGetDeviceInfo returns info about the monitor in the DISPLAYCONFIG_TARGET_DEVICE_NAME structure.
@@ -37,7 +43,7 @@ namespace DisplayMagicianShared.Windows
                                                             // Supported starting in Windows�10 Fall Creators Update (Version 1709).
         DISPLAYCONFIG_DEVICE_INFO_GET_MONITOR_SPECIALIZATION = 12,
         DISPLAYCONFIG_DEVICE_INFO_SET_MONITOR_SPECIALIZATION = 13,
-        DISPLAYCONFIG_DEVICE_INFO_FORCE_UINT32 = 0xFFFFFFFF // Only here to 
+        //DISPLAYCONFIG_DEVICE_INFO_FORCE_UINT32 = 0xFFFFFFFF // Only here to 
     }
 
     [Flags]
@@ -268,6 +274,81 @@ namespace DisplayMagicianShared.Windows
         PalM = 31,
         Other = 255
     }
+
+    /*
+    * struct DISPLAYCONFIG_SOURCE_DPI_SCALE_GET
+    * @brief used to fetch min, max, suggested, and currently applied DPI scaling values.
+    * All values are relative to the recommended DPI scaling value
+    * Note that DPI scaling is a property of the source, and not of target.
+    */
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DISPLAYCONFIG_SOURCE_DPI_SCALE_GET
+    {
+        DISPLAYCONFIG_DEVICE_INFO_HEADER Header;
+        /*
+        * @brief min value of DPI scaling is always 100, minScaleRel gives no. of steps down from recommended scaling
+        * eg. if minScaleRel is -3 => 100 is 3 steps down from recommended scaling => recommended scaling is 175%
+        */
+        public UInt32 MinScaleRel;
+
+        /*
+        * @brief currently applied DPI scaling value wrt the recommended value. eg. if recommended value is 175%,
+        * => if curScaleRel == 0 the current scaling is 175%, if curScaleRel == -1, then current scale is 150%
+        */
+        public UInt32 CurrrentScaleRel;
+
+        /*
+        * @brief maximum supported DPI scaling wrt recommended value
+        */
+        public UInt32 MaxScaleRel;
+    };
+
+    /*
+    * struct DISPLAYCONFIG_SOURCE_DPI_SCALE_SET
+    * @brief set DPI scaling value of a source
+    * Note that DPI scaling is a property of the source, and not of target.
+    */
+    public struct DISPLAYCONFIG_SOURCE_DPI_SCALE_SET
+    {
+        DISPLAYCONFIG_DEVICE_INFO_HEADER Header;
+        /*
+        * @brief The value we want to set. The value should be relative to the recommended DPI scaling value of source.
+        * eg. if scaleRel == 1, and recommended value is 175% => we are trying to set 200% scaling for the source
+        */
+        public UInt32 ScaleRel;
+    };
+
+    /*
+   * struct DPIScalingInfo
+   * @brief DPI info about a source
+   * mininum :     minumum DPI scaling in terms of percentage supported by source. Will always be 100%.
+   * maximum :     maximum DPI scaling in terms of percentage supported by source. eg. 100%, 150%, etc.
+   * current :     currently applied DPI scaling value
+   * recommended : DPI scaling value reommended by OS. OS takes resolution, physical size, and expected viewing distance
+   *               into account while calculating this, however exact formula is not known, hence must be retrieved from OS
+   *               For a system in which user has not explicitly changed DPI, current should eqaul recommended.
+   * bInitDone :   If true, it means that the members of the struct contain values, as fetched from OS, and not the default
+   *               ones given while object creation.
+   */
+    public struct DPIScalingInfo
+    {
+        public UInt32 Mininum;
+        public UInt32 Maximum;
+        public UInt32 Current;
+        public UInt32 Recommended;
+        public bool InitDone;
+
+        /*public DPIScalingInfo()
+        {
+            Mininum = 100;
+            Maximum = 100;
+            Current = 100;
+            Recommended = 100;
+            InitDone = false;
+        }*/
+
+    };
+
 
     [StructLayout(LayoutKind.Sequential)]
     public struct DISPLAYCONFIG_DEVICE_INFO_HEADER : IEquatable<DISPLAYCONFIG_DEVICE_INFO_HEADER>
