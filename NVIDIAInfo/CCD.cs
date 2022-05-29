@@ -275,6 +275,30 @@ namespace DisplayMagicianShared.Windows
         Other = 255
     }
 
+
+    /*
+* OS reports DPI scaling values in relative terms, and not absolute terms.
+* eg. if current DPI value is 250%, and recommended value is 200%, then
+* OS will give us integer 2 for DPI scaling value (starting from recommended
+* DPI scaling move 2 steps to the right in this list).
+* values observed (and extrapolated) from system settings app (immersive control panel).
+*/
+    /*public enum DPI_VALUES: UInt32
+    { 
+        DPI_100 = 100,
+        DPI_125 = 125,
+        DPI_150 = 150,
+        DPI_175 = 175,
+        DPI_200 = 200,
+        DPI_225 = 225,
+        DPI_250 = 250,
+        DPI_300 = 300,
+        DPI_350 = 350,
+        DPI_400 = 400,
+        DPI_450 = 450,
+        DPI_500 = 500 
+    };*/
+    
     /*
     * struct DISPLAYCONFIG_SOURCE_DPI_SCALE_GET
     * @brief used to fetch min, max, suggested, and currently applied DPI scaling values.
@@ -284,7 +308,7 @@ namespace DisplayMagicianShared.Windows
     [StructLayout(LayoutKind.Sequential)]
     public struct DISPLAYCONFIG_SOURCE_DPI_SCALE_GET
     {
-        DISPLAYCONFIG_DEVICE_INFO_HEADER Header;
+        public DISPLAYCONFIG_DEVICE_INFO_HEADER Header;
         /*
         * @brief min value of DPI scaling is always 100, minScaleRel gives no. of steps down from recommended scaling
         * eg. if minScaleRel is -3 => 100 is 3 steps down from recommended scaling => recommended scaling is 175%
@@ -310,45 +334,13 @@ namespace DisplayMagicianShared.Windows
     */
     public struct DISPLAYCONFIG_SOURCE_DPI_SCALE_SET
     {
-        DISPLAYCONFIG_DEVICE_INFO_HEADER Header;
+        public DISPLAYCONFIG_DEVICE_INFO_HEADER Header;
         /*
         * @brief The value we want to set. The value should be relative to the recommended DPI scaling value of source.
         * eg. if scaleRel == 1, and recommended value is 175% => we are trying to set 200% scaling for the source
         */
         public UInt32 ScaleRel;
     };
-
-    /*
-   * struct DPIScalingInfo
-   * @brief DPI info about a source
-   * mininum :     minumum DPI scaling in terms of percentage supported by source. Will always be 100%.
-   * maximum :     maximum DPI scaling in terms of percentage supported by source. eg. 100%, 150%, etc.
-   * current :     currently applied DPI scaling value
-   * recommended : DPI scaling value reommended by OS. OS takes resolution, physical size, and expected viewing distance
-   *               into account while calculating this, however exact formula is not known, hence must be retrieved from OS
-   *               For a system in which user has not explicitly changed DPI, current should eqaul recommended.
-   * bInitDone :   If true, it means that the members of the struct contain values, as fetched from OS, and not the default
-   *               ones given while object creation.
-   */
-    public struct DPIScalingInfo
-    {
-        public UInt32 Mininum;
-        public UInt32 Maximum;
-        public UInt32 Current;
-        public UInt32 Recommended;
-        public bool InitDone;
-
-        /*public DPIScalingInfo()
-        {
-            Mininum = 100;
-            Maximum = 100;
-            Current = 100;
-            Recommended = 100;
-            InitDone = false;
-        }*/
-
-    };
-
 
     [StructLayout(LayoutKind.Sequential)]
     public struct DISPLAYCONFIG_DEVICE_INFO_HEADER : IEquatable<DISPLAYCONFIG_DEVICE_INFO_HEADER>
@@ -1103,6 +1095,7 @@ namespace DisplayMagicianShared.Windows
         // Set some useful constants
         public const SDC SDC_CCD_TEST_IF_VALID = (SDC.SDC_VALIDATE | SDC.SDC_USE_SUPPLIED_DISPLAY_CONFIG);
         public const uint DISPLAYCONFIG_PATH_MODE_IDX_INVALID = 0xffffffff;
+        public static readonly UInt32[] DPI_VALUES = { 100, 125, 150, 175, 200, 225, 250, 300, 350, 400, 450, 500 };
 
 
         // GetDisplayConfigBufferSizes
@@ -1150,12 +1143,19 @@ namespace DisplayMagicianShared.Windows
         [DllImport("user32")]
         public static extern WIN32STATUS DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_SDR_WHITE_LEVEL requestPacket);
 
+        [DllImport("user32")]
+        public static extern WIN32STATUS DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DPI_SCALE_GET requestPacket);
+
+
         // DisplayConfigSetDeviceInfo
         [DllImport("user32")]
         public static extern WIN32STATUS DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_TARGET_PERSISTENCE requestPacket);
 
         [DllImport("user32")]
         public static extern WIN32STATUS DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE requestPacket);
+        
+        [DllImport("user32")]
+        public static extern WIN32STATUS DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DPI_SCALE_SET requestPacket);
 
 
         // Have disabled the DisplayConfigSetDeviceInfo options except for SET_TARGET_PERSISTENCE, as per the note
@@ -1166,7 +1166,6 @@ namespace DisplayMagicianShared.Windows
 
         // SetDisplayConfig
         [DllImport("user32")]
-        public static extern WIN32STATUS SetDisplayConfig([In] uint numPathArrayElements, [In] DISPLAYCONFIG_PATH_INFO[] pathArray, [In] uint numModeInfoArrayElements, [In] DISPLAYCONFIG_MODE_INFO[] modeInfoArray, [In] SDC flags);
-
+        public static extern WIN32STATUS SetDisplayConfig([In] uint numPathArrayElements, [In] DISPLAYCONFIG_PATH_INFO[] pathArray, [In] uint numModeInfoArrayElements, [In] DISPLAYCONFIG_MODE_INFO[] modeInfoArray, [In] SDC flags);        
     }
 }
