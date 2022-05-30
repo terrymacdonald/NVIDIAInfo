@@ -581,6 +581,8 @@ namespace NVIDIAInfo
                     return;
                 }
                 if (displayConfig.WindowsConfig.Equals(WinLibrary.GetLibrary().GetActiveConfig()) && displayConfig.NVIDIAConfig.Equals(NVIDIALibrary.GetLibrary().GetActiveConfig()))
+                //if (displayConfig.NVIDIAConfig.Equals(NVIDIALibrary.GetLibrary().GetActiveConfig()))
+                //if (displayConfig.WindowsConfig.Equals(WinLibrary.GetLibrary().GetActiveConfig()))
                 { 
                     SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: The NVIDIA display settings in {filename} and the currently active display configuration are equal.");
                     Console.WriteLine($"The NVIDIA display settings in {filename} and the currently active display configuration are equal.");

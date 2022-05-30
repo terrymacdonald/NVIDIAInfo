@@ -1533,15 +1533,6 @@ namespace DisplayMagicianShared.NVIDIA
                                     // And then we save the DRS Config to the main config so it gets saved
                                     myDisplayConfig.DRSSettings.Add(drsConfig);
 
-                                    // Now we do a specific check for NVIDIA Optimus. We need to do this as we want to figure out if we have to set the IsOptimus setting.
-                                    foreach (var drsSetting in drsDriverSettings)
-                                    {
-                                        // Look specifically for the Optimus enabled setting
-                                        if (drsSetting.SettingId == 33333 && drsSetting.GetCurrentValueAsInteger() == 0)
-                                        {
-                                            myDisplayConfig.IsOptimus = true;
-                                        }
-                                    }
                                 }                                
 
                             }

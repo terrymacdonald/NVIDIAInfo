@@ -1124,7 +1124,7 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 if (!IsPredefinedValid)
                 {
-                    return null;
+                    return 0;
                 }
 
                 switch (InternalSettingType)
@@ -1305,8 +1305,7 @@ namespace DisplayMagicianShared.NVIDIA
             InternalSettingType == other.InternalSettingType &&
             InternalSettingLocation == other.InternalSettingLocation &&
             InternalIsCurrentPredefined == other.InternalIsCurrentPredefined &&
-            InternalIsPredefinedValid == other.InternalIsPredefinedValid &&
-            InternalPredefinedValue == other.InternalPredefinedValue))
+            InternalIsPredefinedValid == other.InternalIsPredefinedValid))
             {
                 return false;
             }
@@ -1334,7 +1333,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         public override Int32 GetHashCode()
         {
-            return (InternalVersion, InternalSettingName, InternalSettingId, InternalSettingType, InternalSettingLocation, InternalIsCurrentPredefined, InternalIsPredefinedValid, InternalPredefinedValue, InternalCurrentValue).GetHashCode();
+            return (InternalVersion, InternalSettingName, InternalSettingId, InternalSettingType, InternalSettingLocation, InternalIsCurrentPredefined, InternalIsPredefinedValid, InternalCurrentValue).GetHashCode();
         }
         public static bool operator ==(NVDRS_SETTING_V1 lhs, NVDRS_SETTING_V1 rhs) => lhs.Equals(rhs);
 
