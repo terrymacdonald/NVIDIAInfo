@@ -53,10 +53,10 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.7.5");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.7.6");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v1.7.5");
+            Console.WriteLine($"\nNVIDIAInfo v1.7.6");
             Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald (c) 2022\n");
 
@@ -315,6 +315,9 @@ namespace NVIDIAInfo
                         ObjectCreationHandling = ObjectCreationHandling.Replace
                     });
                     SharedLogger.logger.Trace($"NVIDIAInfo/loadFromFile: Successfully parsed {filename} as JSON.");
+
+                    // We have to patch the adapter IDs after we load a display config because Windows changes them after every reboot :(
+                    WinLibrary.GetLibrary().PatchWindowsDisplayConfig(ref myDisplayConfig.WindowsConfig);
                 }
                 catch (Exception ex)
                 {
@@ -427,6 +430,9 @@ namespace NVIDIAInfo
                         ObjectCreationHandling = ObjectCreationHandling.Replace
                     });
                     SharedLogger.logger.Trace($"NVIDIAInfo/possibleFromFile: Successfully parsed {filename} as JSON.");
+
+                    // We have to patch the adapter IDs after we load a display config because Windows changes them after every reboot :(
+                    WinLibrary.GetLibrary().PatchWindowsDisplayConfig(ref myDisplayConfig.WindowsConfig);
                 }
                 catch (Exception ex)
                 {
@@ -498,6 +504,9 @@ namespace NVIDIAInfo
                         ObjectCreationHandling = ObjectCreationHandling.Replace
                     });
                     SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Successfully parsed {filename} as JSON.");
+
+                    // We have to patch the adapter IDs after we load a display config because Windows changes them after every reboot :(
+                    WinLibrary.GetLibrary().PatchWindowsDisplayConfig(ref displayConfig.WindowsConfig);
                 }
                 catch (Exception ex)
                 {
@@ -517,6 +526,9 @@ namespace NVIDIAInfo
                         ObjectCreationHandling = ObjectCreationHandling.Replace
                     });
                     SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Successfully parsed {filename} as JSON.");
+
+                    // We have to patch the adapter IDs after we load a display config because Windows changes them after every reboot :(
+                    WinLibrary.GetLibrary().PatchWindowsDisplayConfig(ref otherDisplayConfig.WindowsConfig);
                 }
                 catch (Exception ex)
                 {
@@ -573,6 +585,9 @@ namespace NVIDIAInfo
                         ObjectCreationHandling = ObjectCreationHandling.Replace
                     });
                     SharedLogger.logger.Trace($"NVIDIAInfo/equalFromFile: Successfully parsed {filename} as JSON.");
+
+                    // We have to patch the adapter IDs after we load a display config because Windows changes them after every reboot :(
+                    WinLibrary.GetLibrary().PatchWindowsDisplayConfig(ref displayConfig.WindowsConfig);
                 }
                 catch (Exception ex)
                 {

@@ -298,7 +298,7 @@ namespace DisplayMagicianShared.Windows
         DPI_450 = 450,
         DPI_500 = 500 
     };*/
-    
+
     /*
     * struct DISPLAYCONFIG_SOURCE_DPI_SCALE_GET
     * @brief used to fetch min, max, suggested, and currently applied DPI scaling values.
@@ -1153,7 +1153,7 @@ namespace DisplayMagicianShared.Windows
 
         [DllImport("user32")]
         public static extern WIN32STATUS DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE requestPacket);
-        
+
         [DllImport("user32")]
         public static extern WIN32STATUS DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DPI_SCALE_SET requestPacket);
 
@@ -1166,6 +1166,6 @@ namespace DisplayMagicianShared.Windows
 
         // SetDisplayConfig
         [DllImport("user32")]
-        public static extern WIN32STATUS SetDisplayConfig([In] uint numPathArrayElements, [In] DISPLAYCONFIG_PATH_INFO[] pathArray, [In] uint numModeInfoArrayElements, [In] DISPLAYCONFIG_MODE_INFO[] modeInfoArray, [In] SDC flags);        
+        public static extern WIN32STATUS SetDisplayConfig([In] uint numPathArrayElements, [In] DISPLAYCONFIG_PATH_INFO[] pathArray, [In] uint numModeInfoArrayElements, [In] DISPLAYCONFIG_MODE_INFO[] modeInfoArray, [In] SDC flags);
     }
 }
