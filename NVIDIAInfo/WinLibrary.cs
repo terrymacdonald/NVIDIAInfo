@@ -90,7 +90,7 @@ namespace DisplayMagicianShared.Windows
         {
             if (!(IsCloned == other.IsCloned &&
            DisplayConfigPaths.SequenceEqual(other.DisplayConfigPaths) &&
-           DisplayConfigModes.SequenceEqual(other.DisplayConfigModes) &&           
+           DisplayConfigModes.SequenceEqual(other.DisplayConfigModes) &&
            // The dictionary keys sometimes change after returning from NVIDIA Surround, so we need to only focus on comparing the values of the GDISettings.
            // Additionally, we had to disable the DEviceKey from the equality testing within the GDI library itself as that waould also change after changing back from NVIDIA surround
            // This still allows us to detect when refresh rates change, which will allow DisplayMagician to detect profile differences.
@@ -104,7 +104,7 @@ namespace DisplayMagicianShared.Windows
             if (!WinLibrary.EqualButDifferentOrder<ADVANCED_HDR_INFO_PER_PATH>(DisplayHDRStates, other.DisplayHDRStates))
             {
                 return false;
-            }                    
+            }
 
             // Now we need to go through the values to make sure they are the same, but ignore the keys (as they change after each reboot!)
             for (int i = 0; i < DisplaySources.Count; i++)
@@ -302,10 +302,15 @@ namespace DisplayMagicianShared.Windows
                     {
                         // We get here if there is a matching adapter
                         newAdapterValue = adapterOldToNewMap[oldAdapterValue];
-                        // Add a new dictionary key with the old value
-                        savedDisplayConfig.DisplayAdapters.Add(newAdapterValue, savedDisplayConfig.DisplayAdapters[oldAdapterValue]);
-                        // Remove the old dictionary key
-                        savedDisplayConfig.DisplayAdapters.Remove(oldAdapterValue);
+
+                        // Skip if we've already replaced something!
+                        if (!savedDisplayConfig.DisplayAdapters.ContainsKey(newAdapterValue))
+                        {
+                            // Add a new dictionary key with the old value
+                            savedDisplayConfig.DisplayAdapters.Add(newAdapterValue, savedDisplayConfig.DisplayAdapters[oldAdapterValue]);
+                            // Remove the old dictionary key
+                            savedDisplayConfig.DisplayAdapters.Remove(oldAdapterValue);
+                        }
                         SharedLogger.logger.Trace($"WinLibrary/PatchAdapterIDs: Updated DisplayAdapter from adapter {oldAdapterValue} to adapter {newAdapterValue} instead.");
                     }
                 }
@@ -1662,7 +1667,7 @@ namespace DisplayMagicianShared.Windows
                     else
                     {
                         SharedLogger.logger.Error($"WinLibrary/SetActiveConfig: The GDI mode change would be unsuccessful because there was an unknown error testing if Display {displayDeviceKey} could use the new mode.");
-                    }                    
+                    }
                 }
                 else
                 {

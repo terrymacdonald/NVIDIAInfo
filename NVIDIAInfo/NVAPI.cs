@@ -694,7 +694,7 @@ namespace DisplayMagicianShared.NVIDIA
         NV_DESKTOP_COLOR_DEPTH_MAX_VALUE = NV_DESKTOP_COLOR_DEPTH_16BPC_FLOAT_HDR, // must be set to highest enum value
     }
 
-    
+
     public enum NVDRS_SETTING_LOCATION : UInt32
     {
         NVDRS_CURRENT_PROFILE_LOCATION = 0x0,
@@ -703,7 +703,7 @@ namespace DisplayMagicianShared.NVIDIA
         NVDRS_DEFAULT_PROFILE_LOCATION = 0x3,
     }
 
-    
+
     [Flags]
     public enum NV_HDR_CAPABILITIES_V2_FLAGS : UInt32
     {
@@ -1329,7 +1329,7 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 return false;
             }
-        }       
+        }
 
 
         public override Int32 GetHashCode()
@@ -1348,12 +1348,12 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
-    public struct NVDRS_BINARY_SETTING : IEquatable<NVDRS_BINARY_SETTING>, ICloneable 
+    public struct NVDRS_BINARY_SETTING : IEquatable<NVDRS_BINARY_SETTING>, ICloneable
     {
-        public UInt32 ValueLength;        
+        public UInt32 ValueLength;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (Int32)NVImport.NVAPI_UNICODE_STRING_MAX)]
         public string ValueData;
-        
+
         public override bool Equals(object obj) => obj is NVDRS_BINARY_SETTING other && this.Equals(other);
 
         public bool Equals(NVDRS_BINARY_SETTING other)
@@ -1375,7 +1375,7 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
-    
+
     //NVDRS_SETTING_VALUE_UNION
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct NVDRS_SETTING_VALUE : IEquatable<NVDRS_SETTING_VALUE>, ICloneable // Note: Version 1 of NVDRS_SETTINGS_VALUE structure
@@ -1632,7 +1632,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct UnicodeString 
+    public struct UnicodeString
     {
         public const int UnicodeStringLength = 2048;
 
@@ -2260,11 +2260,11 @@ namespace DisplayMagicianShared.NVIDIA
 
         public bool Equals(NV_DISPLAYCONFIG_PATH_INFO_V2 other)
         {
-           if(!(Version == other.Version &&
-           SourceId == other.SourceId &&
-           TargetInfoCount == other.TargetInfoCount &&
-           SourceModeInfo.Equals(other.SourceModeInfo) &&
-           Flags == other.Flags))
+            if (!(Version == other.Version &&
+            SourceId == other.SourceId &&
+            TargetInfoCount == other.TargetInfoCount &&
+            SourceModeInfo.Equals(other.SourceModeInfo) &&
+            Flags == other.Flags))
             {
                 return false;
             }
@@ -3530,7 +3530,7 @@ namespace DisplayMagicianShared.NVIDIA
         public static UInt32 NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_INFO_V2_INTERNAL>(2);
         public static UInt32 NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL_VER = MAKE_NVAPI_VERSION<NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_V1_INTERNAL>(1);
 
-        public static UInt32 NVDRS_PROFILE_V1_VER = MAKE_NVAPI_VERSION<NVDRS_PROFILE_V1>(1); 
+        public static UInt32 NVDRS_PROFILE_V1_VER = MAKE_NVAPI_VERSION<NVDRS_PROFILE_V1>(1);
         public static UInt32 NVDRS_SETTING_V1_VER = MAKE_NVAPI_VERSION<NVDRS_SETTING_V1>(1);
         //public static UInt32 NVDRS_SETTING_VALUES_V1_VER = MAKE_NVAPI_VERSION<NVDRS_SETTING_VALUES_V1>(1);
 
@@ -3728,7 +3728,7 @@ namespace DisplayMagicianShared.NVIDIA
                 GetDelegate(NvId_DRS_SaveSettings, out DRS_SaveSettingsInternal);
                 GetDelegate(NvId_DRS_GetBaseProfile, out DRS_GetBaseProfileInternal);
                 GetDelegate(NvId_DRS_GetNumProfiles, out DRS_GetNumProfilesInternal);
-                GetDelegate(NvId_DRS_RestoreProfileDefaultSetting, out DRS_RestoreProfileDefaultSettingInternal);               
+                GetDelegate(NvId_DRS_RestoreProfileDefaultSetting, out DRS_RestoreProfileDefaultSettingInternal);
 
                 // Set the availability
                 available = true;
@@ -5758,6 +5758,8 @@ namespace DisplayMagicianShared.NVIDIA
             // Go through the array and copy things from managed code to unmanaged code
             for (Int32 x = 0; x < (Int32)GridCount; x++)
             {
+                GridTopologies[x].Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
+
                 // Marshal a single gridtopology into unmanaged code ready for sending to the unmanaged NVAPI function
                 Marshal.StructureToPtr(GridTopologies[x], currentGridTopologiesBuffer, false);
                 // advance the buffer forwards to the next object
@@ -6871,7 +6873,7 @@ namespace DisplayMagicianShared.NVIDIA
                 for (int i = 0; i < drsSettingCount; i++)
                 {
                     drsSettingsInternal[i].InternalVersion = NVImport.NVDRS_SETTING_V1_VER;
-                    
+
                 }
                 status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, drsSettingsInternal);
                 drsSettings = new NVDRS_SETTING_V1[drsSettingCount];
@@ -6929,7 +6931,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         // NVAPI_INTERFACE NvAPI_DRS_EnumAvailableSettingValues(NvU32 settingId, NvU32* pMaxNumValues, NVDRS_SETTING_VALUES* pSettingValues)
         private delegate NVAPI_STATUS DRS_EnumAvailableSettingValuesDelegate(
-            [In] UInt32 drsSettingId, 
+            [In] UInt32 drsSettingId,
             [In, Out] ref UInt32 drsMaxNumValues,
             [In][Out] NVDRS_SETTING_VALUES_V1[] drsSettingsValues);
         private static readonly DRS_EnumAvailableSettingValuesDelegate DRS_EnumAvailableSettingValuesInternal;

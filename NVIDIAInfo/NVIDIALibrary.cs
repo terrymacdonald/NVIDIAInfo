@@ -188,7 +188,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
             return true;
-        }           
+        }
 
         public override int GetHashCode()
         {
@@ -513,7 +513,7 @@ namespace DisplayMagicianShared.NVIDIA
                 else
                 {
                     SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: There are no valid Mosaic Topologies available with this display layout.");
-                }               
+                }
 
                 // Get current Mosaic Topology settings in brief (check whether Mosaic is on)
                 NV_MOSAIC_TOPO_BRIEF mosaicTopoBrief = new NV_MOSAIC_TOPO_BRIEF();
@@ -1454,9 +1454,9 @@ namespace DisplayMagicianShared.NVIDIA
                         // Firstly, we get the profile handle to the global DRS Profile currently in use
                         NvDRSProfileHandle drsProfileHandle = new NvDRSProfileHandle();
                         //NVStatus = NVImport.NvAPI_DRS_GetCurrentGlobalProfile(drsSessionHandle, out drsProfileHandle);
-                        NVStatus = NVImport.NvAPI_DRS_GetBaseProfile(drsSessionHandle, out drsProfileHandle);                        
+                        NVStatus = NVImport.NvAPI_DRS_GetBaseProfile(drsSessionHandle, out drsProfileHandle);
                         if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                        {                            
+                        {
                             if (drsProfileHandle.Ptr == IntPtr.Zero)
                             {
                                 // There isn't a custom global profile set yet, so we ignore it
@@ -1544,7 +1544,7 @@ namespace DisplayMagicianShared.NVIDIA
                                     // And then we save the DRS Config to the main config so it gets saved
                                     myDisplayConfig.DRSSettings.Add(drsConfig);
 
-                                }                                
+                                }
 
                             }
                         }
@@ -1574,7 +1574,7 @@ namespace DisplayMagicianShared.NVIDIA
                         }
 
                     }
-                    finally 
+                    finally
                     {
                         // Destroy the DRS Session Handle to clean up
                         NVStatus = NVImport.NvAPI_DRS_DestroySession(drsSessionHandle);
@@ -1631,7 +1631,7 @@ namespace DisplayMagicianShared.NVIDIA
                 else
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting a DRS Session Handle! NvAPI_DRS_CreateSession() returned error code {NVStatus}");
-                }               
+                }
 
             }
             else
@@ -2494,7 +2494,8 @@ namespace DisplayMagicianShared.NVIDIA
                             SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_Mosaic_EnableCurrentTopo() returned error code {NVStatus}");
                         }*/
 
-                        NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.MAXIMIZE_PERFORMANCE;
+                        //NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.MAXIMIZE_PERFORMANCE;
+                        NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
 
                         SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Mosaic current config is different as the one we want, so applying the Mosaic config now");
                         // If we get here then the display is valid, so now we actually apply the new Mosaic Topology
@@ -2552,7 +2553,8 @@ namespace DisplayMagicianShared.NVIDIA
                     // We are on a Mosaic profile now, and we need to change to a non-Mosaic profile
                     // We need to disable the Mosaic Topology
 
-                    NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.ALLOW_INVALID;
+                    //NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.ALLOW_INVALID;
+                    NV_MOSAIC_SETDISPLAYTOPO_FLAGS setTopoFlags = NV_MOSAIC_SETDISPLAYTOPO_FLAGS.NONE;
 
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Mosaic config that is currently set is no longer needed. Removing Mosaic config.");
                     NV_MOSAIC_GRID_TOPO_V2[] individualScreensTopology = CreateSingleScreenMosaicTopology();
@@ -2815,7 +2817,7 @@ namespace DisplayMagicianShared.NVIDIA
                 else
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Skipping setting the NVIDIA Display Config as there isn't one provided in the configuration.");
-                }                
+                }
 
             }
             return true;
@@ -4015,7 +4017,7 @@ namespace DisplayMagicianShared.NVIDIA
                             }
                             settingCount++;
                         }
-                        
+
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_NVIDIA_DEVICE_NOT_FOUND)
                     {
@@ -4042,7 +4044,7 @@ namespace DisplayMagicianShared.NVIDIA
                         SharedLogger.logger.Trace($"NVIDIALibrary/DumpAllDRSSettings: Some non standard error occurred while destroying our DRS Session Handle! NvAPI_DRS_GetCurrentGlobalProfile() returned error code {NVStatus}");
                     }
 
-                }                
+                }
                 finally
                 {
                     // Destroy the DRS Session Handle to clean up
