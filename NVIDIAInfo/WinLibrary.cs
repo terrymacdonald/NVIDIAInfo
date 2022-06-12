@@ -302,15 +302,10 @@ namespace DisplayMagicianShared.Windows
                     {
                         // We get here if there is a matching adapter
                         newAdapterValue = adapterOldToNewMap[oldAdapterValue];
-
-                        // Skip if we've already replaced something!
-                        if (!savedDisplayConfig.DisplayAdapters.ContainsKey(newAdapterValue))
-                        {
-                            // Add a new dictionary key with the old value
-                            savedDisplayConfig.DisplayAdapters.Add(newAdapterValue, savedDisplayConfig.DisplayAdapters[oldAdapterValue]);
-                            // Remove the old dictionary key
-                            savedDisplayConfig.DisplayAdapters.Remove(oldAdapterValue);
-                        }
+                        // Add a new dictionary key with the old value
+                        savedDisplayConfig.DisplayAdapters.Add(newAdapterValue, savedDisplayConfig.DisplayAdapters[oldAdapterValue]);
+                        // Remove the old dictionary key
+                        savedDisplayConfig.DisplayAdapters.Remove(oldAdapterValue);
                         SharedLogger.logger.Trace($"WinLibrary/PatchAdapterIDs: Updated DisplayAdapter from adapter {oldAdapterValue} to adapter {newAdapterValue} instead.");
                     }
                 }
@@ -876,30 +871,7 @@ namespace DisplayMagicianShared.Windows
 
             // Now attempt to get the windows taskbar location for each display
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar Layouts.");
-            bool retryNeeded = false;
-            taskBarStuckRectangles = TaskBarLayout.GetAllCurrentTaskBarLayouts(windowsDisplayConfig.DisplaySources, out retryNeeded);
-            // Check whether Windows has actually added the registry keys that outline the taskbar position
-            if (retryNeeded)
-            {
-                // We wait until the reg key is populated                
-                for (int count = 1; count <= 4; count++)
-                {
-                    SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: We were unable to get all the Windows Taskbar Layouts! So we need to try again. Attempt {count} of 4.");
-
-                    // Wait 5 seconds
-                    System.Threading.Thread.Sleep(5000);
-                    // then try again
-                    retryNeeded = false;
-                    taskBarStuckRectangles = TaskBarLayout.GetAllCurrentTaskBarLayouts(windowsDisplayConfig.DisplaySources, out retryNeeded);
-
-                    if (!retryNeeded)
-                    {
-                        SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: We successfully got the Windows Taskbar Layouts on attempt {count}! So we can stop trying to get them");
-                        break;
-                    }
-
-                }
-            }
+            taskBarStuckRectangles = TaskBarLayout.GetAllCurrentTaskBarLayouts(windowsDisplayConfig.DisplaySources);
 
             // Now we try to get the taskbar settings too
             SharedLogger.logger.Trace($"WinLibrary/GetWindowsDisplayConfig: Attempting to get the Windows Taskbar Settings.");
