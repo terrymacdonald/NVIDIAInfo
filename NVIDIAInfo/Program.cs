@@ -53,10 +53,10 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.7.9");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.7.9b");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v1.7.9");
+            Console.WriteLine($"\nNVIDIAInfo v1.7.9b");
             Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald (c) 2022\n");
 

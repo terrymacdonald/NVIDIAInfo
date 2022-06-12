@@ -123,7 +123,7 @@ namespace DisplayMagicianShared.Windows
                     }
                     catch (Exception ex)
                     {
-                        SharedLogger.logger.Trace($"TaskBarLayout/ReadFromRegistry: Exception while trying to open RegKey {address}. Unable to get the TaskBarStuckRectangle binary settings. Screen details may not be available yet in registry.");
+                        SharedLogger.logger.Trace(ex, $"TaskBarLayout/ReadFromRegistry: Exception while trying to open RegKey {address}. Unable to get the TaskBarStuckRectangle binary settings. Screen details may not be available yet in registry.");
                     }
                 }
                 else
@@ -196,7 +196,7 @@ namespace DisplayMagicianShared.Windows
                     }
                     catch (Exception ex)
                     {
-                        SharedLogger.logger.Trace($"TaskBarLayout/ReadFromRegistry: Exception2 while trying to open RegKey {address}. Unable to get the TaskBarStuckRectangle binary settings. Screen details may not be available yet in registry.");
+                        SharedLogger.logger.Trace(ex, $"TaskBarLayout/ReadFromRegistry: Exception2 while trying to open RegKey {address}. Unable to get the TaskBarStuckRectangle binary settings. Screen details may not be available yet in registry.");
                         return false;
                     }
 
