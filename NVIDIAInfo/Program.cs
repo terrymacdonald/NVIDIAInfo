@@ -53,15 +53,15 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.8.0");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.8.1");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v1.8.0");
+            Console.WriteLine($"\nNVIDIAInfo v1.8.1");
             Console.WriteLine($"=================");
             Console.WriteLine($"By Terry MacDonald (c) 2022\n");
 
             // First check that we have an NVIDIA Video Card in this PC
-            List<string> videoCardVendors = WinLibrary.GetLibrary().GetCurrentPCIVideoCardVendors();
+            List<string> videoCardVendors = WinLibrary.GetLibrary().GetAllPCIVideoCardVendors();
             if (!NVIDIALibrary.GetLibrary().PCIVendorIDs.All(value => videoCardVendors.Contains(value)))
             {
                 SharedLogger.logger.Error($"NVIDIAInfo/Main: There are no NVIDIA Video Cards enabled within this computer. NVIDIAInfo requires at least one NVIDIA Video Card to work. Please use DisplayMagician instead.");
