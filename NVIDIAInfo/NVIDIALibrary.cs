@@ -68,8 +68,11 @@ namespace DisplayMagicianShared.NVIDIA
         => HasNvHdrEnabled == other.HasNvHdrEnabled &&
             HdrCapabilities.Equals(other.HdrCapabilities) &&
             HdrColorData.Equals(other.HdrColorData) &&
-            HasAdaptiveSync == other.HasAdaptiveSync &&
-            AdaptiveSyncConfig.Equals(other.AdaptiveSyncConfig) &&
+            // Disabled the Adaptive Sync equality matching as we are having trouble applying it, which is causing issues in profile matching in DisplayMagician
+            // To fix this bit, we need to test the SetActiveConfigOverride Adaptive Sync part of the codebase to apply this properly.
+            // But for now, we'll exclude it from the equality matching and also stop trying to use the adaptive sync config.
+            //HasAdaptiveSync == other.HasAdaptiveSync &&
+            //AdaptiveSyncConfig.Equals(other.AdaptiveSyncConfig) &&
             HasColorData == other.HasColorData &&
             ColorData.Equals(other.ColorData) &&
             HasCustomDisplay == other.HasCustomDisplay &&
@@ -77,7 +80,11 @@ namespace DisplayMagicianShared.NVIDIA
 
         public override int GetHashCode()
         {
-            return (HasNvHdrEnabled, HdrCapabilities, HdrColorData, HasAdaptiveSync, AdaptiveSyncConfig, HasColorData, ColorData, HasCustomDisplay, CustomDisplays).GetHashCode();
+            // Disabled the Adaptive Sync equality matching as we are having trouble applying it, which is causing issues in profile matching in DisplayMagician
+            // To fix this bit, we need to test the SetActiveConfigOverride Adaptive Sync part of the codebase to apply this properly.
+            // But for now, we'll exclude it from the equality matching and also stop trying to use the adaptive sync config.
+            //return (HasNvHdrEnabled, HdrCapabilities, HdrColorData, HasAdaptiveSync, AdaptiveSyncConfig, HasColorData, ColorData, HasCustomDisplay, CustomDisplays).GetHashCode();
+            return (HasNvHdrEnabled, HdrCapabilities, HdrColorData, HasColorData, ColorData, HasCustomDisplay, CustomDisplays).GetHashCode();
         }
         public static bool operator ==(NVIDIA_PER_DISPLAY_CONFIG lhs, NVIDIA_PER_DISPLAY_CONFIG rhs) => lhs.Equals(rhs);
 
@@ -470,8 +477,6 @@ namespace DisplayMagicianShared.NVIDIA
                 }
 
                 // Get current Supported Mosaic Topology info (check whether Mosaic is on)
-                // Temporarily disabling this as not needed for config, and seems to have error in NVAPI function I've made
-                // Probably some inconsistencies with the memory structures I've made.
                 /*NV_MOSAIC_SUPPORTED_TOPO_INFO_V2 mosaicSupportedTopoInfo = new NV_MOSAIC_SUPPORTED_TOPO_INFO_V2();
                 NVStatus = NVImport.NvAPI_Mosaic_GetSupportedTopoInfo(ref mosaicSupportedTopoInfo, NV_MOSAIC_TOPO_TYPE.ALL);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK)
@@ -2032,67 +2037,7 @@ namespace DisplayMagicianShared.NVIDIA
                             SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfig: Exception caused while turning off prior NVIDIA HDR colour settings for display {displayId}.");
                         }
 
-                        // Set any AdaptiveSync settings
-                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to set any adaptive Sync settings if in use.");
 
-                        NV_SET_ADAPTIVE_SYNC_DATA_V1 adaptiveSyncData = myDisplay.AdaptiveSyncConfig;
-                        try
-                        {
-                            if (myDisplay.AdaptiveSyncConfig.DisableAdaptiveSync)
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to DISABLE Adaptive Sync for display {displayId}.");
-                            }
-                            else
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to ENABLE Adaptive Sync for display {displayId}.");
-                            }
-
-                            if (myDisplay.AdaptiveSyncConfig.DisableFrameSplitting)
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to DISABLE Frame Splitting for display {displayId}.");
-                            }
-                            else
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to ENABLE Frame Splitting for display {displayId}.");
-                            }
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to set the Adaptice Sync Max Frame Interval to {myDisplay.AdaptiveSyncConfig.MaxFrameInterval}ms for display {displayId}.");
-
-                            // Apply the AdaptiveSync settings
-                            NVStatus = NVImport.NvAPI_DISP_SetAdaptiveSyncData(displayId, ref adaptiveSyncData);
-                            if (NVStatus == NVAPI_STATUS.NVAPI_OK)
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_DISP_SetAdaptiveSyncData returned OK. We just successfully set the Adaptive Sync settings for display {displayId}.");
-                            }
-                            else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The input buffer is not large enough to hold it's contents. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
-                            }
-                            else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The input monitor is either not connected or is not a DP or HDMI panel. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
-                            }
-                            else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The NvAPI API needs to be initialized first. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
-                            }
-                            else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: This entry point not available in this NVIDIA Driver. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
-                            }
-                            else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: A miscellaneous error occurred. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
-                            }
-                            else
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}. It's most likely that your monitor {displayId} doesn't support HDR.");
-                            }
-
-                        }
-                        catch (Exception ex)
-                        {
-                            SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfig: Exception caused while trying to set NVIDIA Adaptive Sync settings for display {displayId}.");
-                        }
                     }
 
                 }
@@ -2782,8 +2727,18 @@ namespace DisplayMagicianShared.NVIDIA
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_ARGUMENT)
                     {
-                        SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: One or more arguments passed in are invalid. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
-                        return false;
+                        // We sometimes get an invalid argument here if NVIDIA has just disolved a mosaic surround screen into indivudal screens
+                        // THis is because if there are any additional screens from other adapters, nvidia tells windows to disable them
+                        // We need to wait until the Windows library applies the screen before the DisplayConfig will be applied.
+                        if (!displayConfig.MosaicConfig.IsMosaicEnabled && ActiveDisplayConfig.MosaicConfig.IsMosaicEnabled)
+                        {
+                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}, but this is expected as we are changing from a Surround screen layout to a non-surround layout. Ignoring this error.");
+                        }
+                        else
+                        {
+                            SharedLogger.logger.Error($"NVIDIALibrary/SetActiveConfig: One or more arguments passed in are invalid. NvAPI_DISP_SetDisplayConfig() returned error code {NVStatus}");
+                            return false;
+                        }
                     }
                     else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
                     {
@@ -2835,10 +2790,11 @@ namespace DisplayMagicianShared.NVIDIA
 
                 NVAPI_STATUS NVStatus = NVAPI_STATUS.NVAPI_ERROR;
 
+
                 // Go through the physical adapters
                 foreach (var physicalGPU in displayConfig.PhysicalAdapters)
                 {
-                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Processing settings for Physical GPU #{physicalGPU.Key}");
+                    SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: Processing settings for Physical GPU #{physicalGPU.Key}");
                     NVIDIA_PER_ADAPTER_CONFIG myAdapter = physicalGPU.Value;
                     UInt32 myAdapterIndex = physicalGPU.Key;
 
@@ -2852,7 +2808,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                         if (!ActiveDisplayConfig.PhysicalAdapters[myAdapterIndex].Displays.ContainsKey(displayId))
                         {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Display {displayId} doesn't exist in this setup, so skipping overriding any NVIDIA display Settings.");
+                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfigOverride: Display {displayId} doesn't exist in this setup, so skipping overriding any NVIDIA display Settings.");
                             continue;
                         }
 
@@ -2995,6 +2951,71 @@ namespace DisplayMagicianShared.NVIDIA
                             SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfigOverride: Exception caused while turning on custom NVIDIA HDR colour settings for display {displayId}.");
                         }
 
+                        // Disabled the Adaptive Sync equality matching as we are having trouble applying it, which is causing issues in profile matching in DisplayMagician
+                        // To fix this bit, we need to test the SetActiveConfigOverride Adaptive Sync part of the codebase to apply this properly.
+                        // But for now, we'll exclude it from the equality matching and also stop trying to use the adaptive sync config.
+
+                        /*// Set any AdaptiveSync settings
+                        SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to set any adaptive Sync settings if in use.");
+
+                        NV_SET_ADAPTIVE_SYNC_DATA_V1 adaptiveSyncData = myDisplay.AdaptiveSyncConfig;
+                        try
+                        {
+                            if (myDisplay.AdaptiveSyncConfig.DisableAdaptiveSync)
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to DISABLE Adaptive Sync for display {displayId}.");
+                            }
+                            else
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to ENABLE Adaptive Sync for display {displayId}.");
+                            }
+
+                            if (myDisplay.AdaptiveSyncConfig.DisableFrameSplitting)
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to DISABLE Frame Splitting for display {displayId}.");
+                            }
+                            else
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to ENABLE Frame Splitting for display {displayId}.");
+                            }
+                            SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: We want to set the Adaptice Sync Max Frame Interval to {myDisplay.AdaptiveSyncConfig.MaxFrameInterval}ms for display {displayId}.");
+
+                            // Apply the AdaptiveSync settings
+                            NVStatus = NVImport.NvAPI_DISP_SetAdaptiveSyncData(displayId, ref adaptiveSyncData);
+                            if (NVStatus == NVAPI_STATUS.NVAPI_OK)
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: NvAPI_DISP_SetAdaptiveSyncData returned OK. We just successfully set the Adaptive Sync settings for display {displayId}.");
+                            }
+                            else if (NVStatus == NVAPI_STATUS.NVAPI_INSUFFICIENT_BUFFER)
+                            {
+                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The input buffer is not large enough to hold it's contents. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
+                            }
+                            else if (NVStatus == NVAPI_STATUS.NVAPI_INVALID_DISPLAY_ID)
+                            {
+                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The input monitor is either not connected or is not a DP or HDMI panel. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
+                            }
+                            else if (NVStatus == NVAPI_STATUS.NVAPI_API_NOT_INITIALIZED)
+                            {
+                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: The NvAPI API needs to be initialized first. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
+                            }
+                            else if (NVStatus == NVAPI_STATUS.NVAPI_NO_IMPLEMENTATION)
+                            {
+                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: This entry point not available in this NVIDIA Driver. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
+                            }
+                            else if (NVStatus == NVAPI_STATUS.NVAPI_ERROR)
+                            {
+                                SharedLogger.logger.Warn($"NVIDIALibrary/SetActiveConfig: A miscellaneous error occurred. NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}");
+                            }
+                            else
+                            {
+                                SharedLogger.logger.Trace($"NVIDIALibrary/SetActiveConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_DISP_SetAdaptiveSyncData() returned error code {NVStatus}. It's most likely that your monitor {displayId} doesn't support HDR.");
+                            }
+
+                        }
+                        catch (Exception ex)
+                        {
+                            SharedLogger.logger.Error(ex, $"NVIDIALibrary/SetActiveConfig: Exception caused while trying to set NVIDIA Adaptive Sync settings for display {displayId}.");
+                        }*/
                     }
 
 
