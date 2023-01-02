@@ -53,12 +53,12 @@ namespace NVIDIAInfo
             NLog.LogManager.Configuration = config;
 
             // Start the Log file
-            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.8.3");
+            SharedLogger.logger.Info($"NVIDIAInfo/Main: Starting NVIDIAInfo v1.8.4");
 
 
-            Console.WriteLine($"\nNVIDIAInfo v1.8.3");
+            Console.WriteLine($"\nNVIDIAInfo v1.8.4");
             Console.WriteLine($"=================");
-            Console.WriteLine($"By Terry MacDonald (c) 2022\n");
+            Console.WriteLine($"(c) Terry MacDonald 2023\n");
 
             // First check that we have an NVIDIA Video Card in this PC
             List<string> videoCardVendors = WinLibrary.GetLibrary().GetAllPCIVideoCardVendors();
