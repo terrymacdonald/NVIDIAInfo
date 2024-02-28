@@ -37,7 +37,7 @@ namespace DisplayMagicianShared.NVIDIA
            OverlapY == other.OverlapY &&
            MosaicGridTopos.SequenceEqual(other.MosaicGridTopos) &&
            MosaicGridCount == other.MosaicGridCount &&
-           NVIDIALibrary.ListOfArraysEqual(MosaicViewports, other.MosaicViewports) &&
+           IntelLibrary.ListOfArraysEqual(MosaicViewports, other.MosaicViewports) &&
            PrimaryDisplayId == other.PrimaryDisplayId;
 
         public override int GetHashCode()
@@ -189,7 +189,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
             // Now we need to go through the display configscomparing values, as the order changes if there is a cloned display
-            if (!NVIDIALibrary.EqualButDifferentOrder<NV_DISPLAYCONFIG_PATH_INFO_V2>(DisplayConfigs, other.DisplayConfigs))
+            if (!IntelLibrary.EqualButDifferentOrder<NV_DISPLAYCONFIG_PATH_INFO_V2>(DisplayConfigs, other.DisplayConfigs))
             {
                 return false;
             }
@@ -206,13 +206,13 @@ namespace DisplayMagicianShared.NVIDIA
         public static bool operator !=(NVIDIA_DISPLAY_CONFIG lhs, NVIDIA_DISPLAY_CONFIG rhs) => !(lhs == rhs);
     }
 
-    public class NVIDIALibrary : IDisposable
+    public class IntelLibrary : IDisposable
     {
 
         // Static members are 'eagerly initialized', that is, 
         // immediately when class is loaded for the first time.
         // .NET guarantees thread safety for static initialization
-        private static NVIDIALibrary _instance = new NVIDIALibrary();
+        private static IntelLibrary _instance = new NVIDIALibrary();
 
         private bool _initialised = false;
         private NVIDIA_DISPLAY_CONFIG _activeDisplayConfig;
@@ -225,8 +225,8 @@ namespace DisplayMagicianShared.NVIDIA
         // Instantiate a SafeHandle instance.
         private SafeHandle _safeHandle = new SafeFileHandle(IntPtr.Zero, true);
 
-        static NVIDIALibrary() { }
-        public NVIDIALibrary()
+        static IntelLibrary() { }
+        public IntelLibrary()
         {
             // Populate the list of ConnectionTypes we want to skip as they don't support querying
             SkippedColorConnectionTypes = new List<NV_MONITOR_CONN_TYPE> {
@@ -278,7 +278,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         }
 
-        ~NVIDIALibrary()
+        ~IntelLibrary()
         {
             SharedLogger.logger.Trace("NVIDIALibrary/~NVIDIALibrary: Destroying NVIDIA NVAPI library interface");
             // The NVAPI library automatically runs NVAPI_Unload on Exit, so no need for anything here.
@@ -338,7 +338,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
         }
 
-        public static NVIDIALibrary GetLibrary()
+        public static IntelLibrary GetLibrary()
         {
             return _instance;
         }

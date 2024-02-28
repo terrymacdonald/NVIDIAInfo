@@ -81,7 +81,8 @@
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="GDI.cs" />
     <Compile Include="Helpers.cs" />
-    <Compile Include="NVAPI.cs" />
+    <Compile Include="IGCL.cs" />
+    <Compile Include="IntelLibrary.cs" />
     <Compile Include="NVIDIALibrary.cs" />
     <Compile Include="PInvokeDelegateFactory.cs" />
     <Compile Include="Program.cs" />

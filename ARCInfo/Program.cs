@@ -62,7 +62,7 @@ namespace NVIDIAInfo
 
             // First check that we have an NVIDIA Video Card in this PC
             List<string> videoCardVendors = WinLibrary.GetLibrary().GetAllPCIVideoCardVendors();
-            if (!NVIDIALibrary.GetLibrary().PCIVendorIDs.All(value => videoCardVendors.Contains(value)))
+            if (!IntelLibrary.GetLibrary().PCIVendorIDs.All(value => videoCardVendors.Contains(value)))
             {
                 SharedLogger.logger.Error($"NVIDIAInfo/Main: There are no NVIDIA Video Cards enabled within this computer. NVIDIAInfo requires at least one NVIDIA Video Card to work. Please use DisplayMagician instead.");
                 Console.WriteLine($"ERROR - There are no NVIDIA Video Cards enabled within this computer. NVIDIAInfo requires at least one NVIDIA Video Card to work.");
@@ -72,7 +72,7 @@ namespace NVIDIAInfo
             }
 
             // Update the configuration
-            NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
+            IntelLibrary nvidiaLibrary = IntelLibrary.GetLibrary();
             WinLibrary winLibrary = WinLibrary.GetLibrary();
 
             if (args.Length > 0)
@@ -245,7 +245,7 @@ namespace NVIDIAInfo
 
             SharedLogger.logger.Trace($"NVIDIAInfo/saveToFile: Getting the current Active Config");
             // Get references to the libraries used
-            NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
+            IntelLibrary nvidiaLibrary = IntelLibrary.GetLibrary();
             WinLibrary winLibrary = WinLibrary.GetLibrary();
             // Get the current configuration
             myDisplayConfig.NVIDIAConfig = nvidiaLibrary.ActiveDisplayConfig;
@@ -327,7 +327,7 @@ namespace NVIDIAInfo
                 }
 
                 // Get references to the libraries used
-                NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
+                IntelLibrary nvidiaLibrary = IntelLibrary.GetLibrary();
                 WinLibrary winLibrary = WinLibrary.GetLibrary();
                 
                 if (!winLibrary.IsActiveConfig(myDisplayConfig.WindowsConfig) || !nvidiaLibrary.IsActiveConfig(myDisplayConfig.NVIDIAConfig))
@@ -401,7 +401,7 @@ namespace NVIDIAInfo
         static void possibleFromFile(string filename)
         {
             // Get references to the libraries used
-            NVIDIALibrary nvidiaLibrary = NVIDIALibrary.GetLibrary();
+            IntelLibrary nvidiaLibrary = IntelLibrary.GetLibrary();
             WinLibrary winLibrary = WinLibrary.GetLibrary();
             
             string json = "";
@@ -595,7 +595,7 @@ namespace NVIDIAInfo
                     SharedLogger.logger.Error(ex, $"NVIDIAInfo/equalFromFile: Tried to parse the JSON in the {filename} but the JsonConvert threw an exception.");
                     return;
                 }
-                if (displayConfig.WindowsConfig.Equals(WinLibrary.GetLibrary().GetActiveConfig()) && displayConfig.NVIDIAConfig.Equals(NVIDIALibrary.GetLibrary().GetActiveConfig()))
+                if (displayConfig.WindowsConfig.Equals(WinLibrary.GetLibrary().GetActiveConfig()) && displayConfig.NVIDIAConfig.Equals(IntelLibrary.GetLibrary().GetActiveConfig()))
                 //if (displayConfig.NVIDIAConfig.Equals(NVIDIALibrary.GetLibrary().GetActiveConfig()))
                 //if (displayConfig.WindowsConfig.Equals(WinLibrary.GetLibrary().GetActiveConfig()))
                 { 
