@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34607.119
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntelInfo", "ARCInfo\IntelInfo.csproj", "{6C2E9CDB-07A2-4A32-9788-017CCA239AD9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntelInfo", "IntelInfo\IntelInfo.csproj", "{6C2E9CDB-07A2-4A32-9788-017CCA239AD9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

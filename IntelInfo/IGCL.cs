@@ -1,5 +1,7 @@
-﻿using System;
+﻿using DisplayMagicianShared.Windows;
+using System;
 using System.Runtime.InteropServices;
+using static DisplayMagicianShared.Intel.IGCLImport;
 using FARPROC = System.IntPtr;
 using HMODULE = System.IntPtr;
 
@@ -1704,7 +1706,154 @@ namespace DisplayMagicianShared.Intel
     }
 
 
-    class ADLImport
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// @brief Application Unique ID
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ctl_application_id_t
+    {
+        UInt32 Data1;                                 ///< [in] Data1
+        UInt16 Data2;                                 ///< [in] Data2
+        UInt16 Data3;                                 ///< [in] Data3
+        byte Data4;                               ///< [in] Data4
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// @brief Init arguments
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ctl_init_args_t
+    {
+        UInt32 Size;                                  //< [in] size of this structure
+        byte Version;                                //< [in] version of this structure
+        UInt32 AppVersion;                  //< [in][release] App's IGCL version
+        UInt32 flags;                         //< [in][release] Caller version
+        UInt32 SupportedVersion;            //< [out][release] IGCL implementation version
+        ctl_application_id_t ApplicationUID;            //< [in] Application Provided Unique ID.Application can pass all 0's as
+                                                        //< the default ID
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// @brief Combined Display's child display target mode
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ctl_child_display_target_mode_t : IEquatable<ctl_child_display_target_mode_t>
+    {
+        UInt32 Width;                                 ///< [in,out] Width
+        UInt32 Height;                                ///< [in,out] Height
+        float RefreshRate;                              ///< [in,out] Refresh Rate
+        UInt32 ReservedFields;                     ///< [out] Reserved field of 16 bytes
+
+        public override bool Equals(object obj) => obj is ctl_child_display_target_mode_t other && this.Equals(other);
+        public bool Equals(ctl_child_display_target_mode_t other)
+            => Width == other.Width &&
+                Height == other.Height &&
+                RefreshRate == other.RefreshRate &&
+                ReservedFields == other.ReservedFields;
+
+        public override int GetHashCode()
+        {
+            return (Width, Height, RefreshRate, ReservedFields).GetHashCode();
+        }
+
+        public static bool operator ==(ctl_child_display_target_mode_t lhs, ctl_child_display_target_mode_t rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(ctl_child_display_target_mode_t lhs, ctl_child_display_target_mode_t rhs) => !(lhs.Equals(rhs));
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// @brief Combined Display's child display information
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ctl_combined_display_child_info_t : IEquatable<ctl_combined_display_child_info_t>
+    {
+        ctl_display_output_handle_t hDisplayOutput;     ///< [in,out] Display output handle under combined display configuration
+        ctl_rect_t FbSrc;                               ///< [in,out] FrameBuffer source's RECT within Combined Display respective
+        ctl_rect_t FbPos;                               ///< [in,out] FrameBuffer target's RECT within output size
+        ctl_display_orientation_t DisplayOrientation;   ///< [in,out] 0/180 Degree Display orientation (rotation)
+        ctl_child_display_target_mode_t TargetMode;     ///< [in,out] Desired target mode (width, height, refresh)
+
+        public override bool Equals(object obj) => obj is ctl_combined_display_child_info_t other && this.Equals(other);
+        public bool Equals(ctl_combined_display_child_info_t other)
+            => hDisplayOutput == other.hDisplayOutput &&
+                FbSrc == other.FbSrc &&
+                FbPos == other.FbPos &&
+                DisplayOrientation == other.DisplayOrientation &&
+                TargetMode == other.TargetMode;
+
+        public override int GetHashCode()
+        {
+            return (hDisplayOutput, FbSrc, FbPos, DisplayOrientation, TargetMode).GetHashCode();
+        }
+
+        public static bool operator ==(ctl_child_display_target_mode_t lhs, ctl_child_display_target_mode_t rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(ctl_child_display_target_mode_t lhs, ctl_child_display_target_mode_t rhs) => !(lhs.Equals(rhs));
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// @brief Combined Display arguments
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ctl_combined_display_args_t : IEquatable<_ctl_combined_display_args_t>
+    {
+        UInt32 Size;                                  ///< [in] size of this structure
+        byte Version;                                ///< [in] version of this structure
+        ctl_combined_display_optype_t OpType;           ///< [in] Combined display operation type
+        bool IsSupported;                               ///< [out] Returns yes/no in response to IS_SUPPORTED_CONFIG command
+        byte NumOutputs;                             ///< [in,out] Number of outputs part of desired combined display
+                                                        ///< configuration
+        UInt32 CombinedDesktopWidth;                  ///< [in,out] Width of desired combined display configuration
+        UInt32 CombinedDesktopHeight;                 ///< [in,out] Height of desired combined display configuration
+        IntPtr pChildInfo;  ///< [in,out] List of child display information respective to each output.
+                                                        ///< Up to 16 displays are supported with up to 4 displays per GPU.
+        IntPtr hCombinedDisplayOutput; ///< [in,out] Handle to combined display output
+
+        public override bool Equals(object obj) => obj is ctl_combined_display_args_t other && this.Equals(other);
+        public bool Equals(ctl_combined_display_args_t other)
+            => Size == other.Size &&
+                Version == other.Version &&
+                OpType == other.OpType &&
+                IsSupported == other.IsSupported &&
+                NumOutputs == other.NumOutputs &&
+                CombinedDesktopWidth == other.CombinedDesktopWidth &&
+                CombinedDesktopHeight == other.CombinedDesktopHeight &&
+                pChildInfo == other.pChildInfo &&
+                hCombinedDisplayOutput == other.hCombinedDisplayOutput;
+
+        public override int GetHashCode()
+        {
+            return (Size, Version, OpType, IsSupported, NumOutputs, CombinedDesktopWidth, CombinedDesktopHeight, pChildInfo, hCombinedDisplayOutput).GetHashCode();
+        }
+
+        public static bool operator ==(ctl_combined_display_args_t lhs, ctl_combined_display_args_t rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(ctl_combined_display_args_t lhs, ctl_combined_display_args_t rhs) => !(lhs.Equals(rhs));
+
+
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /// @brief Combined Display operation type
+    public enum ctl_combined_display_optype_t : Int32
+    {
+        CTL_COMBINED_DISPLAY_OPTYPE_IS_SUPPORTED_CONFIG = 1,///< To check whether given outputs can form a combined display, no changes
+                                                            ///< are applied
+        CTL_COMBINED_DISPLAY_OPTYPE_ENABLE = 2,         ///< To setup and enable a combined display
+        CTL_COMBINED_DISPLAY_OPTYPE_DISABLE = 3,        ///< To disable combined display
+        CTL_COMBINED_DISPLAY_OPTYPE_QUERY_CONFIG = 4,   ///< To query combined display configuration
+        CTL_COMBINED_DISPLAY_OPTYPE_MAX
+
+    };
+
+
+
+    class IGCLImport
     {
 
         /// <summary> Define false </summary>
@@ -2007,7 +2156,7 @@ namespace DisplayMagicianShared.Intel
 
         #region Internal Constant
         /// <summary> Atiadlxx_FileName </summary>
-        public const string ATI_ADL_DLL = "atiadlxx.dll";
+        public const string INTEL_IGCL_DLL = "atiadlxx.dll";
         /// <summary> Kernel32_FileName </summary>
         public const string Kernel32_FileName = "kernel32.dll";
         #endregion Internal Constant
@@ -2016,174 +2165,249 @@ namespace DisplayMagicianShared.Intel
         [DllImport(Kernel32_FileName)]
         public static extern HMODULE GetModuleHandle(string moduleName);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ctl_result_t ADL2_Main_Control_Create(ADL_Main_Memory_Alloc_Delegate callback, int enumConnectedAdapters, out IntPtr contextHandle);
+        ///////////////////////////////////////////////////////////////////////////////
+        /// @brief Control Api Init
+        /// 
+        /// @details
+        ///     - Control Api Init
+        /// 
+        /// @returns
+        ///     - CTL_RESULT_SUCCESS
+        ///     - CTL_RESULT_ERROR_UNINITIALIZED
+        ///     - CTL_RESULT_ERROR_DEVICE_LOST
+        ///     - CTL_RESULT_ERROR_INVALID_NULL_POINTER
+        ///         + `nullptr == pInitDesc`
+        ///         + `nullptr == phAPIHandle`
+        ///     - ::CTL_RESULT_ERROR_UNSUPPORTED_VERSION - "Unsupported version"
+        //ctl_result_t ctlInit(
+        //      ctl_init_args_t* pInitDesc,                     ///< [in][out] App's control API version
+        //      ctl_api_handle_t* phAPIHandle                   ///< [in][out][release] Control API handle
+        //);
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ctl_result_t ctlInit([In][Out] ctl_init_args_t pInitDesc, [In][Out] IntPtr phAPIHandle);
 
-        //typedef int (* ADL2_MAIN_CONTROLX2_CREATE) (ADL_MAIN_MALLOC_CALLBACK, int iEnumConnectedAdapter_, ADL_CONTEXT_HANDLE* context_, ADLThreadingModel);
+        ///////////////////////////////////////////////////////////////////////////////
+        /// @brief Control Api Destroy
+        /// 
+        /// @details
+        ///     - Control Api Close
+        /// 
+        /// @returns
+        ///     - CTL_RESULT_SUCCESS
+        ///     - CTL_RESULT_ERROR_UNINITIALIZED
+        ///     - CTL_RESULT_ERROR_DEVICE_LOST
+        ///     - CTL_RESULT_ERROR_INVALID_NULL_HANDLE
+        ///         + `nullptr == hAPIHandle`
+        ///     - ::CTL_RESULT_ERROR_UNSUPPORTED_VERSION - "Unsupported version"
+        //CTL_APIEXPORT ctl_result_t CTL_APICALL
+        //ctlClose(
+        //    ctl_api_handle_t hAPIHandle                     ///< [in][release] Control API implementation handle obtained during init
+        //                                                    ///< call
+        //    );
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ctl_result_t ctlClose(IntPtr contextHandle);
 
-        //typedef int (* ADL2_MAIN_CONTROL_DESTROY) (ADL_CONTEXT_HANDLE);
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ctl_result_t ADL2_Main_Control_Destroy(IntPtr contextHandle);
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Get/Set Combined Display
+/// 
+/// @details
+///     - To get or set combined display with given Child Targets on a Single
+///       GPU or across identical GPUs. Multi-GPU(MGPU) combined display is
+///       reserved i.e. it is not public and requires special application GUID.
+///       MGPU Combined Display will get activated or deactivated in next boot.
+///       MGPU scenario will internally link the associated adapters via Linked
+///       Display Adapter Call, with supplied hDeviceAdapter being the LDA
+///       Primary. If Genlock and enabled in Driver registry and supported by
+///       given Display Config, MGPU Combined Display will enable MGPU Genlock
+///       with supplied hDeviceAdapter being the Genlock Primary Adapter and the
+///       First Child Display being the Primary Display.
+/// 
+/// @returns
+///     - CTL_RESULT_SUCCESS
+///     - CTL_RESULT_ERROR_UNINITIALIZED
+///     - CTL_RESULT_ERROR_DEVICE_LOST
+///     - CTL_RESULT_ERROR_INVALID_NULL_HANDLE
+///         + `nullptr == hDeviceAdapter`
+///     - CTL_RESULT_ERROR_INVALID_NULL_POINTER
+///         + `nullptr == pCombinedDisplayArgs`
+///     - ::CTL_RESULT_ERROR_UNSUPPORTED_VERSION - "Unsupported version"
+///     - ::CTL_RESULT_ERROR_INVALID_OPERATION_TYPE - "Invalid operation type"
+///     - ::CTL_RESULT_ERROR_INSUFFICIENT_PERMISSIONS - "Insufficient permissions"
+///     - ::CTL_RESULT_ERROR_INVALID_NULL_POINTER - "Invalid null pointer"
+///     - ::CTL_RESULT_ERROR_NULL_OS_DISPLAY_OUTPUT_HANDLE - "Null OS display output handle"
+///     - ::CTL_RESULT_ERROR_NULL_OS_INTERFACE - "Null OS interface"
+///     - ::CTL_RESULT_ERROR_NULL_OS_ADAPATER_HANDLE - "Null OS adapter handle"
+///     - ::CTL_RESULT_ERROR_KMD_CALL - "Kernel mode driver call failure"
+///     - ::CTL_RESULT_ERROR_FEATURE_NOT_SUPPORTED - "Combined Display feature is not supported in this platform"
+///     - ::CTL_RESULT_ERROR_ADAPTER_NOT_SUPPORTED_ON_LDA_SECONDARY - "Unsupported (secondary) adapter handle passed"
+CTL_APIEXPORT ctl_result_t CTL_APICALL
+ctlGetSetCombinedDisplay(
+    ctl_device_adapter_handle_t hDeviceAdapter,     ///< [in][release] Handle to control device adapter
+    ctl_combined_display_args_t* pCombinedDisplayArgs   ///< [in,out] Setup and get combined display arguments
+    );
+
+
 
         // This is used to set the display settings permanently
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Flush_Driver_Data(IntPtr ADLContextHandle, int adapterIndex);
 
 
         // adapter functions
         //typedef int (* ADL2_DISPLAY_POSSIBLEMODE_GET) (ADL_CONTEXT_HANDLE, int, int*, ADLMode**);
         // This function retrieves the OS possible modes list for a specified input adapter.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_PossibleMode_Get(IntPtr ADLContextHandle, int adapterIndex, out int numModes, out IntPtr modes);
 
         //typedef int (* ADL2_ADAPTER_PRIMARY_SET) (ADL_CONTEXT_HANDLE, int);
         // This function sets the adapter index for a specified primary display adapter.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_Primary_Set(IntPtr ADLContextHandle, int primaryAdapterIndex);
 
         //typedef int (* ADL2_ADAPTER_PRIMARY_GET) (ADL_CONTEXT_HANDLE, int*);
         // This function retrieves the adapter index for the primary display adapter.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_Primary_Get(IntPtr ADLContextHandle, out int primaryAdapterIndex);
 
         //typedef int (* ADL2_ADAPTER_ACTIVE_SET) (ADL_CONTEXT_HANDLE, int, int, int*);
         // This function enables or disables extended desktop mode for a specified display.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_Active_Set(IntPtr ADLContextHandle, int primaryAdapterIndex, int desiredStatus, out int newlyActivated);
 
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_NumberOfAdapters_Get(IntPtr contextHandle, out int numAdapters);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_Active_Get(IntPtr ADLContextHandle, int adapterIndex, out int status);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_AdapterX2_Caps(IntPtr ADLContextHandle, int adapterIndex, out ADL_ADAPTER_CAPSX2 adapterCapabilities);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_AdapterInfo_Get(IntPtr ADLContextHandle, int inputSize, out IntPtr AdapterInfoArray);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_AdapterInfoX2_Get(IntPtr ADLContextHandle, out IntPtr AdapterInfoArray);
 
         //typedef int (* ADL2_ADAPTER_ADAPTERINFOX3_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* numAdapters, AdapterInfo** lppAdapterInfo);
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_AdapterInfoX3_Get(IntPtr ADLContextHandle, int adapterIndex, out int numAdapters, out IntPtr AdapterInfoArray);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_AdapterInfoX4_Get(IntPtr ADLContextHandle, int adapterIndex, out int numAdapters, out IntPtr AdapterInfoX2Array);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_DDCInfo2_Get(IntPtr contextHandle, int adapterIndex, int displayIndex, out ADL_DDC_INFO2 DDCInfo);
 
         //typedef int (* ADL2_DISPLAY_DISPLAYINFO_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpNumDisplays, ADLDisplayInfo** lppInfo, int iForceDetect);
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_DisplayInfo_Get(IntPtr ADLContextHandle, int adapterIndex, out int numDisplays, out IntPtr displayInfoArray, int forceDetect);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_DeviceConfig_Get(IntPtr ADLContextHandle, int adapterIndex, int displayIndex, out ADL_DISPLAY_CONFIG displayConfig);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_HDRState_Get(IntPtr ADLContextHandle, int adapterIndex, ADL_DISPLAY_ID displayID, out int support, out int enable);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_HDRState_Set(IntPtr ADLContextHandle, int adapterIndex, ADL_DISPLAY_ID displayID, int enable);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_ColorDepth_Get(IntPtr ADLContextHandle, int adapterIndex, ADL_DISPLAY_ID displayID, out ADL_COLORDEPTH colourDepth);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_DisplayMapConfig_PossibleAddAndRemove(IntPtr ADLContextHandle, int adapterIndex, int numDisplayMap, in ADL_DISPLAY_MAP displayMap, int numDisplayTarget, in ADL_DISPLAY_TARGET displayTarget, out int numPossibleAddTarget, out IntPtr possibleAddTarget, out int numPossibleRemoveTarget, out IntPtr possibleRemoveTarget);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_Desktop_Caps(IntPtr ADLContextHandle, int adapterIndex, out int DesktopCapsValue, out int DesktopCapsMask);
 
         // Function to retrieve active desktop supported SLS grid size.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Adapter_Desktop_SupportedSLSGridTypes_Get(IntPtr ADLContextHandle, int adapterIndex, int numDisplayTargetToUse, ref ADL_DISPLAY_TARGET displayTargetToUse, out int numSLSGrid, out ADL_DISPLAY_TARGET SLSGrid, out int option);
 
         // Function to get the current supported SLS grid patterns (MxN) for a GPU.
         // This function gets a list of supported SLS grids for a specified input adapter based on display devices currently connected to the GPU.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSGrid_Caps(IntPtr ADLContextHandle, int adapterIndex, out int NumSLSGrid, out IntPtr SLSGrid, int option);
 
         // Function to get the active SLS map index list for a given GPU.
         // This function retrieves a list of active SLS map indexes for a specified input GPU.            
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapIndexList_Get(IntPtr ADLContextHandle, int adapterIndex, out int numSLSMapIndexList, out IntPtr SLSMapIndexList, int option);
 
         // Definitions of the used function pointers. Add more if you use other ADL APIs
         // SLS functions
         //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_VALID) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLSLSMap slsMap, int iNumDisplayTarget, ADLSLSTarget* lpSLSTarget, int* lpSupportedSLSLayoutImageMode, int* lpReasonForNotSupportSLS, int iOption);
         // Function to Set SLS configuration for each display index the controller and the adapter is being mapped to.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapConfig_Valid(IntPtr ADLContextHandle, int adapterIndex, ADL_SLS_MAP SLSMap, int numDisplayTarget, ADL_SLS_TARGET[] displayTarget, out int supportedSLSLayoutImageMode, out int reasonForNotSupportingSLS, int option);
 
         //typedef int (* ADL2_DISPLAY_SLSMAPINDEX_GET) (ADL_CONTEXT_HANDLE, int, int, ADLDisplayTarget*, int*);
         // Function to get a SLS map index based on a group of displays that are connected in the given adapter. The driver only searches the active SLS grid database.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapIndex_Get(IntPtr ADLContextHandle, int adapterIndex, int numDisplayTarget, ADL_DISPLAY_TARGET[] displayTarget, out int SLSMapIndex);
 
         //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_GET) (ADL_CONTEXT_HANDLE, int, int, ADLSLSMap*, int*, ADLSLSTarget**, int*, ADLSLSMode**, int*, ADLBezelTransientMode**, int*, ADLBezelTransientMode**, int*, ADLSLSOffset**, int);
         // This function retrieves an SLS configuration, which includes the, SLS map, SLS targets, SLS standard modes, bezel modes or a transient mode, and offsets.           
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapConfig_Get(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, out ADL_SLS_MAP slsMap, out int NumSLSTarget, out IntPtr SLSTargetArrayBuffer, out int lpNumNativeMode, out IntPtr NativeModeBuffer, out int NumBezelMode, out IntPtr BezelModeBuffer, out int NumTransientMode, out IntPtr TransientModeBuffer, out int NumSLSOffset, out IntPtr SLSOffsetBuffer, int iOption);
 
         // typedef int ADL2_Display_SLSMapConfigX2_Get(ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iSLSMapIndex, ADLSLSMap* lpSLSMap, int* lpNumSLSTarget, ADLSLSTarget** lppSLSTarget, int* lpNumNativeMode, ADLSLSMode** lppNativeMode, int* lpNumNativeModeOffsets, ADLSLSOffset** lppNativeModeOffsets, int* lpNumBezelMode, ADLBezelTransientMode** lppBezelMode, int* lpNumTransientMode, ADLBezelTransientMode** lppTransientMode, int* lpNumSLSOffset, ADLSLSOffset** lppSLSOffset, int iOption)
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapConfigX2_Get(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, ref ADL_SLS_MAP slsMap, out int NumSLSTarget, out IntPtr SLSTargetBuffer, out int lpNumNativeMode, out IntPtr NativeModeBuffer, out int NumNativeModeOffsets, out IntPtr NativeModeOffsetsBuffer, out int NumBezelMode, out IntPtr BezelModeBuffer, out int NumTransientMode, out IntPtr TransientModeBuffer, out int NumSLSOffset, out IntPtr SLSOffsetBuffer, int option);
 
         //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_DELETE) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iSLSMapIndex);
         // This function deletes an SLS map from the driver database based on the input SLS map index.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_SLSMapConfig_Delete(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex);
 
 
         //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_CREATE) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLSLSMap SLSMap, int iNumTarget, ADLSLSTarget* lpSLSTarget, int iBezelModePercent, int* lpSLSMapIndex, int iOption);
         // This function creates an SLS configuration with a given grid, targets, and bezel mode percent. It will output an SLS map index if the SLS map is successfully created.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapConfig_Create(IntPtr ADLContextHandle, int adapterIndex, ADL_SLS_MAP SLSMap, int numDisplayTarget, ADL_SLS_TARGET[] displayTarget, int bezelModePercent, out int SLSMapIndex, int option);
 
         //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_REARRANGE) (ADL_CONTEXT_HANDLE, int, int, int, ADLSLSTarget*, ADLSLSMap, int);
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapConfig_Rearrange(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, int numDisplayTarget, ADL_SLS_TARGET[] displayTargets, ADL_SLS_MAP SLSMap, int option);
 
         //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_SETSTATE) (ADL_CONTEXT_HANDLE, int, int, int);
         // This is used to set the SLS Grid we want from the SLSMap by selecting the one we want and supplying that as an index.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapConfig_SetState(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, int State);
 
 
         //typedef int 	ADL2_Display_SLSRecords_Get (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLDisplayID displayID, int *lpNumOfRecords, int **lppGridIDList)
         // This is used to set the SLS Grid we want from the SLSMap by selecting the one we want and supplying that as an index.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSRecords_Get(IntPtr ADLContextHandle, int adapterIndex, ADL_DISPLAY_ID displayID, out int numOfRecords, out IntPtr gridIDList);
 
         //typedef int (* ADL2_DISPLAY_SLSMAPINDEXLIST_GET) (ADL_CONTEXT_HANDLE, int, int*, int**, int);
         // This function retrieves a list of active SLS map indexes for a specified input GPU.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_SLSMapIndexList_Get(IntPtr ADLContextHandle, int AdapterIndex, out int numSLSMapIndexList, IntPtr SLSMapIndexList, int option);
 
         //typedef int (* ADL2_DISPLAY_MODES_GET) (ADL_CONTEXT_HANDLE, int, int, int*, ADLMode**);
         // This function retrieves the current display mode information.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_Modes_Get(IntPtr ADLContextHandle, int adapterIndex, int displayIndex, out int numModes, out IntPtr modes);
 
 
         //typedef int (* ADL2_DISPLAY_MODES_SET) (ADL_CONTEXT_HANDLE, int, int, int, ADLMode*);
         // This function sets the current display mode information.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_Modes_Set(IntPtr ADLContextHandle, int adapterIndex, int displayIndex, int numModes, ref ADL_MODE modes);
 
         //typedef int (* ADL2_DISPLAY_BEZELOFFSET_SET) (ADL_CONTEXT_HANDLE, int, int, int, LPADLSLSOffset, ADLSLSMap, int);
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_BezelOffset_Set(IntPtr ADLContextHandle, int adapterIndex, int SLSMapIndex, int numBezelOffset, ref ADL_SLS_OFFSET displayTargetToUse, ADL_SLS_MAP SLSMap, int option);
 
         //display map functions
         //typedef int (* ADL2_DISPLAY_DISPLAYMAPCONFIG_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpNumDisplayMap, ADLDisplayMap** lppDisplayMap, int* lpNumDisplayTarget, ADLDisplayTarget** lppDisplayTarget, int iOptions);
         // This function retrieves the current display map configurations, including the controllers and adapters mapped to each display.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_DisplayMapConfig_Get(IntPtr ADLContextHandle, int adapterIndex, out int numDisplayMap, out IntPtr displayMap, out int numDisplayTarget, out IntPtr displayTarget, int options);
 
         //typedef int (* ADL2_DISPLAY_DISPLAYMAPCONFIG_SET) (ADL_CONTEXT_HANDLE, int, int, ADLDisplayMap*, int, ADLDisplayTarget*);
@@ -2191,91 +2415,91 @@ namespace DisplayMagicianShared.Intel
         // Possible display configurations are single, clone, extended desktop, and stretch mode.
         // If clone mode is desired and the current display configuration is extended desktop mode, the function disables extended desktop mode in order to enable clone mode.
         // If extended display mode is desired and the current display configuration is single mode, this function enables extended desktop.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_DisplayMapConfig_Set(IntPtr ADLContextHandle, int adapterIndex, int numDisplayMap, ADL_DISPLAY_MAP[] displayMap, int numDisplayTarget, ADL_DISPLAY_TARGET[] displayTarget);
 
         // This function validate the list of the display configurations for a specified input adapter. This function is applicable to all OS platforms.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_DisplayMapConfig_Validate(IntPtr ADLContextHandle, int adapterIndex, int numPossibleMap, ref ADL_POSSIBLE_MAP possibleMaps, out int numPossibleMapResult, out IntPtr possibleMapResult);
 
         // Function to indicate whether displays are physically connected to an adapter.
         // This function indicates whether displays are physically connected to a specified adapter.        
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL2_Display_ConnectedDisplays_Get(IntPtr context, int adapterIndex, out int connections);
 
 
         // ======================================
 
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Main_Control_Create(ADL_Main_Memory_Alloc_Delegate callback, int enumConnectedAdapters);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Main_Control_Destroy();
 
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Main_Control_IsFunctionValid(HMODULE module, string procName);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern FARPROC ADL_Main_Control_GetProcAddress(HMODULE module, string procName);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Adapter_NumberOfAdapters_Get(ref int numAdapters);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Adapter_AdapterInfo_Get(out IntPtr info, int inputSize);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Adapter_Active_Get(int adapterIndex, ref int status);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Adapter_ID_Get(int adapterIndex, ref int adapterId);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_AdapterX2_Caps(int adapterIndex, out ADL_ADAPTER_CAPSX2 adapterCapabilities);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_DisplayInfo_Get(int adapterIndex, ref int numDisplays, out IntPtr displayInfoArray, int forceDetect);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_DeviceConfig_Get(int adapterIndex, int displayIndex, out ADL_DISPLAY_CONFIG displayConfig);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_EdidData_Get(int adapterIndex, int displayIndex, ref ADL_DISPLAY_EDID_DATA EDIDData);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_DisplayMapConfig_Get(int adapterIndex, out int numDisplayMap, out IntPtr displayMap, out int numDisplayTarget, out IntPtr displayTarget, int options);
 
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_DisplayMapConfig_PossibleAddAndRemove(int adapterIndex, int numDisplayMap, ADL_DISPLAY_MAP displayMap, int numDisplayTarget, ADL_DISPLAY_TARGET displayTarget, out int numPossibleAddTarget, out IntPtr possibleAddTarget, out int numPossibleRemoveTarget, out IntPtr possibleRemoveTarget);
 
         //typedef int (* ADL2_DISPLAY_SLSMAPCONFIG_GET) (ADL_CONTEXT_HANDLE, int, int, ADLSLSMap*, int*, ADLSLSTarget**, int*, ADLSLSMode**, int*, ADLBezelTransientMode**, int*, ADLBezelTransientMode**, int*, ADLSLSOffset**, int);
         // This function retrieves an SLS configuration, which includes the, SLS map, SLS targets, SLS standard modes, bezel modes or a transient mode, and offsets.           
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_SLSMapConfig_Get(int adapterIndex, int SLSMapIndex, out ADL_SLS_MAP SLSMap, out int NumSLSTarget, out IntPtr SLSTargetArray, out int lpNumNativeMode, out IntPtr NativeMode, out int NumBezelMode, out IntPtr BezelMode, out int NumTransientMode, out IntPtr TransientMode, out int NumSLSOffset, out IntPtr SLSOffset, int iOption);
 
         // typedef int ADL2_Display_SLSMapConfigX2_Get(ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iSLSMapIndex, ADLSLSMap* lpSLSMap, int* lpNumSLSTarget, ADLSLSTarget** lppSLSTarget, int* lpNumNativeMode, ADLSLSMode** lppNativeMode, int* lpNumNativeModeOffsets, ADLSLSOffset** lppNativeModeOffsets, int* lpNumBezelMode, ADLBezelTransientMode** lppBezelMode, int* lpNumTransientMode, ADLBezelTransientMode** lppTransientMode, int* lpNumSLSOffset, ADLSLSOffset** lppSLSOffset, int iOption)
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_SLSMapConfigX2_Get(int adapterIndex, int SLSMapIndex, out ADL_SLS_MAP SLSMap, out int NumSLSTarget, out IntPtr SLSTargetArray, out int lpNumNativeMode, out IntPtr NativeMode, out int NumNativeModeOffsets, out IntPtr NativeModeOffsets, out int NumBezelMode, out IntPtr BezelMode, out int NumTransientMode, out IntPtr TransientMode, out int NumSLSOffset, out IntPtr SLSOffset, int option);
 
         // This is used to set the SLS Grid we want from the SLSMap by selecting the one we want and supplying that as an index.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_SLSMapConfig_SetState(int AdapterIndex, int SLSMapIndex, int State);
 
         // Function to get the current supported SLS grid patterns (MxN) for a GPU.
         // This function gets a list of supported SLS grids for a specified input adapter based on display devices currently connected to the GPU.
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_SLSGrid_Caps(int adapterIndex, ref int NumSLSGrid, out IntPtr SLSGrid, int option);
 
         // Function to get the active SLS map index list for a given GPU.
         // This function retrieves a list of active SLS map indexes for a specified input GPU.            
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_SLSMapIndexList_Get(int adapterIndex, out int numSLSMapIndexList, out IntPtr SLSMapIndexList, int options);
 
         // Function to get the active SLS map index list for a given GPU.
         // This function retrieves a list of active SLS map indexes for a specified input GPU.            
-        [DllImport(ATI_ADL_DLL, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(INTEL_IGCL_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern ctl_result_t ADL_Display_SLSMapIndex_Get(int adapterIndex, int ADLNumDisplayTarget, ref ADL_DISPLAY_TARGET displayTarget, ref int SLSMapIndex);
 
         #endregion DLLImport
