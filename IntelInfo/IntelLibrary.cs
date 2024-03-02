@@ -124,11 +124,12 @@ namespace DisplayMagicianShared.Intel
     public struct INTEL_DISPLAY_CONFIG : IEquatable<INTEL_DISPLAY_CONFIG>
     {
         public List<INTEL_ADAPTER_CONFIG> AdapterConfigs;
-        public INTEL_SLS_CONFIG SlsConfig;
-        public List<ADL_DISPLAY_MAP> DisplayMaps;
-        public List<ADL_DISPLAY_TARGET> DisplayTargets;
-        public Dictionary<int, INTEL_HDR_CONFIG> HdrConfigs;
+        //public INTEL_SLS_CONFIG SlsConfig;
+        //public List<ADL_DISPLAY_MAP> DisplayMaps;
+        //public List<ADL_DISPLAY_TARGET> DisplayTargets;
+        //public Dictionary<int, INTEL_HDR_CONFIG> HdrConfigs;
         public List<string> DisplayIdentifiers;
+        
         public override bool Equals(object obj) => obj is INTEL_DISPLAY_CONFIG other && this.Equals(other);
 
         public bool Equals(INTEL_DISPLAY_CONFIG other)
@@ -187,7 +188,7 @@ namespace DisplayMagicianShared.Intel
             {
                 SharedLogger.logger.Trace($"IntelLibrary/IntelLibrary: Attempting to load the Intel ADL DLL {ADLImport.ATI_ADL_DLL}");
                 // Attempt to prelink all of the NVAPI functions
-                Marshal.PrelinkAll(typeof(ADLImport));
+                Marshal.PrelinkAll(typeof(IGCLImport));
 
                 SharedLogger.logger.Trace("IntelLibrary/IntelLibrary: Intialising Intel ADL2 library interface");
                 // Second parameter is 1 so that we only the get connected adapters in use now
