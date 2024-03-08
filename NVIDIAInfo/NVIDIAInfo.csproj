@@ -82,6 +82,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NVAPI.cs" />
     <Compile Include="NvAttributes.cs" />
     <Compile Include="CCD.cs" />
     <Compile Include="ExtensionMethods.cs" />
@@ -97,7 +98,7 @@
     <Compile Include="NvMosaic.cs" />
     <Compile Include="NvStereo.cs" />
     <Compile Include="OldHelpers.cs" />
-    <Compile Include="NVAPI.cs" />
+    <Compile Include="OldNVAPI.cs" />
     <Compile Include="NVIDIALibrary.cs" />
     <Compile Include="NvInterfaces.cs" />
     <Compile Include="PInvokeDelegateFactory.cs" />

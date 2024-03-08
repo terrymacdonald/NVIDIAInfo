@@ -19,7 +19,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <inheritdoc />
         public override string Message
         {
-            get => GeneralApi.GetErrorMessage(Status) ?? Status.ToString();
+            get => NVAPI.GetErrorMessage(Status) ?? Status.ToString();
         }
 
         /// <summary>

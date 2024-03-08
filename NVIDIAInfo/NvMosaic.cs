@@ -629,7 +629,7 @@ namespace DisplayMagicianShared.NVIDIA
         ///     Maximum number of displays for this structure
         /// </summary>
         public const int MaxDisplays =
-            PhysicalGPUHandle.PhysicalGPUs * Constants.Display.AdvancedDisplayHeads;
+            PhysicalGPUHandle.PhysicalGPUs * Constants.AdvancedDisplayHeads;
 
         internal StructureVersion _Version;
         internal readonly DisplayCapacityProblem _Errors;
