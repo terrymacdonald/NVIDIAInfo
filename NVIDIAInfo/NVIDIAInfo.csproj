@@ -89,11 +89,13 @@
     <Compile Include="NvConstants.cs" />
     <Compile Include="NvDelegates.cs" />
     <Compile Include="NvDisplay.cs" />
+    <Compile Include="NvDRS.cs" />
     <Compile Include="NvExceptions.cs" />
     <Compile Include="NvGeneral.cs" />
     <Compile Include="NvGPU.cs" />
     <Compile Include="NvHelpers.cs" />
     <Compile Include="NvMosaic.cs" />
+    <Compile Include="NvStereo.cs" />
     <Compile Include="OldHelpers.cs" />
     <Compile Include="NVAPI.cs" />
     <Compile Include="NVIDIALibrary.cs" />
