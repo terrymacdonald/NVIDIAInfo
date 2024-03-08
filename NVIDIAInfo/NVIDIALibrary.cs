@@ -9,7 +9,6 @@ using System.ComponentModel;
 using DisplayMagicianShared.Windows;
 using EDIDParser;
 using System.Threading.Tasks;
-using DisplayMagicianShared.AMD;
 
 namespace DisplayMagicianShared.NVIDIA
 {
