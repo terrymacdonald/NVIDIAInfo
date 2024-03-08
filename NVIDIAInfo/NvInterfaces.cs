@@ -1,6 +1,8 @@
 ﻿using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.General;
+using NvAPIWrapper.Native.GPU.Structures;
+using NvAPIWrapper.Native.GPU;
 using NvAPIWrapper.Native.Interfaces.Display;
 using NvAPIWrapper.Native.Interfaces.Mosaic;
 using NvAPIWrapper.Native.Mosaic;
@@ -10,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NvAPIWrapper.Native.Interfaces.GPU;
 
 namespace DisplayMagicianShared.NVIDIA
 {
@@ -463,4 +466,585 @@ namespace DisplayMagicianShared.NVIDIA
         /// </summary>
         IEnumerable<TopologyBrief> TopologyBriefs { get; }
     }
+
+    /// <summary>
+    ///     Interface for all ClockFrequencies structures
+    /// </summary>
+    public interface IClockFrequencies
+    {
+        /// <summary>
+        ///     Gets all valid clocks
+        /// </summary>
+        IReadOnlyDictionary<PublicClockDomain, ClockDomainInfo> Clocks { get; }
+
+        /// <summary>
+        ///     Gets the type of clock frequencies provided with this object
+        /// </summary>
+        ClockType ClockType { get; }
+
+        /// <summary>
+        ///     Gets graphics engine clock
+        /// </summary>
+        ClockDomainInfo GraphicsClock { get; }
+
+        /// <summary>
+        ///     Gets memory decoding clock
+        /// </summary>
+        ClockDomainInfo MemoryClock { get; }
+
+        /// <summary>
+        ///     Gets processor clock
+        /// </summary>
+        ClockDomainInfo ProcessorClock { get; }
+
+        /// <summary>
+        ///     Gets video decoding clock
+        /// </summary>
+        ClockDomainInfo VideoDecodingClock { get; }
+    }
+
+    /// <summary>
+    ///     Interface for all DisplayDriverMemoryInfo structures
+    /// </summary>
+    public interface IDisplayDriverMemoryInfo
+    {
+        /// <summary>
+        ///     Size(in kb) of the available physical frame buffer for allocating video memory surfaces.
+        /// </summary>
+        uint AvailableDedicatedVideoMemoryInkB { get; }
+
+        /// <summary>
+        ///     Size(in kb) of the current available physical frame buffer for allocating video memory surfaces.
+        /// </summary>
+        uint CurrentAvailableDedicatedVideoMemoryInkB { get; }
+
+        /// <summary>
+        ///     Size(in kb) of the physical frame buffer.
+        /// </summary>
+        uint DedicatedVideoMemoryInkB { get; }
+
+        /// <summary>
+        ///     Size(in kb) of shared system memory that driver is allowed to commit for surfaces across all allocations.
+        /// </summary>
+        uint SharedSystemMemoryInkB { get; }
+
+        /// <summary>
+        ///     Size(in kb) of system memory the driver allocates at load time.
+        /// </summary>
+        uint SystemVideoMemoryInkB { get; }
+    }
+
+    /// <summary>
+    ///     Interface for all DisplayIds structures
+    /// </summary>
+    public interface IDisplayIds
+    {
+        /// <summary>
+        ///     Gets connection type. This is reserved for future use and clients should not rely on this information. Instead get
+        ///     the GPU connector type from NvAPI_GPU_GetConnectorInfo/NvAPI_GPU_GetConnectorInfoEx
+        /// </summary>
+        MonitorConnectionType ConnectionType { get; }
+
+        /// <summary>
+        ///     Gets a unique identifier for each device
+        /// </summary>
+        uint DisplayId { get; }
+
+        /// <summary>
+        ///     Indicates if the display is being actively driven
+        /// </summary>
+        bool IsActive { get; }
+
+        /// <summary>
+        ///     Indicates if the display is the representative display
+        /// </summary>
+        bool IsCluster { get; }
+
+        /// <summary>
+        ///     Indicates if the display is connected
+        /// </summary>
+        bool IsConnected { get; }
+
+        /// <summary>
+        ///     Indicates if the display is part of MST topology and it's a dynamic
+        /// </summary>
+        bool IsDynamic { get; }
+
+        /// <summary>
+        ///     Indicates if the display identification belongs to a multi stream enabled connector (root node). Note that when
+        ///     multi stream is enabled and a single multi stream capable monitor is connected to it, the monitor will share the
+        ///     display id with the RootNode.
+        ///     When there is more than one monitor connected in a multi stream topology, then the root node will have a separate
+        ///     displayId.
+        /// </summary>
+        bool IsMultiStreamRootNode { get; }
+
+        /// <summary>
+        ///     Indicates if the display is reported to the OS
+        /// </summary>
+        bool IsOSVisible { get; }
+
+        /// <summary>
+        ///     Indicates if the display is a physically connected display; Valid only when IsConnected is true
+        /// </summary>
+        bool IsPhysicallyConnected { get; }
+
+        /// <summary>
+        ///     Indicates if the display is wireless
+        /// </summary>
+        bool IsWFD { get; }
+    }
+
+    /// <summary>
+    ///     Interface for all EDID structures
+    /// </summary>
+    public interface IEDID
+    {
+        /// <summary>
+        ///     Gets whole or a part of the EDID data
+        /// </summary>
+        byte[] Data { get; }
+    }
+
+    /// <summary>
+    ///     Contains an I2C packet transmitted or to be transmitted
+    /// </summary>
+    public interface II2CInfo
+    {
+        /// <summary>
+        ///     Gets the payload data
+        /// </summary>
+        byte[] Data { get; }
+
+        /// <summary>
+        ///     Gets the device I2C slave address
+        /// </summary>
+        byte DeviceAddress { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating that this instance contents information about a read operation
+        /// </summary>
+        bool IsReadOperation { get; }
+
+        /// <summary>
+        ///     Gets the target display output mask
+        /// </summary>
+        OutputId OutputMask { get; }
+
+        /// <summary>
+        ///     Gets the port id on which device is connected
+        /// </summary>
+        byte? PortId { get; }
+
+        /// <summary>
+        ///     Gets the target I2C register address
+        /// </summary>
+        byte[] RegisterAddress { get; }
+
+        /// <summary>
+        ///     Gets the target speed of the transaction in kHz
+        /// </summary>
+        I2CSpeed Speed { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating that the DDC port should be used instead of the communication port
+        /// </summary>
+        bool UseDDCPort { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding a performance state
+    /// </summary>
+    public interface IPerformanceState
+    {
+        /// <summary>
+        ///     Gets a boolean value indicating if this performance state is overclockable
+        /// </summary>
+        bool IsOverclockable { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if this performance state is currently overclocked
+        /// </summary>
+        bool IsOverclocked { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if this performance state is limited to use PCIE generation 1 or PCIE generation 2
+        /// </summary>
+        bool IsPCIELimited { get; }
+
+        /// <summary>
+        ///     Gets the performance state identification
+        /// </summary>
+        PerformanceStateId StateId { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding a performance state v2
+    /// </summary>
+    public interface IPerformanceState20
+    {
+        /// <summary>
+        ///     Gets a boolean value indicating if this performance state is editable
+        /// </summary>
+        bool IsEditable { get; }
+
+        /// <summary>
+        ///     Gets the performance state identification
+        /// </summary>
+        PerformanceStateId StateId { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding the frequency range of a clock domain as well as the dependent voltage domain and the
+    ///     range of the voltage
+    /// </summary>
+    public interface IPerformanceStates20ClockDependentFrequencyRange
+    {
+        /// <summary>
+        ///     Gets the maximum clock frequency in kHz
+        /// </summary>
+        uint MaximumFrequencyInkHz { get; }
+
+        /// <summary>
+        ///     Gets the dependent voltage domain's maximum voltage in uV
+        /// </summary>
+        uint MaximumVoltageInMicroVolt { get; }
+
+        /// <summary>
+        ///     Gets the minimum clock frequency in kHz
+        /// </summary>
+        uint MinimumFrequencyInkHz { get; }
+
+        /// <summary>
+        ///     Gets the dependent voltage domain's minimum voltage in uV
+        /// </summary>
+        uint MinimumVoltageInMicroVolt { get; }
+
+        /// <summary>
+        ///     Gets the dependent voltage domain identification
+        /// </summary>
+        PerformanceVoltageDomain VoltageDomainId { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding the clock frequency of a fixed frequency clock domain
+    /// </summary>
+    public interface IPerformanceStates20ClockDependentSingleFrequency
+    {
+        /// <summary>
+        ///     Gets the clock frequency of a clock domain in kHz
+        /// </summary>
+        uint FrequencyInkHz { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding a clock domain of a performance states
+    /// </summary>
+    public interface IPerformanceStates20ClockEntry
+    {
+        /// <summary>
+        ///     Gets the type of clock frequency
+        /// </summary>
+        PerformanceStates20ClockType ClockType { get; }
+
+        /// <summary>
+        ///     Gets the domain identification
+        /// </summary>
+        PublicClockDomain DomainId { get; }
+
+        /// <summary>
+        ///     Gets the current base frequency delta value and the range for a valid delta value
+        /// </summary>
+        PerformanceStates20ParameterDelta FrequencyDeltaInkHz { get; }
+
+        /// <summary>
+        ///     Gets the fixed frequency of the clock
+        /// </summary>
+        IPerformanceStates20ClockDependentFrequencyRange FrequencyRange { get; }
+
+
+        /// <summary>
+        ///     Gets a boolean value indicating if this clock is editable
+        /// </summary>
+        bool IsEditable { get; }
+
+        /// <summary>
+        ///     Gets the range of clock frequency and related voltage information if present
+        /// </summary>
+        IPerformanceStates20ClockDependentSingleFrequency SingleFrequency { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding the valid power states and their clock and voltage settings as well as general
+    ///     over-volting settings
+    /// </summary>
+    public interface IPerformanceStates20Info
+    {
+        /// <summary>
+        ///     Gets a dictionary for valid power states and their clock frequencies
+        /// </summary>
+        IReadOnlyDictionary<PerformanceStateId, IPerformanceStates20ClockEntry[]> Clocks { get; }
+
+        /// <summary>
+        ///     Gets the list of general over-volting settings
+        /// </summary>
+        IPerformanceStates20VoltageEntry[] GeneralVoltages { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if performance states are editable
+        /// </summary>
+        bool IsEditable { get; }
+
+        /// <summary>
+        ///     Gets an array of valid power states for the GPU
+        /// </summary>
+        IPerformanceState20[] PerformanceStates { get; }
+
+        /// <summary>
+        ///     Gets a dictionary for valid power states and their voltage settings
+        /// </summary>
+        IReadOnlyDictionary<PerformanceStateId, IPerformanceStates20VoltageEntry[]> Voltages { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding the voltage of a voltage domain
+    /// </summary>
+    public interface IPerformanceStates20VoltageEntry
+    {
+        /// <summary>
+        ///     Gets the voltage domain identification
+        /// </summary>
+        PerformanceVoltageDomain DomainId { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating this voltage domain is editable
+        /// </summary>
+        bool IsEditable { get; }
+
+        /// <summary>
+        ///     Gets the base voltage delta and the range of valid values for the delta value
+        /// </summary>
+        PerformanceStates20ParameterDelta ValueDeltaInMicroVolt { get; }
+
+        /// <summary>
+        ///     Gets the current value of this voltage domain in uV
+        /// </summary>
+        uint ValueInMicroVolt { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding a clock domain of a performance state
+    /// </summary>
+    public interface IPerformanceStatesClock
+    {
+        /// <summary>
+        ///     Gets the clock domain identification
+        /// </summary>
+        PublicClockDomain DomainId { get; }
+
+        /// <summary>
+        ///     Gets the clock frequency in kHz
+        /// </summary>
+        uint Frequency { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding performance states status of a GPU
+    /// </summary>
+    public interface IPerformanceStatesInfo
+    {
+        /// <summary>
+        ///     Gets a boolean value indicating if the device is capable of dynamic performance state switching
+        /// </summary>
+        bool IsCapableOfDynamicPerformance { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the dynamic performance state switching is enable
+        /// </summary>
+        bool IsDynamicPerformanceEnable { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the performance monitoring is enable
+        /// </summary>
+        bool IsPerformanceMonitorEnable { get; }
+
+        /// <summary>
+        ///     Gets an array of valid and available performance states information
+        /// </summary>
+        IPerformanceState[] PerformanceStates { get; }
+
+        /// <summary>
+        ///     Gets a dictionary of valid and available performance states and their clock information as an array
+        /// </summary>
+        IReadOnlyDictionary<PerformanceStateId, IPerformanceStatesClock[]> PerformanceStatesClocks { get; }
+
+        /// <summary>
+        ///     Gets a dictionary of valid and available performance states and their voltage information as an array
+        /// </summary>
+        IReadOnlyDictionary<PerformanceStateId, IPerformanceStatesVoltage[]> PerformanceStatesVoltages { get; }
+    }
+
+    /// <summary>
+    ///     Holds information regarding a voltage domain of a performance state
+    /// </summary>
+    public interface IPerformanceStatesVoltage
+    {
+        /// <summary>
+        ///     Gets the voltage domain identification
+        /// </summary>
+        PerformanceVoltageDomain DomainId { get; }
+
+        /// <summary>
+        ///     Gets the voltage in mV
+        /// </summary>
+        uint Value { get; }
+    }
+
+    /// <summary>
+    ///     Provides information about a single thermal sensor
+    /// </summary>
+    public interface IThermalSensor
+    {
+        /// <summary>
+        ///     Internal, ADM1032, MAX6649...
+        /// </summary>
+        ThermalController Controller { get; }
+
+        /// <summary>
+        ///     Current temperature value of the thermal sensor in degree Celsius
+        /// </summary>
+        int CurrentTemperature { get; }
+
+        /// <summary>
+        ///     Maximum default temperature value of the thermal sensor in degree Celsius
+        /// </summary>
+        int DefaultMaximumTemperature { get; }
+
+        /// <summary>
+        ///     Minimum default temperature value of the thermal sensor in degree Celsius
+        /// </summary>
+        int DefaultMinimumTemperature { get; }
+
+        /// <summary>
+        ///     Thermal sensor targeted - GPU, memory, chipset, power supply, Visual Computing Device, etc
+        /// </summary>
+        ThermalSettingsTarget Target { get; }
+    }
+
+    /// <summary>
+    ///     Holds a list of thermal sensors
+    /// </summary>
+    public interface IThermalSettings
+    {
+        /// <summary>
+        ///     Gets a list of requested thermal sensor information
+        /// </summary>
+        IThermalSensor[] Sensors { get; }
+    }
+
+    /// <summary>
+    ///     Holds information about a utilization domain
+    /// </summary>
+    public interface IUtilizationDomainInfo
+    {
+        /// <summary>
+        ///     Gets a boolean value that indicates if this utilization domain is present on this GPU.
+        /// </summary>
+        bool IsPresent { get; }
+
+        /// <summary>
+        ///     Gets the percentage of time where the domain is considered busy in the last 1 second interval.
+        /// </summary>
+        uint Percentage { get; }
+    }
+
+    /// <summary>
+    ///     Holds information about the GPU utilization domains
+    /// </summary>
+    public interface IUtilizationStatus
+    {
+
+        /// <summary>
+        ///     Gets the Bus interface (BUS) utilization
+        /// </summary>
+        IUtilizationDomainInfo BusInterface { get; }
+        /// <summary>
+        ///     Gets all valid utilization domains and information
+        /// </summary>
+        Dictionary<UtilizationDomain, IUtilizationDomainInfo> Domains { get; }
+
+        /// <summary>
+        ///     Gets the frame buffer (FB) utilization
+        /// </summary>
+        IUtilizationDomainInfo FrameBuffer { get; }
+
+        /// <summary>
+        ///     Gets the graphic engine (GPU) utilization
+        /// </summary>
+        IUtilizationDomainInfo GPU { get; }
+
+
+        /// <summary>
+        ///     Gets the Video engine (VID) utilization
+        /// </summary>
+        IUtilizationDomainInfo VideoEngine { get; }
+    }
+
+    /// <summary>
+    ///     Interface for all ChipsetInfo structures
+    /// </summary>
+    public interface IChipsetInfo
+    {
+        /// <summary>
+        ///     Chipset device name
+        /// </summary>
+        string ChipsetName { get; }
+
+        /// <summary>
+        ///     Chipset device identification
+        /// </summary>
+        int DeviceId { get; }
+
+        /// <summary>
+        ///     Chipset information flags - obsolete
+        /// </summary>
+        ChipsetInfoFlag Flags { get; }
+
+        /// <summary>
+        ///     Chipset vendor identification
+        /// </summary>
+        int VendorId { get; }
+
+        /// <summary>
+        ///     Chipset vendor name
+        /// </summary>
+        string VendorName { get; }
+    }
+
+    /// <summary>
+    ///     Represents an application rule registered in a profile
+    /// </summary>
+    public interface IDRSApplication
+    {
+        /// <summary>
+        ///     Gets the application name
+        /// </summary>
+        string ApplicationName { get; }
+
+        /// <summary>
+        ///     Gets the application friendly name
+        /// </summary>
+        string FriendlyName { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if this application is predefined as part of NVIDIA driver
+        /// </summary>
+        bool IsPredefined { get; }
+
+        /// <summary>
+        ///     Gets the application launcher name.
+        /// </summary>
+        string LauncherName { get; }
+    }
+
 }

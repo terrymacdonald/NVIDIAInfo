@@ -1,5 +1,9 @@
-﻿using System;
+﻿using NvAPIWrapper.Native.Display;
+using NvAPIWrapper.Native.Display.Structures;
+using NvAPIWrapper.Native.GPU;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -7,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace DisplayMagicianShared.NVIDIA
 {
-    /// <summary>
+/*    /// <summary>
     ///     This structure defines a group of topologies that work together to create one overall layout.  All of the supported
     ///     topologies are represented with this structure.
     ///     For example, a 'Passive Stereo' topology would be represented with this structure, and would have separate topology
@@ -105,7 +109,7 @@ namespace DisplayMagicianShared.NVIDIA
                 return hashCode;
             }
         }
-    }
+    }*/
 
     /// <summary>
     ///     Contains possible values for the color data command
@@ -1875,7 +1879,7 @@ namespace DisplayMagicianShared.NVIDIA
         WarpingReSamplingMethodBicubicAdaptiveBSpline = 0x106
     }
 
-    / <summary>
+    /// <summary>
     ///     Display spanning for Windows XP
     /// </summary>
     public enum SpanningOrientation
@@ -2328,6 +2332,5370 @@ namespace DisplayMagicianShared.NVIDIA
         ///     XYUVRQ Triangles format
         /// </summary>
         TrianglesXYUVRQ = 1
+    }
+
+
+
+
+
+    /// <summary>
+    ///     Holds coordinates of a color in the color space
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct ColorDataColorCoordinate : IEquatable<ColorDataColorCoordinate>
+    {
+        private readonly ushort _X;
+        private readonly ushort _Y;
+
+        /// <summary>
+        ///     Gets the color space's X coordinate
+        /// </summary>
+        public float X
+        {
+            get => (float)_X / 0xC350;
+        }
+
+        /// <summary>
+        ///     Gets the color space's Y coordinate
+        /// </summary>
+        public float Y
+        {
+            get => (float)_Y / 0xC350;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataColorCoordinate" />.
+        /// </summary>
+        /// <param name="x">The color space's X coordinate.</param>
+        /// <param name="y">The color space's Y coordinate.</param>
+        public ColorDataColorCoordinate(float x, float y)
+        {
+            _X = (ushort)(Math.Min(Math.Max(x, 0), 1) * 0xC350);
+            _Y = (ushort)(Math.Min(Math.Max(y, 0), 1) * 0xC350);
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataColorCoordinate" />.
+        /// </summary>
+        /// <param name="coordinate">The color space's coordinates.</param>
+        public ColorDataColorCoordinate(PointF coordinate) : this(coordinate.X, coordinate.Y)
+        {
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"({X:F3}, {Y:F3})";
+        }
+
+        /// <inheritdoc />
+        public bool Equals(ColorDataColorCoordinate other)
+        {
+            return _X == other._X && _Y == other._Y;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            return obj is ColorDataColorCoordinate other && Equals(other);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (_X.GetHashCode() * 397) ^ _Y.GetHashCode();
+            }
+        }
+
+        /// <summary>
+        ///     Checks two instance of <see cref="ColorDataColorCoordinate" /> for equality.
+        /// </summary>
+        /// <param name="left">The first instance.</param>
+        /// <param name="right">The second instance.</param>
+        /// <returns>true if both instances are equal, otherwise false.</returns>
+        public static bool operator ==(ColorDataColorCoordinate left, ColorDataColorCoordinate right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Checks two instance of <see cref="ColorDataColorCoordinate" /> for inequality.
+        /// </summary>
+        /// <param name="left">The first instance.</param>
+        /// <param name="right">The second instance.</param>
+        /// <returns>true if both instances are not equal, otherwise false.</returns>
+        public static bool operator !=(ColorDataColorCoordinate left, ColorDataColorCoordinate right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    /// <inheritdoc cref="IColorData" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct ColorDataV1 : IInitializable, IColorData
+    {
+        internal StructureVersion _Version;
+        internal ushort _Size;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly byte _Command;
+        private readonly ColorDataBag _Data;
+
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        private struct ColorDataBag
+        {
+            public readonly byte ColorFormat;
+            public readonly byte Colorimetry;
+
+            public ColorDataBag(ColorDataFormat colorFormat, ColorDataColorimetry colorimetry)
+            {
+                ColorFormat = (byte)colorFormat;
+                Colorimetry = (byte)colorimetry;
+            }
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV1" /> to retrieve color data information
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        public ColorDataV1(ColorDataCommand command)
+        {
+            this = typeof(ColorDataV1).Instantiate<ColorDataV1>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Get && command != ColorDataCommand.GetDefault)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV1" /> to modify the color data
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        /// <param name="colorFormat">The color data color format.</param>
+        /// <param name="colorimetry">The color data color space.</param>
+        public ColorDataV1(
+            ColorDataCommand command,
+            ColorDataFormat colorFormat,
+            ColorDataColorimetry colorimetry
+        )
+        {
+            this = typeof(ColorDataV1).Instantiate<ColorDataV1>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Set && command != ColorDataCommand.IsSupportedColor)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Data = new ColorDataBag(colorFormat, colorimetry);
+        }
+
+        /// <inheritdoc />
+        public ColorDataFormat ColorFormat
+        {
+            get => (ColorDataFormat)_Data.ColorFormat;
+        }
+
+        /// <inheritdoc />
+        public ColorDataColorimetry Colorimetry
+        {
+            get => (ColorDataColorimetry)_Data.Colorimetry;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDynamicRange? DynamicRange
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDepth? ColorDepth
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public ColorDataSelectionPolicy? SelectionPolicy
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDesktopDepth? DesktopColorDepth
+        {
+            get => null;
+        }
+    }
+
+    /// <inheritdoc cref="IColorData" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(2)]
+    public struct ColorDataV2 : IInitializable, IColorData
+    {
+        internal StructureVersion _Version;
+        internal ushort _Size;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly byte _Command;
+        private readonly ColorDataBag _Data;
+
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        private struct ColorDataBag
+        {
+            public readonly byte ColorFormat;
+            public readonly byte Colorimetry;
+            public readonly byte ColorDynamicRange;
+
+            public ColorDataBag(
+                ColorDataFormat colorFormat,
+                ColorDataColorimetry colorimetry,
+                ColorDataDynamicRange colorDynamicRange
+            )
+            {
+                ColorFormat = (byte)colorFormat;
+                Colorimetry = (byte)colorimetry;
+                ColorDynamicRange = (byte)colorDynamicRange;
+            }
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV2" /> to retrieve color data information
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        public ColorDataV2(ColorDataCommand command)
+        {
+            this = typeof(ColorDataV2).Instantiate<ColorDataV2>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Get && command != ColorDataCommand.GetDefault)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV2" /> to modify the color data
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        /// <param name="colorFormat">The color data color format.</param>
+        /// <param name="colorimetry">The color data color space.</param>
+        /// <param name="colorDynamicRange">The color data dynamic range.</param>
+        public ColorDataV2(
+            ColorDataCommand command,
+            ColorDataFormat colorFormat,
+            ColorDataColorimetry colorimetry,
+            ColorDataDynamicRange colorDynamicRange
+        )
+        {
+            this = typeof(ColorDataV2).Instantiate<ColorDataV2>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Set && command != ColorDataCommand.IsSupportedColor)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Data = new ColorDataBag(colorFormat, colorimetry, colorDynamicRange);
+        }
+
+        /// <inheritdoc />
+        public ColorDataFormat ColorFormat
+        {
+            get => (ColorDataFormat)_Data.ColorFormat;
+        }
+
+        /// <inheritdoc />
+        public ColorDataColorimetry Colorimetry
+        {
+            get => (ColorDataColorimetry)_Data.Colorimetry;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDynamicRange? DynamicRange
+        {
+            get => (ColorDataDynamicRange)_Data.ColorDynamicRange;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDepth? ColorDepth
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public ColorDataSelectionPolicy? SelectionPolicy
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDesktopDepth? DesktopColorDepth
+        {
+            get => null;
+        }
+    }
+
+    /// <inheritdoc cref="IColorData" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(3)]
+    public struct ColorDataV3 : IInitializable, IColorData
+    {
+        internal StructureVersion _Version;
+        internal ushort _Size;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly byte _Command;
+        private readonly ColorDataBag _Data;
+
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        private struct ColorDataBag
+        {
+            public readonly byte ColorFormat;
+            public readonly byte Colorimetry;
+            public readonly byte ColorDynamicRange;
+            public readonly ColorDataDepth ColorDepth;
+
+            public ColorDataBag(
+                ColorDataFormat colorFormat,
+                ColorDataColorimetry colorimetry,
+                ColorDataDynamicRange colorDynamicRange,
+                ColorDataDepth colorDepth
+            )
+            {
+                ColorFormat = (byte)colorFormat;
+                Colorimetry = (byte)colorimetry;
+                ColorDynamicRange = (byte)colorDynamicRange;
+                ColorDepth = colorDepth;
+            }
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV3" /> to retrieve color data information
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        public ColorDataV3(ColorDataCommand command)
+        {
+            this = typeof(ColorDataV3).Instantiate<ColorDataV3>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Get && command != ColorDataCommand.GetDefault)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV3" /> to modify the color data
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        /// <param name="colorFormat">The color data color format.</param>
+        /// <param name="colorimetry">The color data color space.</param>
+        /// <param name="colorDynamicRange">The color data dynamic range.</param>
+        /// <param name="colorDepth">The color data color depth.</param>
+        public ColorDataV3(
+            ColorDataCommand command,
+            ColorDataFormat colorFormat,
+            ColorDataColorimetry colorimetry,
+            ColorDataDynamicRange colorDynamicRange,
+            ColorDataDepth colorDepth
+        )
+        {
+            this = typeof(ColorDataV3).Instantiate<ColorDataV3>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Set && command != ColorDataCommand.IsSupportedColor)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Data = new ColorDataBag(colorFormat, colorimetry, colorDynamicRange, colorDepth);
+        }
+
+        /// <inheritdoc />
+        public ColorDataFormat ColorFormat
+        {
+            get => (ColorDataFormat)_Data.ColorFormat;
+        }
+
+        /// <inheritdoc />
+        public ColorDataColorimetry Colorimetry
+        {
+            get => (ColorDataColorimetry)_Data.Colorimetry;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDynamicRange? DynamicRange
+        {
+            get => (ColorDataDynamicRange)_Data.ColorDynamicRange;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDepth? ColorDepth
+        {
+            get
+            {
+                switch ((int)_Data.ColorDepth)
+                {
+                    case 6:
+                        return ColorDataDepth.BPC6;
+                    case 8:
+                        return ColorDataDepth.BPC8;
+                    case 10:
+                        return ColorDataDepth.BPC10;
+                    case 12:
+                        return ColorDataDepth.BPC12;
+                    case 16:
+                        return ColorDataDepth.BPC16;
+                    default:
+                        return _Data.ColorDepth;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public ColorDataSelectionPolicy? SelectionPolicy
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDesktopDepth? DesktopColorDepth
+        {
+            get => null;
+        }
+    }
+
+    /// <inheritdoc cref="IColorData" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(4)]
+    public struct ColorDataV4 : IInitializable, IColorData
+    {
+        internal StructureVersion _Version;
+        internal ushort _Size;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly byte _Command;
+        private readonly ColorDataBag _Data;
+
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        private struct ColorDataBag
+        {
+            public readonly byte ColorFormat;
+            public readonly byte Colorimetry;
+            public readonly byte ColorDynamicRange;
+            public readonly ColorDataDepth ColorDepth;
+            public readonly ColorDataSelectionPolicy ColorSelectionPolicy;
+
+            public ColorDataBag(
+                ColorDataFormat colorFormat,
+                ColorDataColorimetry colorimetry,
+                ColorDataDynamicRange colorDynamicRange,
+                ColorDataDepth colorDepth,
+                ColorDataSelectionPolicy colorSelectionPolicy
+            )
+            {
+                ColorFormat = (byte)colorFormat;
+                Colorimetry = (byte)colorimetry;
+                ColorDynamicRange = (byte)colorDynamicRange;
+                ColorDepth = colorDepth;
+                ColorSelectionPolicy = colorSelectionPolicy;
+            }
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV4" /> to retrieve color data information
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        public ColorDataV4(ColorDataCommand command)
+        {
+            this = typeof(ColorDataV4).Instantiate<ColorDataV4>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Get && command != ColorDataCommand.GetDefault)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV4" /> to modify the color data
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        /// <param name="colorFormat">The color data color format.</param>
+        /// <param name="colorimetry">The color data color space.</param>
+        /// <param name="colorDynamicRange">The color data dynamic range.</param>
+        /// <param name="colorDepth">The color data color depth.</param>
+        /// <param name="colorSelectionPolicy">The color data selection policy.</param>
+        public ColorDataV4(
+            ColorDataCommand command,
+            ColorDataFormat colorFormat,
+            ColorDataColorimetry colorimetry,
+            ColorDataDynamicRange colorDynamicRange,
+            ColorDataDepth colorDepth,
+            ColorDataSelectionPolicy colorSelectionPolicy
+        )
+        {
+            this = typeof(ColorDataV4).Instantiate<ColorDataV4>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Set && command != ColorDataCommand.IsSupportedColor)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Data = new ColorDataBag(colorFormat, colorimetry, colorDynamicRange, colorDepth, colorSelectionPolicy);
+        }
+
+        /// <inheritdoc />
+        public ColorDataFormat ColorFormat
+        {
+            get => (ColorDataFormat)_Data.ColorFormat;
+        }
+
+        /// <inheritdoc />
+        public ColorDataColorimetry Colorimetry
+        {
+            get => (ColorDataColorimetry)_Data.Colorimetry;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDynamicRange? DynamicRange
+        {
+            get => (ColorDataDynamicRange)_Data.ColorDynamicRange;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDepth? ColorDepth
+        {
+            get
+            {
+                switch ((int)_Data.ColorDepth)
+                {
+                    case 6:
+                        return ColorDataDepth.BPC6;
+                    case 8:
+                        return ColorDataDepth.BPC8;
+                    case 10:
+                        return ColorDataDepth.BPC10;
+                    case 12:
+                        return ColorDataDepth.BPC12;
+                    case 16:
+                        return ColorDataDepth.BPC16;
+                    default:
+                        return _Data.ColorDepth;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public ColorDataSelectionPolicy? SelectionPolicy
+        {
+            get => _Data.ColorSelectionPolicy;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDesktopDepth? DesktopColorDepth
+        {
+            get => null;
+        }
+    }
+
+    /// <inheritdoc cref="IColorData" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(5)]
+    public struct ColorDataV5 : IInitializable, IColorData
+    {
+        internal StructureVersion _Version;
+        internal ushort _Size;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly byte _Command;
+        private readonly ColorDataBag _Data;
+
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        private struct ColorDataBag
+        {
+            public readonly byte ColorFormat;
+            public readonly byte Colorimetry;
+            public readonly byte ColorDynamicRange;
+            public readonly ColorDataDepth ColorDepth;
+            public readonly ColorDataSelectionPolicy ColorSelectionPolicy;
+            public readonly ColorDataDesktopDepth DesktopColorDepth;
+
+            public ColorDataBag(
+                ColorDataFormat colorFormat,
+                ColorDataColorimetry colorimetry,
+                ColorDataDynamicRange colorDynamicRange,
+                ColorDataDepth colorDepth,
+                ColorDataSelectionPolicy colorSelectionPolicy,
+                ColorDataDesktopDepth desktopColorDepth
+            )
+            {
+                ColorFormat = (byte)colorFormat;
+                Colorimetry = (byte)colorimetry;
+                ColorDynamicRange = (byte)colorDynamicRange;
+                ColorDepth = colorDepth;
+                ColorSelectionPolicy = colorSelectionPolicy;
+                DesktopColorDepth = desktopColorDepth;
+            }
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV5" /> to retrieve color data information
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        public ColorDataV5(ColorDataCommand command)
+        {
+            this = typeof(ColorDataV5).Instantiate<ColorDataV5>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Get && command != ColorDataCommand.GetDefault)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ColorDataV4" /> to modify the color data
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        /// <param name="colorFormat">The color data color format.</param>
+        /// <param name="colorimetry">The color data color space.</param>
+        /// <param name="dynamicRange">The color data dynamic range.</param>
+        /// <param name="colorDepth">The color data color depth.</param>
+        /// <param name="colorSelectionPolicy">The color data selection policy.</param>
+        /// <param name="desktopColorDepth">The color data desktop color depth.</param>
+        public ColorDataV5(
+            ColorDataCommand command,
+            ColorDataFormat colorFormat,
+            ColorDataColorimetry colorimetry,
+            ColorDataDynamicRange dynamicRange,
+            ColorDataDepth colorDepth,
+            ColorDataSelectionPolicy colorSelectionPolicy,
+            ColorDataDesktopDepth desktopColorDepth
+        )
+        {
+            this = typeof(ColorDataV5).Instantiate<ColorDataV5>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != ColorDataCommand.Set && command != ColorDataCommand.IsSupportedColor)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Data = new ColorDataBag(
+                colorFormat,
+                colorimetry,
+                dynamicRange,
+                colorDepth,
+                colorSelectionPolicy,
+                desktopColorDepth
+            );
+        }
+
+        /// <inheritdoc />
+        public ColorDataFormat ColorFormat
+        {
+            get => (ColorDataFormat)_Data.ColorFormat;
+        }
+
+        /// <inheritdoc />
+        public ColorDataColorimetry Colorimetry
+        {
+            get => (ColorDataColorimetry)_Data.Colorimetry;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDynamicRange? DynamicRange
+        {
+            get => (ColorDataDynamicRange)_Data.ColorDynamicRange;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDepth? ColorDepth
+        {
+            get
+            {
+                switch ((int)_Data.ColorDepth)
+                {
+                    case 6:
+                        return ColorDataDepth.BPC6;
+                    case 8:
+                        return ColorDataDepth.BPC8;
+                    case 10:
+                        return ColorDataDepth.BPC10;
+                    case 12:
+                        return ColorDataDepth.BPC12;
+                    case 16:
+                        return ColorDataDepth.BPC16;
+                    default:
+                        return _Data.ColorDepth;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public ColorDataSelectionPolicy? SelectionPolicy
+        {
+            get => _Data.ColorSelectionPolicy;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDesktopDepth? DesktopColorDepth
+        {
+            get => _Data.DesktopColorDepth;
+        }
+    }
+
+    /// <summary>
+    ///     Hold information about a custom display resolution
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct CustomDisplay : IInitializable
+    {
+        internal StructureVersion _Version;
+        internal uint _Width;
+        internal uint _Height;
+        internal uint _Depth;
+        internal ColorFormat _ColorFormat;
+        internal ViewPortF _SourcePartition;
+        internal float _XRatio;
+        internal float _YRatio;
+        internal Timing _Timing;
+        internal uint _Flags;
+
+        /// <summary>
+        ///     Gets the source surface (source mode) width.
+        /// </summary>
+        public uint Width
+        {
+            get => _Width;
+        }
+
+        /// <summary>
+        ///     Gets the source surface (source mode) height.
+        /// </summary>
+        public uint Height
+        {
+            get => _Height;
+        }
+
+        /// <summary>
+        ///     Gets the source surface color depth. "0" means all 8/16/32bpp.
+        /// </summary>
+        public uint Depth
+        {
+            get => _Depth;
+        }
+
+        /// <summary>
+        ///     Gets the color format (optional)
+        /// </summary>
+        public ColorFormat ColorFormat
+        {
+            get => _ColorFormat;
+        }
+
+        /// <summary>
+        ///     Gets the source partition viewport. All values are between [0, 1]. For multi-mon support, should be set to
+        ///     (0,0,1.0,1.0) for now.
+        /// </summary>
+        public ViewPortF SourcePartition
+        {
+            get => _SourcePartition;
+        }
+
+        /// <summary>
+        ///     Gets the horizontal scaling ratio.
+        /// </summary>
+        public float XRatio
+        {
+            get => _XRatio;
+        }
+
+        /// <summary>
+        ///     Gets the vertical scaling ratio.
+        /// </summary>
+        public float YRatio
+        {
+            get => _YRatio;
+        }
+
+        /// <summary>
+        ///     Gets the timing used to program TMDS/DAC/LVDS/HDMI/TVEncoder, etc.
+        /// </summary>
+        public Timing Timing
+        {
+            get => _Timing;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating that a hardware mode-set without OS update should be performed.
+        /// </summary>
+        public bool HardwareModeSetOnly
+        {
+            get => _Flags.GetBit(0);
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="CustomDisplay" />
+        /// </summary>
+        /// <param name="width">The source surface (source mode) width.</param>
+        /// <param name="height">The source surface (source mode) height.</param>
+        /// <param name="depth">The source surface color depth. "0" means all 8/16/32bpp.</param>
+        /// <param name="colorFormat">The color format (optional)</param>
+        /// <param name="xRatio">The horizontal scaling ratio.</param>
+        /// <param name="yRatio">The vertical scaling ratio.</param>
+        /// <param name="timing">The timing used to program TMDS/DAC/LVDS/HDMI/TVEncoder, etc.</param>
+        /// <param name="hwModeSetOnly">A boolean value indicating that a hardware mode-set without OS update should be performed.</param>
+        public CustomDisplay(
+            uint width,
+            uint height,
+            uint depth,
+            ColorFormat colorFormat,
+            float xRatio,
+            float yRatio,
+            Timing timing,
+            bool hwModeSetOnly
+        )
+        {
+            this = typeof(CustomDisplay).Instantiate<CustomDisplay>();
+
+            _Width = width;
+            _Height = height;
+            _Depth = depth;
+            _ColorFormat = colorFormat;
+            _SourcePartition = new ViewPortF(0, 0, 1, 1);
+            _XRatio = xRatio;
+            _YRatio = yRatio;
+            _Timing = timing;
+            _Flags = _Flags.SetBit(0, hwModeSetOnly);
+        }
+    }
+
+    /// <inheritdoc />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct DisplayColorData : IDisplayColorData
+    {
+        private readonly ColorDataColorCoordinate _FirstColorCoordinate;
+        private readonly ColorDataColorCoordinate _SecondColorCoordinate;
+        private readonly ColorDataColorCoordinate _ThirdColorCoordinate;
+        private readonly ColorDataColorCoordinate _WhiteColorCoordinate;
+        private readonly ushort _MaximumDesiredContentLuminance;
+        private readonly ushort _MinimumDesiredContentLuminance;
+        private readonly ushort _MaximumDesiredFrameAverageLightLevel;
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate FirstColorCoordinate
+        {
+            get => _FirstColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate SecondColorCoordinate
+        {
+            get => _SecondColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate ThirdColorCoordinate
+        {
+            get => _ThirdColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate WhiteColorCoordinate
+        {
+            get => _WhiteColorCoordinate;
+        }
+
+        /// <summary>
+        ///     Gets the maximum desired content luminance [1.0-65535] in cd/m^2
+        /// </summary>
+        public float MaximumDesiredContentLuminance
+        {
+            get => _MaximumDesiredContentLuminance;
+        }
+
+        /// <summary>
+        ///     Gets the maximum desired content frame average light level (a.k.a MaxFALL) [1.0-65535] in cd/m^2
+        /// </summary>
+        public float MaximumDesiredContentFrameAverageLightLevel
+        {
+            get => _MaximumDesiredFrameAverageLightLevel;
+        }
+
+        /// <summary>
+        ///     Gets the maximum desired content luminance [1.0-6.5535] in cd/m^2
+        /// </summary>
+        public float MinimumDesiredContentLuminance
+        {
+            get => _MinimumDesiredContentLuminance / 10000f;
+        }
+    }
+
+    /// <summary>
+    ///     DisplayHandle is a one-to-one map to the GDI handle of an attached display in the Windows Display Properties
+    ///     Settings page.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DisplayHandle : IHandle, IEquatable<DisplayHandle>
+    {
+        internal readonly IntPtr _MemoryAddress;
+
+        /// <inheritdoc />
+        public IntPtr MemoryAddress
+        {
+            get => _MemoryAddress;
+        }
+
+        /// <inheritdoc />
+        public bool IsNull
+        {
+            get => _MemoryAddress == IntPtr.Zero;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(DisplayHandle other)
+        {
+            return _MemoryAddress.Equals(other._MemoryAddress);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is DisplayHandle handle && Equals(handle);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return _MemoryAddress.GetHashCode();
+        }
+
+        /// <summary>
+        ///     Checks for equality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are equal, otherwise false</returns>
+        public static bool operator ==(DisplayHandle left, DisplayHandle right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Checks for inequality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are not equal, otherwise false</returns>
+        public static bool operator !=(DisplayHandle left, DisplayHandle right)
+        {
+            return !left.Equals(right);
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"DisplayHandle #{MemoryAddress.ToInt64()}";
+        }
+
+        /// <summary>
+        ///     Gets default DisplayHandle with a null pointer
+        /// </summary>
+        public static DisplayHandle DefaultHandle
+        {
+            get => default(DisplayHandle);
+        }
+    }
+
+    /// <inheritdoc cref="IHDMISupportInfo" />
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    [StructureVersion(1)]
+    public struct HDMISupportInfoV1 : IInitializable, IHDMISupportInfo
+    {
+        [FieldOffset(0)] internal StructureVersion _Version;
+        [FieldOffset(4)] private readonly uint _Flags;
+        [FieldOffset(8)] private readonly uint _EDID861ExtensionRevision;
+
+        /// <inheritdoc />
+        public bool IsGPUCapableOfHDMIOutput
+        {
+            get => _Flags.GetBit(0);
+        }
+
+        /// <inheritdoc />
+        public bool? IsMonitorCapableOfsYCC601
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public bool IsMonitorCapableOfUnderscan
+        {
+            get => _Flags.GetBit(1);
+        }
+
+        /// <inheritdoc />
+        public bool? IsMonitorCapableOfAdobeYCC601
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public bool IsMonitorCapableOfBasicAudio
+        {
+            get => _Flags.GetBit(2);
+        }
+
+        /// <inheritdoc />
+        public bool IsMonitorCapableOfYCbCr444
+        {
+            get => _Flags.GetBit(3);
+        }
+
+        /// <inheritdoc />
+        public bool IsMonitorCapableOfYCbCr422
+        {
+            get => _Flags.GetBit(4);
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once IdentifierTypo
+        public bool IsMonitorCapableOfxvYCC601
+        {
+            get => _Flags.GetBit(5);
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once IdentifierTypo
+        public bool IsMonitorCapableOfxvYCC709
+        {
+            get => _Flags.GetBit(6);
+        }
+
+        /// <inheritdoc />
+        public bool IsHDMIMonitor
+        {
+            get => _Flags.GetBit(7);
+        }
+
+        /// <inheritdoc />
+        public bool? IsMonitorCapableOfAdobeRGB
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public uint EDID861ExtensionRevision
+        {
+            get => _EDID861ExtensionRevision;
+        }
+    }
+
+    /// <inheritdoc cref="IHDMISupportInfo" />
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    [StructureVersion(2)]
+    public struct HDMISupportInfoV2 : IInitializable, IHDMISupportInfo
+    {
+        [FieldOffset(0)] internal StructureVersion _Version;
+        [FieldOffset(4)] private readonly uint _Flags;
+        [FieldOffset(8)] private readonly uint _EDID861ExtensionRevision;
+
+        /// <inheritdoc />
+        public bool IsGPUCapableOfHDMIOutput
+        {
+            get => _Flags.GetBit(0);
+        }
+
+        /// <inheritdoc />
+        public bool IsMonitorCapableOfUnderscan
+        {
+            get => _Flags.GetBit(1);
+        }
+
+        /// <inheritdoc />
+        public bool IsMonitorCapableOfBasicAudio
+        {
+            get => _Flags.GetBit(2);
+        }
+
+        /// <inheritdoc />
+        public bool IsMonitorCapableOfYCbCr444
+        {
+            get => _Flags.GetBit(3);
+        }
+
+        /// <inheritdoc />
+        public bool IsMonitorCapableOfYCbCr422
+        {
+            get => _Flags.GetBit(4);
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once IdentifierTypo
+        public bool IsMonitorCapableOfxvYCC601
+        {
+            get => _Flags.GetBit(5);
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once IdentifierTypo
+        public bool IsMonitorCapableOfxvYCC709
+        {
+            get => _Flags.GetBit(6);
+        }
+
+        /// <inheritdoc />
+        public bool IsHDMIMonitor
+        {
+            get => _Flags.GetBit(7);
+        }
+
+        /// <inheritdoc />
+        public bool? IsMonitorCapableOfsYCC601
+        {
+            get => _Flags.GetBit(8);
+        }
+
+        /// <inheritdoc />
+        public bool? IsMonitorCapableOfAdobeYCC601
+        {
+            get => _Flags.GetBit(9);
+        }
+
+        /// <inheritdoc />
+        public bool? IsMonitorCapableOfAdobeRGB
+        {
+            get => _Flags.GetBit(10);
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public uint EDID861ExtensionRevision
+        {
+            get => _EDID861ExtensionRevision;
+        }
+    }
+
+    /// <summary>
+    ///     Contains information regarding HDR capabilities of a display
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct HDRCapabilitiesV1 : IInitializable
+    {
+        internal StructureVersion _Version;
+        private readonly uint _RawReserved;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly StaticMetadataDescriptorId _StaticMetadataDescriptorId;
+        private readonly DisplayColorData _DisplayData;
+
+        internal HDRCapabilitiesV1(bool expandDriverDefaultHDRParameters)
+        {
+            this = typeof(HDRCapabilitiesV1).Instantiate<HDRCapabilitiesV1>();
+            _RawReserved = 0u.SetBit(3, expandDriverDefaultHDRParameters);
+            _StaticMetadataDescriptorId = StaticMetadataDescriptorId.StaticMetadataType1;
+        }
+
+        /// <summary>
+        ///     Gets the display color space configurations
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public DisplayColorData DisplayData
+        {
+            get => _DisplayData;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a UHDA HDR with ST2084 EOTF (CEA861.3) is supported.
+        /// </summary>
+        public bool IsST2084EOTFSupported
+        {
+            get => _RawReserved.GetBit(0);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a traditional HDR gamma (CEA861.3) is supported.
+        /// </summary>
+        public bool IsTraditionalHDRGammaSupported
+        {
+            get => _RawReserved.GetBit(1);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the Extended Dynamic Range on SDR displays is supported.
+        /// </summary>
+        public bool IsEDRSupported
+        {
+            get => _RawReserved.GetBit(2);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the default EDID HDR parameters is expanded;
+        ///     otherwise false if this instance contains actual HDR parameters.
+        /// </summary>
+        public bool IsDriverDefaultHDRParametersExpanded
+        {
+            get => _RawReserved.GetBit(3);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a traditional SDR gamma is supported.
+        /// </summary>
+        public bool IsTraditionalSDRGammaSupported
+        {
+            get => _RawReserved.GetBit(4);
+        }
+    }
+
+    /// <inheritdoc cref="IHDRColorData" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct HDRColorDataV1 : IInitializable, IHDRColorData
+    {
+        internal StructureVersion _Version;
+        private readonly ColorDataHDRCommand _Command;
+        private readonly ColorDataHDRMode _HDRMode;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly StaticMetadataDescriptorId _StaticMetadataDescriptorId;
+        private readonly MasteringDisplayColorData _MasteringDisplayData;
+
+        /// <summary>
+        ///     Creates an instance of <see cref="HDRColorDataV1" />.
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        /// <param name="hdrMode">The hdr mode.</param>
+        /// <param name="masteringDisplayData">The display color space configurations.</param>
+        public HDRColorDataV1(
+            ColorDataHDRCommand command,
+            ColorDataHDRMode hdrMode,
+            MasteringDisplayColorData masteringDisplayData = default
+        )
+        {
+            this = typeof(HDRColorDataV1).Instantiate<HDRColorDataV1>();
+
+            if (command != ColorDataHDRCommand.Set)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = command;
+            _HDRMode = hdrMode;
+            _MasteringDisplayData = masteringDisplayData;
+            _StaticMetadataDescriptorId = StaticMetadataDescriptorId.StaticMetadataType1;
+        }
+
+
+        /// <summary>
+        ///     Creates an instance of <see cref="HDRColorDataV1" />.
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        public HDRColorDataV1(ColorDataHDRCommand command)
+        {
+            this = typeof(HDRColorDataV1).Instantiate<HDRColorDataV1>();
+
+            if (command != ColorDataHDRCommand.Get)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = command;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDepth? ColorDepth
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        public ColorDataFormat? ColorFormat
+        {
+            get => null;
+        }
+
+        /// <summary>
+        ///     Gets the color data command
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataHDRCommand Command
+        {
+            get => _Command;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDynamicRange? DynamicRange
+        {
+            get => null;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataHDRMode HDRMode
+        {
+            get => _HDRMode;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public MasteringDisplayColorData MasteringDisplayData
+        {
+            get => _MasteringDisplayData;
+        }
+    }
+
+    /// <inheritdoc cref="IHDRColorData" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(2)]
+    public struct HDRColorDataV2 : IInitializable, IHDRColorData
+    {
+        internal StructureVersion _Version;
+        private readonly ColorDataHDRCommand _Command;
+        private readonly ColorDataHDRMode _HDRMode;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly StaticMetadataDescriptorId _StaticMetadataDescriptorId;
+        private readonly MasteringDisplayColorData _MasteringDisplayData;
+        private readonly ColorDataFormat _ColorFormat;
+        private readonly ColorDataDynamicRange _DynamicRange;
+        private readonly ColorDataDepth _ColorDepth;
+
+        /// <summary>
+        ///     Creates an instance of <see cref="HDRColorDataV2" />.
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        /// <param name="hdrMode">The hdr mode.</param>
+        /// <param name="masteringDisplayData">The display color space configurations.</param>
+        /// <param name="colorFormat">The color data color format.</param>
+        /// <param name="dynamicRange">The color data dynamic range.</param>
+        /// <param name="colorDepth">The color data color depth.</param>
+        public HDRColorDataV2(
+            ColorDataHDRCommand command,
+            ColorDataHDRMode hdrMode,
+            MasteringDisplayColorData masteringDisplayData = default,
+            ColorDataFormat colorFormat = ColorDataFormat.Default,
+            ColorDataDynamicRange dynamicRange = ColorDataDynamicRange.Auto,
+            ColorDataDepth colorDepth = ColorDataDepth.Default
+        )
+        {
+            this = typeof(HDRColorDataV2).Instantiate<HDRColorDataV2>();
+
+            if (command != ColorDataHDRCommand.Set)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = command;
+            _HDRMode = hdrMode;
+            _MasteringDisplayData = masteringDisplayData;
+            _ColorFormat = colorFormat;
+            _DynamicRange = dynamicRange;
+            _ColorDepth = colorDepth;
+            _StaticMetadataDescriptorId = StaticMetadataDescriptorId.StaticMetadataType1;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="HDRColorDataV2" />.
+        /// </summary>
+        /// <param name="command">The command to be executed.</param>
+        public HDRColorDataV2(ColorDataHDRCommand command)
+        {
+            this = typeof(HDRColorDataV2).Instantiate<HDRColorDataV2>();
+
+            if (command != ColorDataHDRCommand.Get)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = command;
+        }
+
+        /// <summary>
+        ///     Gets the color data command
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataHDRCommand Command
+        {
+            get => _Command;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataHDRMode HDRMode
+        {
+            get => _HDRMode;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public MasteringDisplayColorData MasteringDisplayData
+        {
+            get => _MasteringDisplayData;
+        }
+
+        /// <inheritdoc />
+        public ColorDataFormat? ColorFormat
+        {
+            get => _ColorFormat;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDynamicRange? DynamicRange
+        {
+            get => _DynamicRange;
+        }
+
+        /// <inheritdoc />
+        public ColorDataDepth? ColorDepth
+        {
+            get
+            {
+                switch ((uint)_ColorDepth)
+                {
+                    case 6:
+                        return ColorDataDepth.BPC6;
+                    case 8:
+                        return ColorDataDepth.BPC8;
+                    case 10:
+                        return ColorDataDepth.BPC10;
+                    case 12:
+                        return ColorDataDepth.BPC12;
+                    case 16:
+                        return ColorDataDepth.BPC16;
+                    default:
+                        return _ColorDepth;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Contains info-frame audio information
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    public struct InfoFrameAudio
+    {
+        [FieldOffset(0)] private readonly uint _WordAt0;
+
+        [FieldOffset(4)] private readonly uint _WordAt4;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        [FieldOffset(8)] private readonly uint _WordAt8;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        [FieldOffset(12)] private readonly byte _ByteAt12;
+
+        /// <summary>
+        ///     Creates an instance of <see cref="InfoFrameAudio" />.
+        /// </summary>
+        /// <param name="codec">The audio coding type (codec)</param>
+        /// <param name="codecExtension">The audio codec from codec extension</param>
+        /// <param name="sampleSize">The audio sample size (depth)</param>
+        /// <param name="sampleRate">The audio sample rate (sampling frequency)</param>
+        /// <param name="channelCount">The number of audio channels</param>
+        /// <param name="channelAllocation">The audio channel allocation (speaker placements)</param>
+        /// <param name="isDownMixProhibited">A value indicating if down-mix is prohibited</param>
+        /// <param name="lfePlaybackLevel">The Low Frequency Effects playback level value</param>
+        /// <param name="levelShift">The audio level shift value</param>
+        public InfoFrameAudio(
+            InfoFrameAudioCodec codec,
+            InfoFrameAudioExtendedCodec codecExtension,
+            InfoFrameAudioSampleSize sampleSize,
+            InfoFrameAudioSampleRate sampleRate,
+            InfoFrameAudioChannelCount channelCount,
+            InfoFrameAudioChannelAllocation channelAllocation,
+            InfoFrameBoolean isDownMixProhibited,
+            InfoFrameAudioLFEPlaybackLevel lfePlaybackLevel,
+            InfoFrameAudioLevelShift levelShift
+        )
+        {
+            _WordAt0 = 0u
+                .SetBits(0, 5, (uint)codec)
+                .SetBits(5, 6, (uint)codecExtension)
+                .SetBits(11, 3, (uint)sampleSize)
+                .SetBits(14, 4, (uint)sampleRate)
+                .SetBits(18, 4, (uint)channelCount)
+                .SetBits(22, 9, (uint)channelAllocation);
+            _WordAt4 = 0u
+                .SetBits(0, 2, (uint)isDownMixProhibited)
+                .SetBits(2, 3, (uint)lfePlaybackLevel)
+                .SetBits(5, 5, (uint)levelShift);
+            _WordAt8 = 0;
+            _ByteAt12 = 0;
+        }
+
+        /// <summary>
+        ///     Gets the audio coding type (codec)
+        /// </summary>
+        public InfoFrameAudioCodec Codec
+        {
+            get => (InfoFrameAudioCodec)_WordAt0.GetBits(0, 5);
+        }
+
+        /// <summary>
+        ///     Gets the audio codec from codec extension; only valid when
+        ///     <see cref="Codec" /> == <see cref="InfoFrameAudioCodec.UseExtendedCodecType" />
+        /// </summary>
+        public InfoFrameAudioExtendedCodec? ExtendedCodec
+        {
+            get
+            {
+                if (Codec != InfoFrameAudioCodec.UseExtendedCodecType)
+                {
+                    return null;
+                }
+
+                return (InfoFrameAudioExtendedCodec)_WordAt0.GetBits(5, 6);
+            }
+        }
+
+        /// <summary>
+        ///     Gets the audio sample size (depth)
+        /// </summary>
+        public InfoFrameAudioSampleSize SampleSize
+        {
+            get => (InfoFrameAudioSampleSize)_WordAt0.GetBits(11, 3);
+        }
+
+        /// <summary>
+        ///     Gets the audio sample rate (sampling frequency)
+        /// </summary>
+        public InfoFrameAudioSampleRate SampleRate
+        {
+            get => (InfoFrameAudioSampleRate)_WordAt0.GetBits(14, 4);
+        }
+
+        /// <summary>
+        ///     Gets the number of audio channels
+        /// </summary>
+        public InfoFrameAudioChannelCount ChannelCount
+        {
+            get => (InfoFrameAudioChannelCount)_WordAt0.GetBits(18, 4);
+        }
+
+        /// <summary>
+        ///     Gets the audio channel allocation (speaker placements)
+        /// </summary>
+        public InfoFrameAudioChannelAllocation ChannelAllocation
+        {
+            get => (InfoFrameAudioChannelAllocation)_WordAt0.GetBits(22, 9);
+        }
+
+        /// <summary>
+        ///     Gets a value indicating if down-mix is prohibited
+        /// </summary>
+        public InfoFrameBoolean IsDownMixProhibited
+        {
+            get => (InfoFrameBoolean)_WordAt4.GetBits(0, 2);
+        }
+
+        /// <summary>
+        ///     Gets the Low Frequency Effects playback level value
+        /// </summary>
+        public InfoFrameAudioLFEPlaybackLevel LFEPlaybackLevel
+        {
+            get => (InfoFrameAudioLFEPlaybackLevel)_WordAt4.GetBits(2, 3);
+        }
+
+        /// <summary>
+        ///     Gets the audio level shift value
+        /// </summary>
+        public InfoFrameAudioLevelShift LevelShift
+        {
+            get => (InfoFrameAudioLevelShift)_WordAt4.GetBits(5, 5);
+        }
+    }
+
+    /// <summary>
+    ///     Contains info-frame requested information or information to be overriden
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    [StructureVersion(1)]
+    public struct InfoFrameData : IInitializable
+    {
+        [FieldOffset(0)] internal StructureVersion _Version;
+
+        [FieldOffset(4)]
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly ushort _Size;
+
+        [FieldOffset(6)]
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly byte _Command;
+
+        [FieldOffset(7)] private readonly byte _Type;
+
+        [FieldOffset(8)] private readonly InfoFrameProperty _Property;
+        [FieldOffset(8)] private readonly InfoFrameAudio _Audio;
+        [FieldOffset(8)] private readonly InfoFrameVideo _Video;
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="InfoFrameData" />.
+        /// </summary>
+        /// <param name="command">
+        ///     The operation to be done. Can be used for information retrieval or to reset configurations to
+        ///     default.
+        /// </param>
+        /// <param name="dataType">The type of information.</param>
+        public InfoFrameData(InfoFrameCommand command, InfoFrameDataType dataType)
+        {
+            this = typeof(InfoFrameData).Instantiate<InfoFrameData>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != InfoFrameCommand.Get &&
+                command != InfoFrameCommand.GetDefault &&
+                command != InfoFrameCommand.GetOverride &&
+                command != InfoFrameCommand.GetProperty &&
+                command != InfoFrameCommand.Reset)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Type = (byte)dataType;
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="InfoFrameData" />.
+        /// </summary>
+        /// <param name="command">The operation to be done. Can only be used to change property information.</param>
+        /// <param name="dataType">The type of information.</param>
+        /// <param name="propertyInformation">The new property information to be set.</param>
+        public InfoFrameData(
+            InfoFrameCommand command,
+            InfoFrameDataType dataType,
+            InfoFrameProperty propertyInformation)
+        {
+            this = typeof(InfoFrameData).Instantiate<InfoFrameData>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != InfoFrameCommand.SetProperty)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Type = (byte)dataType;
+            _Property = propertyInformation;
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="InfoFrameData" />.
+        /// </summary>
+        /// <param name="command">The operation to be done. Can only be used to change current or default audio information.</param>
+        /// <param name="audioInformation">The new audio information to be set.</param>
+        public InfoFrameData(InfoFrameCommand command, InfoFrameAudio audioInformation)
+        {
+            this = typeof(InfoFrameData).Instantiate<InfoFrameData>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != InfoFrameCommand.Set &&
+                command != InfoFrameCommand.SetOverride)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Type = (byte)InfoFrameDataType.AudioInformation;
+            _Audio = audioInformation;
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="InfoFrameData" />.
+        /// </summary>
+        /// <param name="command">The operation to be done. Can only be used to change current or default video information.</param>
+        /// <param name="videoInformation">The new video information to be set.</param>
+        public InfoFrameData(InfoFrameCommand command, InfoFrameVideo videoInformation)
+        {
+            this = typeof(InfoFrameData).Instantiate<InfoFrameData>();
+            _Size = (ushort)_Version.StructureSize;
+
+            if (command != InfoFrameCommand.Set &&
+                command != InfoFrameCommand.SetOverride)
+            {
+                throw new ArgumentOutOfRangeException(nameof(command));
+            }
+
+            _Command = (byte)command;
+            _Type = (byte)InfoFrameDataType.AuxiliaryVideoInformation;
+            _Video = videoInformation;
+        }
+
+        /// <summary>
+        ///     Gets the type of data contained in this instance
+        /// </summary>
+        public InfoFrameDataType Type
+        {
+            get => (InfoFrameDataType)_Type;
+        }
+
+        /// <summary>
+        ///     Gets the operation type
+        /// </summary>
+        public InfoFrameCommand Command
+        {
+            get => (InfoFrameCommand)_Command;
+        }
+
+        /// <summary>
+        ///     Gets the info-frame audio information if available; otherwise null
+        /// </summary>
+        public InfoFrameAudio? AudioInformation
+        {
+            get
+            {
+                if (Command == InfoFrameCommand.GetProperty || Command == InfoFrameCommand.SetProperty)
+                {
+                    return null;
+                }
+
+                if (Type == InfoFrameDataType.AudioInformation)
+                {
+                    return _Audio;
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the info-frame auxiliary video information (AVI) if available; otherwise null
+        /// </summary>
+        public InfoFrameVideo? AuxiliaryVideoInformation
+        {
+            get
+            {
+                if (Command == InfoFrameCommand.GetProperty || Command == InfoFrameCommand.SetProperty)
+                {
+                    return null;
+                }
+
+                if (Type == InfoFrameDataType.AuxiliaryVideoInformation)
+                {
+                    return _Video;
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the info-frame property information if available; otherwise null
+        /// </summary>
+        public InfoFrameProperty? PropertyInformation
+        {
+            get
+            {
+                if (Command != InfoFrameCommand.GetProperty && Command != InfoFrameCommand.SetProperty)
+                {
+                    return null;
+                }
+
+                return _Property;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Contains info-frame property information
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    public struct InfoFrameProperty
+    {
+        [FieldOffset(0)] private readonly uint _Word;
+
+        /// <summary>
+        ///     Creates an instance of <see cref="InfoFrameProperty" />.
+        /// </summary>
+        /// <param name="mode">The info-frame operation mode</param>
+        /// <param name="isBlackListed">A value indicating if this display (monitor) is blacklisted</param>
+        public InfoFrameProperty(InfoFramePropertyMode mode, InfoFrameBoolean isBlackListed)
+        {
+            _Word = 0u
+                .SetBits(0, 4, (uint)mode)
+                .SetBits(4, 2, (uint)isBlackListed);
+        }
+
+        /// <summary>
+        ///     Gets the info-frame operation mode
+        /// </summary>
+        public InfoFramePropertyMode Mode
+        {
+            get => (InfoFramePropertyMode)_Word.GetBits(0, 4);
+        }
+
+        /// <summary>
+        ///     Gets a value indicating if this display (monitor) is blacklisted
+        /// </summary>
+        public InfoFrameBoolean IsBlackListed
+        {
+            get => (InfoFrameBoolean)_Word.GetBits(4, 2);
+        }
+
+        /// <summary>
+        ///     Gets the info-frame version
+        /// </summary>
+        public byte Version
+        {
+            get => (byte)_Word.GetBits(16, 8);
+        }
+
+        /// <summary>
+        ///     Gets the info-frame length
+        /// </summary>
+        public byte Length
+        {
+            get => (byte)_Word.GetBits(24, 8);
+        }
+    }
+
+    /// <summary>
+    ///     Contains info-frame video information
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    public struct InfoFrameVideo
+    {
+        [FieldOffset(0)] private readonly uint _WordAt0;
+        [FieldOffset(4)] private readonly uint _WordAt4;
+        [FieldOffset(8)] private readonly uint _WordAt8;
+        [FieldOffset(12)] private readonly uint _WordAt12;
+        [FieldOffset(16)] private readonly uint _WordAt16;
+        [FieldOffset(20)] private readonly uint _WordAt20;
+
+        /// <summary>
+        ///     Creates an instance of <see cref="InfoFrameVideo" />.
+        /// </summary>
+        /// <param name="videoIdentificationCode">The video identification code (VIC)</param>
+        /// <param name="pixelRepetition">The video pixel repetition</param>
+        /// <param name="colorFormat">The video color format</param>
+        /// <param name="colorimetry">The video color space</param>
+        /// <param name="extendedColorimetry">The extended video color space</param>
+        /// <param name="rgbQuantization">The RGB quantization configuration</param>
+        /// <param name="yccQuantization">The YCC quantization configuration</param>
+        /// <param name="contentMode">The video content mode</param>
+        /// <param name="contentType">The video content type</param>
+        /// <param name="scanInfo">The video scan information</param>
+        /// <param name="isActiveFormatInfoPresent">A value indicating if the active format information is present</param>
+        /// <param name="activeFormatAspectRatio">The active format aspect ratio</param>
+        /// <param name="pictureAspectRatio">The picture aspect ratio</param>
+        /// <param name="nonUniformPictureScaling">The non uniform picture scaling direction</param>
+        /// <param name="barInfo">The video bar information</param>
+        /// <param name="topBar">The top bar value if not auto and present; otherwise null</param>
+        /// <param name="bottomBar">The bottom bar value if not auto and present; otherwise null</param>
+        /// <param name="leftBar">The left bar value if not auto and present; otherwise null</param>
+        /// <param name="rightBar">The right bar value if not auto and present; otherwise null</param>
+        public InfoFrameVideo(
+            byte videoIdentificationCode,
+            InfoFrameVideoPixelRepetition pixelRepetition,
+            InfoFrameVideoColorFormat colorFormat,
+            InfoFrameVideoColorimetry colorimetry,
+            InfoFrameVideoExtendedColorimetry extendedColorimetry,
+            InfoFrameVideoRGBQuantization rgbQuantization,
+            InfoFrameVideoYCCQuantization yccQuantization,
+            InfoFrameVideoITC contentMode,
+            InfoFrameVideoContentType contentType,
+            InfoFrameVideoScanInfo scanInfo,
+            InfoFrameBoolean isActiveFormatInfoPresent,
+            InfoFrameVideoAspectRatioActivePortion activeFormatAspectRatio,
+            InfoFrameVideoAspectRatioCodedFrame pictureAspectRatio,
+            InfoFrameVideoNonUniformPictureScaling nonUniformPictureScaling,
+            InfoFrameVideoBarData barInfo,
+            uint? topBar,
+            uint? bottomBar,
+            uint? leftBar,
+            uint? rightBar
+        )
+        {
+            _WordAt0 = 0u
+                .SetBits(0, 8, videoIdentificationCode)
+                .SetBits(8, 5, (uint)pixelRepetition)
+                .SetBits(13, 3, (uint)colorFormat)
+                .SetBits(16, 3, (uint)colorimetry)
+                .SetBits(19, 4, (uint)extendedColorimetry)
+                .SetBits(23, 3, (uint)rgbQuantization)
+                .SetBits(26, 3, (uint)yccQuantization)
+                .SetBits(29, 2, (uint)contentMode);
+
+            _WordAt4 = 0u
+                .SetBits(0, 3, (uint)contentType)
+                .SetBits(3, 3, (uint)scanInfo)
+                .SetBits(6, 2, (uint)isActiveFormatInfoPresent)
+                .SetBits(8, 5, (uint)activeFormatAspectRatio)
+                .SetBits(13, 3, (uint)pictureAspectRatio)
+                .SetBits(16, 3, (uint)nonUniformPictureScaling)
+                .SetBits(19, 3, (uint)barInfo);
+
+            _WordAt8 = topBar == null ? 0x1FFFF : 0u.SetBits(0, 17, topBar.Value);
+            _WordAt12 = bottomBar == null ? 0x1FFFF : 0u.SetBits(0, 17, bottomBar.Value);
+            _WordAt16 = leftBar == null ? 0x1FFFF : 0u.SetBits(0, 17, leftBar.Value);
+            _WordAt20 = rightBar == null ? 0x1FFFF : 0u.SetBits(0, 17, rightBar.Value);
+        }
+
+        /// <summary>
+        ///     Gets the video identification code (VIC)
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public byte? VideoIdentificationCode
+        {
+            get
+            {
+                var value = (byte)_WordAt0.GetBits(0, 8);
+
+                if (value == 0xFF)
+                {
+                    return null;
+                }
+
+                return value;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the video pixel repetition
+        /// </summary>
+        public InfoFrameVideoPixelRepetition PixelRepetition
+        {
+            get => (InfoFrameVideoPixelRepetition)_WordAt0.GetBits(8, 5);
+        }
+
+        /// <summary>
+        ///     Gets the video color format
+        /// </summary>
+        public InfoFrameVideoColorFormat ColorFormat
+        {
+            get => (InfoFrameVideoColorFormat)_WordAt0.GetBits(13, 3);
+        }
+
+        /// <summary>
+        ///     Gets the video color space
+        /// </summary>
+        public InfoFrameVideoColorimetry Colorimetry
+        {
+            get => (InfoFrameVideoColorimetry)_WordAt0.GetBits(16, 3);
+        }
+
+        /// <summary>
+        ///     Gets the extended video color space; only valid when <see cref="Colorimetry" /> ==
+        ///     <see cref="InfoFrameVideoColorimetry.UseExtendedColorimetry" />
+        /// </summary>
+        public InfoFrameVideoExtendedColorimetry? ExtendedColorimetry
+        {
+            get
+            {
+                if (Colorimetry != InfoFrameVideoColorimetry.UseExtendedColorimetry)
+                {
+                    return null;
+                }
+
+                return (InfoFrameVideoExtendedColorimetry)_WordAt0.GetBits(19, 4);
+            }
+        }
+
+        /// <summary>
+        ///     Gets the RGB quantization configuration
+        /// </summary>
+        public InfoFrameVideoRGBQuantization RGBQuantization
+        {
+            get => (InfoFrameVideoRGBQuantization)_WordAt0.GetBits(23, 3);
+        }
+
+        /// <summary>
+        ///     Gets the YCC quantization configuration
+        /// </summary>
+        public InfoFrameVideoYCCQuantization YCCQuantization
+        {
+            get => (InfoFrameVideoYCCQuantization)_WordAt0.GetBits(26, 3);
+        }
+
+        /// <summary>
+        ///     Gets the video content mode
+        /// </summary>
+        public InfoFrameVideoITC ContentMode
+        {
+            get => (InfoFrameVideoITC)_WordAt0.GetBits(29, 2);
+        }
+
+        /// <summary>
+        ///     Gets the video content type
+        /// </summary>
+        public InfoFrameVideoContentType ContentType
+        {
+            get => (InfoFrameVideoContentType)_WordAt4.GetBits(0, 3);
+        }
+
+        /// <summary>
+        ///     Gets the video scan information
+        /// </summary>
+        public InfoFrameVideoScanInfo ScanInfo
+        {
+            get => (InfoFrameVideoScanInfo)_WordAt4.GetBits(3, 3);
+        }
+
+        /// <summary>
+        ///     Gets a value indicating if the active format information is present
+        /// </summary>
+        public InfoFrameBoolean IsActiveFormatInfoPresent
+        {
+            get => (InfoFrameBoolean)_WordAt4.GetBits(6, 2);
+        }
+
+        /// <summary>
+        ///     Gets the active format aspect ratio
+        /// </summary>
+        public InfoFrameVideoAspectRatioActivePortion ActiveFormatAspectRatio
+        {
+            get => (InfoFrameVideoAspectRatioActivePortion)_WordAt4.GetBits(8, 5);
+        }
+
+        /// <summary>
+        ///     Gets the picture aspect ratio
+        /// </summary>
+        public InfoFrameVideoAspectRatioCodedFrame PictureAspectRatio
+        {
+            get => (InfoFrameVideoAspectRatioCodedFrame)_WordAt4.GetBits(13, 3);
+        }
+
+        /// <summary>
+        ///     Gets the non uniform picture scaling direction
+        /// </summary>
+        public InfoFrameVideoNonUniformPictureScaling NonUniformPictureScaling
+        {
+            get => (InfoFrameVideoNonUniformPictureScaling)_WordAt4.GetBits(16, 3);
+        }
+
+        /// <summary>
+        ///     Gets the video bar information
+        /// </summary>
+        public InfoFrameVideoBarData BarInfo
+        {
+            get => (InfoFrameVideoBarData)_WordAt4.GetBits(19, 3);
+        }
+
+        /// <summary>
+        ///     Gets the top bar value if not auto and present; otherwise null
+        /// </summary>
+        public uint? TopBar
+        {
+            get
+            {
+                if (BarInfo == InfoFrameVideoBarData.NotPresent || BarInfo == InfoFrameVideoBarData.Horizontal)
+                {
+                    return null;
+                }
+
+                var val = _WordAt8.GetBits(0, 17);
+
+                if (val == 0x1FFFF)
+                {
+                    return null;
+                }
+
+                return (uint)val;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the bottom bar value if not auto and present; otherwise null
+        /// </summary>
+        public uint? BottomBar
+        {
+            get
+            {
+                if (BarInfo == InfoFrameVideoBarData.NotPresent || BarInfo == InfoFrameVideoBarData.Horizontal)
+                {
+                    return null;
+                }
+
+                var val = _WordAt12.GetBits(0, 17);
+
+                if (val == 0x1FFFF)
+                {
+                    return null;
+                }
+
+                return (uint)val;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the left bar value if not auto and present; otherwise null
+        /// </summary>
+        public uint? LeftBar
+        {
+            get
+            {
+                if (BarInfo == InfoFrameVideoBarData.NotPresent || BarInfo == InfoFrameVideoBarData.Vertical)
+                {
+                    return null;
+                }
+
+                var val = _WordAt16.GetBits(0, 17);
+
+                if (val == 0x1FFFF)
+                {
+                    return null;
+                }
+
+                return (uint)val;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the right bar value if not auto and present; otherwise null
+        /// </summary>
+        public uint? RightBar
+        {
+            get
+            {
+                if (BarInfo == InfoFrameVideoBarData.NotPresent || BarInfo == InfoFrameVideoBarData.Vertical)
+                {
+                    return null;
+                }
+
+                var val = _WordAt20.GetBits(0, 17);
+
+                if (val == 0x1FFFF)
+                {
+                    return null;
+                }
+
+                return (uint)val;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Locally unique identifier is a 64-bit value guaranteed to be unique only on the system on which it was generated.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct LUID : IEquatable<LUID>
+    {
+        /// <summary>
+        ///     32Bit unsigned integer, low
+        /// </summary>
+        public readonly uint LowPart;
+
+        /// <summary>
+        ///     32Bit signed integer, high
+        /// </summary>
+        public readonly int HighPart;
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{{{LowPart:X}-{HighPart:X}}}";
+        }
+
+        /// <inheritdoc />
+        public bool Equals(LUID other)
+        {
+            return LowPart == other.LowPart && HighPart == other.HighPart;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is LUID luid && Equals(luid);
+        }
+
+        /// <summary>
+        ///     Checks for equality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are equal, otherwise false</returns>
+        public static bool operator ==(LUID left, LUID right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Checks for inequality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are not equal, otherwise false</returns>
+        public static bool operator !=(LUID left, LUID right)
+        {
+            return !left.Equals(right);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((int)LowPart * 397) ^ HighPart;
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct MasteringDisplayColorData : IDisplayColorData
+    {
+        private readonly ColorDataColorCoordinate _FirstColorCoordinate;
+        private readonly ColorDataColorCoordinate _SecondColorCoordinate;
+        private readonly ColorDataColorCoordinate _ThirdColorCoordinate;
+        private readonly ColorDataColorCoordinate _WhiteColorCoordinate;
+        private readonly ushort _MaximumMasteringLuminance;
+        private readonly ushort _MinimumMasteringLuminance;
+        private readonly ushort _MaximumContentLightLevel;
+        private readonly ushort _MaximumFrameAverageLightLevel;
+
+        /// <summary>
+        ///     Creates an instance of <see cref="MasteringDisplayColorData" />.
+        /// </summary>
+        /// <param name="firstColorCoordinate">The first primary color coordinate.</param>
+        /// <param name="secondColorCoordinate">The second primary color coordinate.</param>
+        /// <param name="thirdColorCoordinate">The third primary color coordinate.</param>
+        /// <param name="whiteColorCoordinate">The white color coordinate.</param>
+        /// <param name="maximumMasteringLuminance">The maximum mastering display luminance [1.0-65535] in cd/m^2</param>
+        /// <param name="minimumMasteringLuminance">The maximum mastering display luminance [1.0-6.5535] in cd/m^2</param>
+        /// <param name="maximumContentLightLevel">
+        ///     The maximum mastering display content light level (a.k.a MaxCLL) [1.0-65535] in
+        ///     cd/m^2
+        /// </param>
+        /// <param name="maximumFrameAverageLightLevel">
+        ///     The maximum mastering display frame average light level (a.k.a MaxFALL)
+        ///     [1.0-65535] in cd/m^2
+        /// </param>
+        public MasteringDisplayColorData(
+            ColorDataColorCoordinate firstColorCoordinate,
+            ColorDataColorCoordinate secondColorCoordinate,
+            ColorDataColorCoordinate thirdColorCoordinate,
+            ColorDataColorCoordinate whiteColorCoordinate,
+            float maximumMasteringLuminance,
+            float minimumMasteringLuminance,
+            float maximumContentLightLevel,
+            float maximumFrameAverageLightLevel
+        )
+        {
+            _FirstColorCoordinate = firstColorCoordinate;
+            _SecondColorCoordinate = secondColorCoordinate;
+            _ThirdColorCoordinate = thirdColorCoordinate;
+            _WhiteColorCoordinate = whiteColorCoordinate;
+            _MaximumMasteringLuminance = (ushort)Math.Max(Math.Min(maximumMasteringLuminance, uint.MaxValue), 1);
+            _MinimumMasteringLuminance =
+                (ushort)Math.Max(Math.Min(minimumMasteringLuminance * 10000, uint.MaxValue), 1);
+            _MaximumContentLightLevel = (ushort)Math.Max(Math.Min(maximumContentLightLevel, uint.MaxValue), 1);
+            _MaximumFrameAverageLightLevel =
+                (ushort)Math.Max(Math.Min(maximumFrameAverageLightLevel, uint.MaxValue), 1);
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate FirstColorCoordinate
+        {
+            get => _FirstColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate SecondColorCoordinate
+        {
+            get => _SecondColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate ThirdColorCoordinate
+        {
+            get => _ThirdColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate WhiteColorCoordinate
+        {
+            get => _WhiteColorCoordinate;
+        }
+
+        /// <summary>
+        ///     Gets the maximum mastering display luminance [1.0-65535] in cd/m^2
+        /// </summary>
+        public float MaximumMasteringLuminance
+        {
+            get => _MaximumMasteringLuminance;
+        }
+
+        /// <summary>
+        ///     Gets the maximum mastering display frame average light level (a.k.a MaxFALL) [1.0-65535] in cd/m^2
+        /// </summary>
+        public float MaximumFrameAverageLightLevel
+        {
+            get => _MaximumFrameAverageLightLevel;
+        }
+
+        /// <summary>
+        ///     Gets the maximum mastering display content light level (a.k.a MaxCLL) [1.0-65535] in cd/m^2
+        /// </summary>
+        public float MaximumContentLightLevel
+        {
+            get => _MaximumContentLightLevel;
+        }
+
+        /// <summary>
+        ///     Gets the maximum mastering display luminance [1.0-6.5535] in cd/m^2
+        /// </summary>
+        public float MinimumMasteringLuminance
+        {
+            get => _MinimumMasteringLuminance / 10000f;
+        }
+    }
+
+    /// <summary>
+    ///     Contains the monitor capabilities read from the Vendor Specific Data Block or the Video Capability Data Block
+    /// </summary>
+    [StructureVersion(1)]
+    [StructLayout(LayoutKind.Explicit, Pack = 8)]
+    public struct MonitorCapabilities : IInitializable
+    {
+        [FieldOffset(0)] internal StructureVersion _Version;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        [FieldOffset(4)] private readonly ushort _Size;
+        [FieldOffset(8)] private readonly MonitorCapabilitiesType _Type;
+        [FieldOffset(12)] private readonly MonitorCapabilitiesConnectorType _ConnectorType;
+
+        [FieldOffset(16)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 50)]
+        private readonly byte[] _Data;
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="MonitorCapabilities" />.
+        /// </summary>
+        /// <param name="type">The type of information to be retrieved.</param>
+        public MonitorCapabilities(MonitorCapabilitiesType type)
+        {
+            this = typeof(MonitorCapabilities).Instantiate<MonitorCapabilities>();
+            _Size = (ushort)_Version.StructureSize;
+            _Type = type;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if this instance contains valid information
+        /// </summary>
+        public bool IsValid
+        {
+            get => _Data[0].GetBit(0);
+        }
+
+        /// <summary>
+        ///     Gets the monitor capability type
+        /// </summary>
+        // ReSharper disable once ConvertToAutoPropertyWhenPossible
+        public MonitorCapabilitiesType Type
+        {
+            get => _Type;
+        }
+
+        /// <summary>
+        ///     Gets the monitor connector type
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public MonitorCapabilitiesConnectorType ConnectorType
+        {
+            get => _ConnectorType;
+        }
+
+        /// <summary>
+        ///     Gets the monitor VCDB capabilities information
+        /// </summary>
+        public MonitorVCDBCapabilities? VCDBCapabilities
+        {
+            get
+            {
+                if (IsValid && _Type == MonitorCapabilitiesType.VCDB)
+                {
+                    return new MonitorVCDBCapabilities(_Data.Skip(1).ToArray());
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the monitor VSDB capabilities information
+        /// </summary>
+        public MonitorVSDBCapabilities? VSDBCapabilities
+        {
+            get
+            {
+                if (IsValid && _Type == MonitorCapabilitiesType.VSDB)
+                {
+                    return new MonitorVSDBCapabilities(_Data.Skip(1).ToArray());
+                }
+
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Contains information about a monitor color data
+    /// </summary>
+    [StructureVersion(1)]
+    [StructLayout(LayoutKind.Explicit, Pack = 8, Size = 12)]
+    public struct MonitorColorData : IInitializable
+    {
+        [FieldOffset(0)]
+        internal StructureVersion _Version;
+        [FieldOffset(4)]
+        private readonly DisplayPortColorFormat _ColorFormat;
+        [FieldOffset(8)]
+        private readonly DisplayPortColorDepth _ColorDepth;
+
+        /// <summary>
+        ///Gets the monitor display port color format
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public DisplayPortColorFormat ColorFormat
+        {
+            get => _ColorFormat;
+        }
+
+        /// <summary>
+        /// Gets the monitor display port color depth
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public DisplayPortColorDepth ColorDepth
+        {
+            get
+            {
+                switch ((uint)_ColorDepth)
+                {
+                    case 6:
+                        return DisplayPortColorDepth.BPC6;
+                    case 8:
+                        return DisplayPortColorDepth.BPC8;
+                    case 10:
+                        return DisplayPortColorDepth.BPC10;
+                    case 12:
+                        return DisplayPortColorDepth.BPC12;
+                    case 16:
+                        return DisplayPortColorDepth.BPC16;
+                    default:
+                        return _ColorDepth;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Contains monitor VCDB capabilities
+    /// </summary>
+    public struct MonitorVCDBCapabilities
+    {
+        private readonly byte[] _data;
+
+        internal MonitorVCDBCapabilities(byte[] data)
+        {
+            if (data.Length != 49)
+            {
+                throw new ArgumentOutOfRangeException(nameof(data));
+            }
+
+            _data = data;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating RGB range quantization
+        /// </summary>
+        public bool QuantizationRangeRGB
+        {
+            get => _data[0].GetBit(1);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating Ycc range quantization
+        /// </summary>
+        public bool QuantizationRangeYcc
+        {
+            get => _data[0].GetBit(0);
+        }
+
+        public byte ScanInfoConsumerElectronicsVideoFormats
+        {
+            get => (byte)_data[0].GetBits(6, 2);
+        }
+
+        public byte ScanInfoInformationTechnologyVideoFormats
+        {
+            get => (byte)_data[0].GetBits(4, 2);
+        }
+
+        public byte ScanInfoPreferredVideoFormat
+        {
+            get => (byte)_data[0].GetBits(2, 2);
+        }
+    }
+
+    /// <summary>
+    ///     Contains monitor VSDB capabilities
+    /// </summary>
+    public struct MonitorVSDBCapabilities
+    {
+        private readonly byte[] _data;
+
+        internal MonitorVSDBCapabilities(byte[] data)
+        {
+            if (data.Length != 49)
+            {
+                throw new ArgumentOutOfRangeException(nameof(data));
+            }
+
+            _data = data;
+        }
+
+        /// <summary>
+        ///     Gets the audio latency if available or null
+        /// </summary>
+        public byte? AudioLatency
+        {
+            get
+            {
+                if (!_data[4].GetBit(7))
+                {
+                    return null;
+                }
+
+                return _data[6];
+            }
+        }
+
+        public byte[] HDMI3D
+        {
+            get
+            {
+                if (!_data[9].GetBit(7))
+                {
+                    return new byte[0];
+                }
+
+                return _data.Skip(18).Take(31).Take((int)_data[10].GetBits(0, 5)).ToArray();
+            }
+        }
+
+        public byte[] HDMIVideoImageCompositors
+        {
+            get
+            {
+                if (!_data[4].GetBit(5))
+                {
+                    return new byte[0];
+                }
+
+                return _data.Skip(11).Take(7).Take((int)_data[10].GetBits(5, 3)).ToArray();
+            }
+        }
+
+        /// <summary>
+        ///     Gets the interlaced audio latency if available or null
+        /// </summary>
+        public byte? InterlacedAudioLatency
+        {
+            get
+            {
+                if (!_data[4].GetBit(6))
+                {
+                    return null;
+                }
+
+                return _data[8];
+            }
+        }
+
+        /// <summary>
+        ///     Gets the interlaced video latency if available or null
+        /// </summary>
+        public byte? InterlacedVideoLatency
+        {
+            get
+            {
+                if (!_data[4].GetBit(6))
+                {
+                    return null;
+                }
+
+                return _data[7];
+            }
+        }
+
+        public bool IsAISupported
+        {
+            get => _data[2].GetBit(7);
+        }
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the cinematic content is supported by the monitor or the connection
+        /// </summary>
+        public bool IsCinemaContentSupported
+        {
+            get => _data[4].GetBit(2);
+        }
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the 30bit deep color is supported by the monitor or the connection
+        /// </summary>
+        public bool IsDeepColor30BitsSupported
+        {
+            get => _data[2].GetBit(4);
+        }
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the 36bit deep color is supported by the monitor or the connection
+        /// </summary>
+        public bool IsDeepColor36BitsSupported
+        {
+            get => _data[2].GetBit(5);
+        }
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the 48bit deep color is supported by the monitor or the connection
+        /// </summary>
+        public bool IsDeepColor48BitsSupported
+        {
+            get => _data[2].GetBit(6);
+        }
+
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the YCbCr444 deep color is supported by the monitor or the connection
+        /// </summary>
+        public bool IsDeepColorYCbCr444Supported
+        {
+            get => _data[2].GetBit(3);
+        }
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the dual DVI operation is supported by the monitor or the connection
+        /// </summary>
+        public bool IsDualDVIOperationSupported
+        {
+            get => _data[2].GetBit(0);
+        }
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the gaming content is supported by the monitor or the connection
+        /// </summary>
+        public bool IsGameContentSupported
+        {
+            get => _data[4].GetBit(3);
+        }
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the graphics text content is supported by the monitor or the connection
+        /// </summary>
+        public bool IsGraphicsTextContentSupported
+        {
+            get => _data[4].GetBit(0);
+        }
+
+        /// <summary>
+        ///     Returns a boolean value indicating if the photo content is supported by monitor or the connection
+        /// </summary>
+        public bool IsPhotoContentSupported
+        {
+            get => _data[4].GetBit(1);
+        }
+
+        /// <summary>
+        ///     Gets the connection max TMDS clock supported by the monitor or the connection
+        /// </summary>
+        public byte MaxTMDSClock
+        {
+            get => _data[3];
+        }
+
+        /// <summary>
+        ///     Gets the monitor physical address on port
+        /// </summary>
+        public MonitorPhysicalAddress PhysicalAddress
+        {
+            get => new MonitorPhysicalAddress(
+                (byte)_data[0].GetBits(4, 4),
+                (byte)_data[0].GetBits(0, 4),
+                (byte)_data[1].GetBits(4, 4),
+                (byte)_data[1].GetBits(0, 4)
+            );
+        }
+
+        /// <summary>
+        ///     Gets the video latency if available or null
+        /// </summary>
+        public byte? VideoLatency
+        {
+            get
+            {
+                if (!_data[4].GetBit(7))
+                {
+                    return null;
+                }
+
+                return _data[5];
+            }
+        }
+
+        /// <summary>
+        ///     Represents a monitor physical address
+        /// </summary>
+        public class MonitorPhysicalAddress
+        {
+            internal MonitorPhysicalAddress(byte a, byte b, byte c, byte d)
+            {
+                A = a;
+                B = b;
+                C = c;
+                D = d;
+            }
+
+            /// <summary>
+            ///     Gets the first part of a monitor physical address
+            /// </summary>
+            public byte A { get; set; }
+
+            /// <summary>
+            ///     Gets the second part of a monitor physical address
+            /// </summary>
+            public byte B { get; set; }
+
+
+            /// <summary>
+            ///     Gets the third part of a monitor physical address
+            /// </summary>
+            public byte C { get; set; }
+
+            /// <summary>
+            ///     Gets the forth part of a monitor physical address
+            /// </summary>
+            public byte D { get; set; }
+
+            /// <inheritdoc />
+            public override string ToString()
+            {
+                return $"{A:D}.{B:D}.{C:D}.{D:D}";
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Holds advanced information about a PathTargetInfo
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct PathAdvancedTargetInfo : IInitializable, IEquatable<PathAdvancedTargetInfo>
+    {
+        internal StructureVersion _Version;
+        internal readonly Rotate _Rotation;
+        internal readonly Scaling _Scaling;
+        internal readonly uint _RefreshRateInMillihertz;
+        internal uint _RawReserved;
+        internal readonly ConnectorType _ConnectorType;
+        internal readonly TVFormat _TVFormat;
+        internal readonly TimingOverride _TimingOverride;
+        internal readonly Timing _Timing;
+
+        /// <summary>
+        ///     Creates a new PathAdvancedTargetInfo for monitors
+        /// </summary>
+        /// <param name="rotation">Screen rotation</param>
+        /// <param name="scale">Screen scaling</param>
+        /// <param name="refreshRateInMillihertz">Screen refresh rate</param>
+        /// <param name="timingOverride">Timing override</param>
+        /// <param name="isInterlaced">Indicates if the mode is interlaced</param>
+        /// <param name="isClonePrimary">Indicates if the display is the primary display of a clone topology</param>
+        /// <param name="isClonePanAndScanTarget">Indicates if the target Pan and Scan is enabled</param>
+        /// <param name="disableVirtualModeSupport"></param>
+        /// <param name="isPreferredUnscaledTarget"></param>
+        /// <exception cref="NVIDIANotSupportedException"></exception>
+        public PathAdvancedTargetInfo(
+            Rotate rotation,
+            Scaling scale,
+            uint refreshRateInMillihertz = 0,
+            TimingOverride timingOverride = TimingOverride.Current,
+            bool isInterlaced = false,
+            bool isClonePrimary = false,
+            bool isClonePanAndScanTarget = false,
+            bool disableVirtualModeSupport = false,
+            bool isPreferredUnscaledTarget = false)
+        {
+            if (timingOverride == TimingOverride.Custom)
+            {
+                throw new NVIDIANotSupportedException("Custom timing is not supported yet.");
+            }
+
+            this = typeof(PathAdvancedTargetInfo).Instantiate<PathAdvancedTargetInfo>();
+            _Rotation = rotation;
+            _Scaling = scale;
+            _RefreshRateInMillihertz = refreshRateInMillihertz;
+            _TimingOverride = timingOverride;
+            IsInterlaced = isInterlaced;
+            IsClonePrimary = isClonePrimary;
+            IsClonePanAndScanTarget = isClonePanAndScanTarget;
+            DisableVirtualModeSupport = disableVirtualModeSupport;
+            IsPreferredUnscaledTarget = isPreferredUnscaledTarget;
+        }
+
+        /// <summary>
+        ///     Creates a new PathAdvancedTargetInfo for TVs
+        /// </summary>
+        /// <param name="rotation">Screen rotation</param>
+        /// <param name="scale">Screen scaling</param>
+        /// <param name="tvFormat">The TV format to apply</param>
+        /// <param name="connectorType">Specify connector type. For TV only</param>
+        /// <param name="refreshRateInMillihertz">Screen refresh rate</param>
+        /// <param name="timingOverride">Timing override</param>
+        /// <param name="isInterlaced">Indicates if the mode is interlaced</param>
+        /// <param name="isClonePrimary">Indicates if the display is the primary display of a clone topology</param>
+        /// <param name="isClonePanAndScanTarget">Indicates if the target Pan and Scan is enabled</param>
+        /// <param name="disableVirtualModeSupport"></param>
+        /// <param name="isPreferredUnscaledTarget"></param>
+        /// <exception cref="NVIDIANotSupportedException"></exception>
+        public PathAdvancedTargetInfo(
+            Rotate rotation,
+            Scaling scale,
+            TVFormat tvFormat,
+            ConnectorType connectorType,
+            uint refreshRateInMillihertz = 0,
+            TimingOverride timingOverride = TimingOverride.Current,
+            bool isInterlaced = false,
+            bool isClonePrimary = false,
+            bool isClonePanAndScanTarget = false,
+            bool disableVirtualModeSupport = false,
+            bool isPreferredUnscaledTarget = false)
+            : this(
+                rotation, scale, refreshRateInMillihertz, timingOverride, isInterlaced, isClonePrimary,
+                isClonePanAndScanTarget,
+                disableVirtualModeSupport, isPreferredUnscaledTarget)
+        {
+            if (tvFormat == TVFormat.None)
+            {
+                throw new NVIDIANotSupportedException(
+                    "This overload is for TV displays, use the other overload(s) if the display is not a TV.");
+            }
+
+            this = typeof(PathAdvancedTargetInfo).Instantiate<PathAdvancedTargetInfo>();
+            _TVFormat = tvFormat;
+            _ConnectorType = connectorType;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(PathAdvancedTargetInfo other)
+        {
+            return _Rotation == other._Rotation &&
+                   _Scaling == other._Scaling &&
+                   _RefreshRateInMillihertz == other._RefreshRateInMillihertz &&
+                   (TVFormat == TVFormat.None || _ConnectorType == other._ConnectorType) &&
+                   _TVFormat == other._TVFormat &&
+                   _TimingOverride == other._TimingOverride &&
+                   _Timing.Equals(other._Timing) &&
+                   _RawReserved == other._RawReserved;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is PathAdvancedTargetInfo info && Equals(info);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (int)_Rotation;
+                hashCode = (hashCode * 397) ^ (int)_Scaling;
+                hashCode = (hashCode * 397) ^ (int)_RefreshRateInMillihertz;
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
+                hashCode = (hashCode * 397) ^ (int)_RawReserved;
+                hashCode = (hashCode * 397) ^ (int)_ConnectorType;
+                hashCode = (hashCode * 397) ^ (int)_TVFormat;
+                hashCode = (hashCode * 397) ^ (int)_TimingOverride;
+                hashCode = (hashCode * 397) ^ _Timing.GetHashCode();
+
+                return hashCode;
+            }
+        }
+
+        /// <summary>
+        ///     Rotation setting
+        /// </summary>
+        public Rotate Rotation
+        {
+            get => _Rotation;
+        }
+
+        /// <summary>
+        ///     Scaling setting
+        /// </summary>
+        public Scaling Scaling
+        {
+            get => _Scaling;
+        }
+
+        /// <summary>
+        ///     Non-interlaced Refresh Rate of the mode, multiplied by 1000, 0 = ignored
+        ///     This is the value which driver reports to the OS.
+        /// </summary>
+        public uint RefreshRateInMillihertz
+        {
+            get => _RefreshRateInMillihertz;
+        }
+
+        /// <summary>
+        ///     Specify connector type. For TV only, ignored if TVFormat == TVFormat.None.
+        /// </summary>
+        public ConnectorType ConnectorType
+        {
+            get => _ConnectorType;
+        }
+
+        /// <summary>
+        ///     To choose the last TV format set this value to TVFormat.None
+        ///     In case of NvAPI_DISP_GetDisplayConfig(), this field will indicate the currently applied TV format;
+        ///     if no TV format is applied, this field will have TVFormat.None value.
+        ///     In case of NvAPI_DISP_SetDisplayConfig(), this field should only be set in case of TVs;
+        ///     for other displays this field will be ignored and resolution &amp; refresh rate specified in input will be used to
+        ///     apply the TV format.
+        /// </summary>
+        public TVFormat TVFormat
+        {
+            get => _TVFormat;
+        }
+
+        /// <summary>
+        ///     Ignored if TimingOverride == TimingOverride.Current
+        /// </summary>
+        public TimingOverride TimingOverride
+        {
+            get => _TimingOverride;
+        }
+
+        /// <summary>
+        ///     Scan out timing, valid only if TimingOverride == TimingOverride.Custom
+        ///     The value Timing.PixelClockIn10KHertz is obtained from the EDID. The driver may tweak this value for HDTV, stereo,
+        ///     etc., before reporting it to the OS.
+        /// </summary>
+        public Timing Timing
+        {
+            get => _Timing;
+        }
+
+        /// <summary>
+        ///     Interlaced mode flag, ignored if refreshRate == 0
+        /// </summary>
+        public bool IsInterlaced
+        {
+            get => _RawReserved.GetBit(0);
+            private set => _RawReserved = _RawReserved.SetBit(0, value);
+        }
+
+        /// <summary>
+        ///     Declares primary display in clone configuration. This is *NOT* GDI Primary.
+        ///     Only one target can be primary per source. If no primary is specified, the first target will automatically be
+        ///     primary.
+        /// </summary>
+        public bool IsClonePrimary
+        {
+            get => _RawReserved.GetBit(1);
+            private set => _RawReserved = _RawReserved.SetBit(1, value);
+        }
+
+        /// <summary>
+        ///     Whether on this target Pan and Scan is enabled or has to be enabled. Valid only when the target is part of clone
+        ///     topology.
+        /// </summary>
+        public bool IsClonePanAndScanTarget
+        {
+            get => _RawReserved.GetBit(2);
+            private set => _RawReserved = _RawReserved.SetBit(2, value);
+        }
+
+        /// <summary>
+        ///     Indicates if virtual mode support is disabled
+        /// </summary>
+        public bool DisableVirtualModeSupport
+        {
+            get => _RawReserved.GetBit(3);
+            private set => _RawReserved = _RawReserved.SetBit(3, value);
+        }
+
+        /// <summary>
+        ///     Indicates if the target is in preferred unscaled mode
+        /// </summary>
+        public bool IsPreferredUnscaledTarget
+        {
+            get => _RawReserved.GetBit(4);
+            private set => _RawReserved = _RawReserved.SetBit(4, value);
+        }
+    }
+
+    /// <summary>
+    ///     Holds information about a path
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    // ReSharper disable once RedundantExtendsListEntry
+    public struct PathInfoV1 : IPathInfo, IInitializable, IAllocatable, IEquatable<PathInfoV1>
+    {
+        internal StructureVersion _Version;
+        internal readonly uint _ReservedSourceId;
+        internal readonly uint _TargetInfoCount;
+        internal ValueTypeArray<PathTargetInfoV1> _TargetsInfo;
+        internal ValueTypeReference<SourceModeInfo> _SourceModeInfo;
+
+        /// <inheritdoc />
+        public uint SourceId
+        {
+            get => _ReservedSourceId;
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<IPathTargetInfo> TargetsInfo
+        {
+            get => _TargetsInfo.ToArray((int)_TargetInfoCount)?.Cast<IPathTargetInfo>() ?? new IPathTargetInfo[0];
+        }
+
+        /// <inheritdoc />
+        public SourceModeInfo SourceModeInfo
+        {
+            get => _SourceModeInfo.ToValueType() ?? default(SourceModeInfo);
+        }
+
+        /// <summary>
+        ///     Creates a new PathInfoV1
+        /// </summary>
+        /// <param name="targetsInformation">Information about path targets</param>
+        /// <param name="sourceModeInformation">Source mode information</param>
+        /// <param name="sourceId">Source Id, can be zero</param>
+        public PathInfoV1(
+            PathTargetInfoV1[] targetsInformation,
+            SourceModeInfo sourceModeInformation,
+            uint sourceId = 0)
+        {
+            this = typeof(PathInfoV1).Instantiate<PathInfoV1>();
+            _TargetInfoCount = (uint)targetsInformation.Length;
+            _TargetsInfo = ValueTypeArray<PathTargetInfoV1>.FromArray(targetsInformation);
+            _SourceModeInfo = ValueTypeReference<SourceModeInfo>.FromValueType(sourceModeInformation);
+            _ReservedSourceId = sourceId;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(PathInfoV1 other)
+        {
+            return _TargetInfoCount == other._TargetInfoCount &&
+                   _TargetsInfo.Equals(other._TargetsInfo) &&
+                   _SourceModeInfo.Equals(other._SourceModeInfo);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is PathInfoV1 && Equals((PathInfoV1)obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (int)_TargetInfoCount;
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
+                hashCode = (hashCode * 397) ^ _TargetsInfo.GetHashCode();
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
+                hashCode = (hashCode * 397) ^ _SourceModeInfo.GetHashCode();
+
+                return hashCode;
+            }
+        }
+
+        /// <summary>
+        ///     Creates a new PathInfoV1
+        /// </summary>
+        /// <param name="targetsInformation">Information about path targets</param>
+        /// <param name="sourceId">Source Id, can be zero</param>
+        public PathInfoV1(PathTargetInfoV1[] targetsInformation, uint sourceId = 0)
+        {
+            this = typeof(PathInfoV1).Instantiate<PathInfoV1>();
+            _TargetInfoCount = (uint)targetsInformation.Length;
+            _TargetsInfo = ValueTypeArray<PathTargetInfoV1>.FromArray(targetsInformation);
+            _SourceModeInfo = ValueTypeReference<SourceModeInfo>.Null;
+            _ReservedSourceId = sourceId;
+        }
+
+        /// <summary>
+        ///     Creates a new PathInfoV1
+        /// </summary>
+        /// <param name="sourceId">Source Id, can be zero</param>
+        public PathInfoV1(uint sourceId)
+        {
+            this = typeof(PathInfoV1).Instantiate<PathInfoV1>();
+            _TargetInfoCount = 0;
+            _TargetsInfo = ValueTypeArray<PathTargetInfoV1>.Null;
+            _SourceModeInfo = ValueTypeReference<SourceModeInfo>.Null;
+            _ReservedSourceId = sourceId;
+        }
+
+        /// <summary>
+        ///     Creates a new PathInfoV1
+        /// </summary>
+        /// <param name="sourceModeInfo">Source mode information</param>
+        /// <param name="sourceId">Source Id, can be zero</param>
+        public PathInfoV1(SourceModeInfo sourceModeInfo, uint sourceId)
+        {
+            this = typeof(PathInfoV1).Instantiate<PathInfoV1>();
+            _TargetInfoCount = 0;
+            _TargetsInfo = ValueTypeArray<PathTargetInfoV1>.Null;
+            _SourceModeInfo = ValueTypeReference<SourceModeInfo>.FromValueType(sourceModeInfo);
+            _ReservedSourceId = sourceId;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            TargetsInfo.DisposeAll();
+            _TargetsInfo.Dispose();
+            _SourceModeInfo.Dispose();
+        }
+
+        void IAllocatable.Allocate()
+        {
+            if (_TargetInfoCount > 0 && _TargetsInfo.IsNull)
+            {
+                var targetInfo = typeof(PathTargetInfoV1).Instantiate<PathTargetInfoV1>();
+                var targetInfoList = targetInfo.Repeat((int)_TargetInfoCount).AllocateAll();
+                _TargetsInfo = ValueTypeArray<PathTargetInfoV1>.FromArray(targetInfoList.ToArray());
+            }
+
+            if (_SourceModeInfo.IsNull)
+            {
+                var sourceModeInfo = typeof(SourceModeInfo).Instantiate<SourceModeInfo>();
+                _SourceModeInfo = ValueTypeReference<SourceModeInfo>.FromValueType(sourceModeInfo);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Holds information about a path
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(2)]
+    // ReSharper disable once RedundantExtendsListEntry
+    public struct PathInfoV2 : IPathInfo, IInitializable, IAllocatable, IEquatable<PathInfoV2>
+    {
+        internal StructureVersion _Version;
+        internal readonly uint _SourceId;
+        internal readonly uint _TargetInfoCount;
+        internal ValueTypeArray<PathTargetInfoV2> _TargetsInfo;
+        internal ValueTypeReference<SourceModeInfo> _SourceModeInfo;
+        internal readonly uint _RawReserved;
+        internal ValueTypeReference<LUID> _OSAdapterLUID;
+
+        /// <inheritdoc />
+        public uint SourceId
+        {
+            get => _SourceId;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(PathInfoV2 other)
+        {
+            return _TargetInfoCount == other._TargetInfoCount &&
+                   _TargetsInfo.Equals(other._TargetsInfo) &&
+                   _SourceModeInfo.Equals(other._SourceModeInfo) &&
+                   _RawReserved == other._RawReserved;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is PathInfoV2 v2 && Equals(v2);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (int)_TargetInfoCount;
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
+                hashCode = (hashCode * 397) ^ _TargetsInfo.GetHashCode();
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
+                hashCode = (hashCode * 397) ^ _SourceModeInfo.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_RawReserved;
+
+                return hashCode;
+            }
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<IPathTargetInfo> TargetsInfo
+        {
+            get => _TargetsInfo.ToArray((int)_TargetInfoCount)?.Cast<IPathTargetInfo>() ?? new IPathTargetInfo[0];
+        }
+
+        /// <inheritdoc />
+        public SourceModeInfo SourceModeInfo
+        {
+            get => _SourceModeInfo.ToValueType() ?? default(SourceModeInfo);
+        }
+
+        /// <summary>
+        ///     True for non-NVIDIA adapter.
+        /// </summary>
+        public bool IsNonNVIDIAAdapter
+        {
+            get => _RawReserved.GetBit(0);
+        }
+
+        /// <summary>
+        ///     Used by Non-NVIDIA adapter for OS Adapter of LUID
+        /// </summary>
+        public LUID? OSAdapterLUID
+        {
+            get => _OSAdapterLUID.ToValueType();
+        }
+
+        /// <summary>
+        ///     Creates a new PathInfoV2
+        /// </summary>
+        /// <param name="targetInformations">Information about path targets</param>
+        /// <param name="sourceModeInfo">Source mode information</param>
+        /// <param name="sourceId">Source Id, can be zero</param>
+        public PathInfoV2(PathTargetInfoV2[] targetInformations, SourceModeInfo sourceModeInfo, uint sourceId = 0)
+        {
+            this = typeof(PathInfoV2).Instantiate<PathInfoV2>();
+            _TargetInfoCount = (uint)targetInformations.Length;
+            _TargetsInfo = ValueTypeArray<PathTargetInfoV2>.FromArray(targetInformations);
+            _SourceModeInfo = ValueTypeReference<SourceModeInfo>.FromValueType(sourceModeInfo);
+            _SourceId = sourceId;
+        }
+
+        /// <summary>
+        ///     Creates a new PathInfoV2
+        /// </summary>
+        /// <param name="targetInformations">Information about path targets</param>
+        /// <param name="sourceId">Source Id, can be zero</param>
+        public PathInfoV2(PathTargetInfoV2[] targetInformations, uint sourceId = 0)
+        {
+            this = typeof(PathInfoV2).Instantiate<PathInfoV2>();
+            _TargetInfoCount = (uint)targetInformations.Length;
+            _TargetsInfo = ValueTypeArray<PathTargetInfoV2>.FromArray(targetInformations);
+            _SourceModeInfo = ValueTypeReference<SourceModeInfo>.Null;
+            _SourceId = sourceId;
+        }
+
+
+        /// <summary>
+        ///     Creates a new PathInfoV2
+        /// </summary>
+        /// <param name="sourceId">Source Id, can be zero</param>
+        public PathInfoV2(uint sourceId)
+        {
+            this = typeof(PathInfoV2).Instantiate<PathInfoV2>();
+            _TargetInfoCount = 0;
+            _TargetsInfo = ValueTypeArray<PathTargetInfoV2>.Null;
+            _SourceModeInfo = ValueTypeReference<SourceModeInfo>.Null;
+            _SourceId = sourceId;
+        }
+
+        /// <summary>
+        ///     Creates a new PathInfoV2
+        /// </summary>
+        /// <param name="sourceModeInfo">Source mode information</param>
+        /// <param name="sourceId">Source Id, can be zero</param>
+        public PathInfoV2(SourceModeInfo sourceModeInfo, uint sourceId)
+        {
+            this = typeof(PathInfoV2).Instantiate<PathInfoV2>();
+            _TargetInfoCount = 0;
+            _TargetsInfo = ValueTypeArray<PathTargetInfoV2>.Null;
+            _SourceModeInfo = ValueTypeReference<SourceModeInfo>.FromValueType(sourceModeInfo);
+            _SourceId = sourceId;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            TargetsInfo.DisposeAll();
+            _TargetsInfo.Dispose();
+            _SourceModeInfo.Dispose();
+        }
+
+        void IAllocatable.Allocate()
+        {
+            if (_TargetInfoCount > 0 && _TargetsInfo.IsNull)
+            {
+                var targetInfo = typeof(PathTargetInfoV2).Instantiate<PathTargetInfoV2>();
+                var targetInfoList = targetInfo.Repeat((int)_TargetInfoCount).AllocateAll();
+                _TargetsInfo = ValueTypeArray<PathTargetInfoV2>.FromArray(targetInfoList.ToArray());
+            }
+
+            if (_SourceModeInfo.IsNull)
+            {
+                var sourceModeInfo = typeof(SourceModeInfo).Instantiate<SourceModeInfo>();
+                _SourceModeInfo = ValueTypeReference<SourceModeInfo>.FromValueType(sourceModeInfo);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Holds information about a path's target
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct PathTargetInfoV1 : IPathTargetInfo,
+        IInitializable,
+        IDisposable,
+        IAllocatable,
+        IEquatable<PathTargetInfoV1>,
+        IEquatable<PathTargetInfoV2>
+    {
+        internal readonly uint _DisplayId;
+        internal ValueTypeReference<PathAdvancedTargetInfo> _Details;
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"PathTargetInfoV2: Display #{_DisplayId}";
+        }
+
+        /// <inheritdoc />
+        public uint DisplayId
+        {
+            get => _DisplayId;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(PathTargetInfoV1 other)
+        {
+            return _DisplayId == other._DisplayId && _Details.Equals(other._Details);
+        }
+
+        /// <inheritdoc />
+        public bool Equals(PathTargetInfoV2 other)
+        {
+            return _DisplayId == other._DisplayId && _Details.Equals(other._Details);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is PathTargetInfoV1 && Equals((PathTargetInfoV1)obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
+                return ((int)_DisplayId * 397) ^ _Details.GetHashCode();
+            }
+        }
+
+        /// <inheritdoc />
+        public PathAdvancedTargetInfo? Details
+        {
+            get => _Details.ToValueType() ?? default(PathAdvancedTargetInfo);
+        }
+
+        /// <summary>
+        ///     Creates a new PathTargetInfoV1
+        /// </summary>
+        /// <param name="displayId">Display Id</param>
+        public PathTargetInfoV1(uint displayId) : this()
+        {
+            _DisplayId = displayId;
+        }
+
+        /// <summary>
+        ///     Creates a new PathTargetInfoV1
+        /// </summary>
+        /// <param name="displayId">Display Id</param>
+        /// <param name="details">Extra information</param>
+        public PathTargetInfoV1(uint displayId, PathAdvancedTargetInfo details) : this(displayId)
+        {
+            _Details = ValueTypeReference<PathAdvancedTargetInfo>.FromValueType(details);
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            _Details.Dispose();
+        }
+
+        void IAllocatable.Allocate()
+        {
+            if (_Details.IsNull)
+            {
+                var detail = typeof(PathAdvancedTargetInfo).Instantiate<PathAdvancedTargetInfo>();
+                _Details = ValueTypeReference<PathAdvancedTargetInfo>.FromValueType(detail);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Holds information about a path's target
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct PathTargetInfoV2 : IPathTargetInfo,
+        IInitializable,
+        IDisposable,
+        IAllocatable,
+        IEquatable<PathTargetInfoV2>,
+        IEquatable<PathTargetInfoV1>
+    {
+        internal readonly uint _DisplayId;
+        internal ValueTypeReference<PathAdvancedTargetInfo> _Details;
+        internal readonly uint _WindowsCCDTargetId;
+
+        /// <inheritdoc />
+        public uint DisplayId
+        {
+            get => _DisplayId;
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"PathTargetInfoV2: Display #{_DisplayId}";
+        }
+
+        /// <inheritdoc />
+        public PathAdvancedTargetInfo? Details
+        {
+            get => _Details.ToValueType();
+        }
+
+        /// <summary>
+        ///     Windows CCD target ID. Must be present only for non-NVIDIA adapter, for NVIDIA adapter this parameter is ignored.
+        /// </summary>
+        public uint WindowsCCDTargetId
+        {
+            get => _WindowsCCDTargetId;
+        }
+
+        /// <summary>
+        ///     Creates a new PathTargetInfoV1
+        /// </summary>
+        /// <param name="displayId">Display Id</param>
+        public PathTargetInfoV2(uint displayId) : this()
+        {
+            _DisplayId = displayId;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(PathTargetInfoV2 other)
+        {
+            return _DisplayId == other._DisplayId && _Details.Equals(other._Details);
+        }
+
+        /// <inheritdoc />
+        public bool Equals(PathTargetInfoV1 other)
+        {
+            return _DisplayId == other._DisplayId && _Details.Equals(other._Details);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is PathTargetInfoV2 v2 && Equals(v2);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (int)_DisplayId;
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
+                hashCode = (hashCode * 397) ^ _Details.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_WindowsCCDTargetId;
+
+                return hashCode;
+            }
+        }
+
+        /// <summary>
+        ///     Creates a new PathTargetInfoV1
+        /// </summary>
+        /// <param name="displayId">Display Id</param>
+        /// <param name="windowsCCDTargetId">Windows CCD target Id</param>
+        public PathTargetInfoV2(uint displayId, uint windowsCCDTargetId) : this(displayId)
+        {
+            _WindowsCCDTargetId = windowsCCDTargetId;
+        }
+
+        /// <summary>
+        ///     Creates a new PathTargetInfoV1
+        /// </summary>
+        /// <param name="displayId">Display Id</param>
+        /// <param name="details">Extra information</param>
+        public PathTargetInfoV2(uint displayId, PathAdvancedTargetInfo details) : this(displayId)
+        {
+            _Details = ValueTypeReference<PathAdvancedTargetInfo>.FromValueType(details);
+        }
+
+        /// <summary>
+        ///     Creates a new PathTargetInfoV1
+        /// </summary>
+        /// <param name="displayId">Display Id</param>
+        /// <param name="windowsCCDTargetId">Windows CCD target Id</param>
+        /// <param name="details">Extra information</param>
+        public PathTargetInfoV2(uint displayId, uint windowsCCDTargetId, PathAdvancedTargetInfo details)
+            : this(displayId, windowsCCDTargetId)
+        {
+            _Details = ValueTypeReference<PathAdvancedTargetInfo>.FromValueType(details);
+        }
+
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            _Details.Dispose();
+        }
+
+        void IAllocatable.Allocate()
+        {
+            if (_Details.IsNull)
+            {
+                var detail = typeof(PathAdvancedTargetInfo).Instantiate<PathAdvancedTargetInfo>();
+                _Details = ValueTypeReference<PathAdvancedTargetInfo>.FromValueType(detail);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Holds a [X,Y] pair as a position on a 2D plane
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct Position : IEquatable<Position>
+    {
+        internal readonly int _X;
+        internal readonly int _Y;
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"[{X}, {Y}]";
+        }
+
+        /// <inheritdoc />
+        public bool Equals(Position other)
+        {
+            return _X == other._X && _Y == other._Y;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is Position position && Equals(position);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (_X * 397) ^ _Y;
+            }
+        }
+
+        /// <summary>
+        ///     Checks for equality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are equal, otherwise false</returns>
+        public static bool operator ==(Position left, Position right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Checks for inequality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are not equal, otherwise false</returns>
+        public static bool operator !=(Position left, Position right)
+        {
+            return !left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Creates a new Position
+        /// </summary>
+        /// <param name="x">X value</param>
+        /// <param name="y">Y value</param>
+        public Position(int x, int y)
+        {
+            _X = x;
+            _Y = y;
+        }
+
+        /// <summary>
+        ///     X value
+        /// </summary>
+        public int X
+        {
+            get => _X;
+        }
+
+        /// <summary>
+        ///     Y value
+        /// </summary>
+        public int Y
+        {
+            get => _Y;
+        }
+    }
+
+    /// <inheritdoc cref="IDisplayDVCInfo" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct PrivateDisplayDVCInfo : IInitializable, IDisplayDVCInfo
+    {
+        internal StructureVersion _Version;
+        internal int _CurrentLevel;
+        internal int _MinimumLevel;
+        internal int _MaximumLevel;
+
+        /// <inheritdoc />
+        public int CurrentLevel
+        {
+            get => _CurrentLevel;
+        }
+
+        /// <inheritdoc />
+        public int MinimumLevel
+        {
+            get => _MinimumLevel;
+        }
+
+        /// <inheritdoc />
+        int IDisplayDVCInfo.DefaultLevel
+        {
+            get => 0;
+        }
+
+        /// <inheritdoc />
+        public int MaximumLevel
+        {
+            get => _MaximumLevel;
+        }
+    }
+
+    /// <inheritdoc cref="IDisplayDVCInfo" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct PrivateDisplayDVCInfoEx : IInitializable, IDisplayDVCInfo
+    {
+        internal StructureVersion _Version;
+        internal int _CurrentLevel;
+        internal int _MinimumLevel;
+        internal int _MaximumLevel;
+        internal int _DefaultLevel;
+
+        /// <inheritdoc />
+        public int CurrentLevel
+        {
+            get => _CurrentLevel;
+        }
+
+        /// <inheritdoc />
+        public int MinimumLevel
+        {
+            get => _MinimumLevel;
+        }
+
+        /// <inheritdoc />
+        public int MaximumLevel
+        {
+            get => _MaximumLevel;
+        }
+
+        /// <inheritdoc />
+        public int DefaultLevel
+        {
+            get => _DefaultLevel;
+        }
+
+        internal PrivateDisplayDVCInfoEx(int currentLevel)
+        {
+            this = typeof(PrivateDisplayDVCInfoEx).Instantiate<PrivateDisplayDVCInfoEx>();
+            _CurrentLevel = currentLevel;
+        }
+    }
+
+    /// <summary>
+    ///     Holds the current and the default HUE information
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct PrivateDisplayHUEInfo : IInitializable
+    {
+        internal StructureVersion _Version;
+        internal int _CurrentAngle;
+        internal int _DefaultAngle;
+
+        /// <summary>
+        ///     Gets or sets the current HUE offset angle [0-359]
+        /// </summary>
+        public int CurrentAngle
+        {
+            get => _CurrentAngle;
+        }
+
+        /// <summary>
+        ///     Gets or sets the default HUE offset angle [0-359]
+        /// </summary>
+        public int DefaultAngle
+        {
+            get => _DefaultAngle;
+        }
+    }
+
+    /// <summary>
+    ///     Holds a [Width, Height] pair as the resolution of a display device, as well as a color format
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct Resolution : IEquatable<Resolution>
+    {
+        internal readonly uint _Width;
+        internal readonly uint _Height;
+        internal readonly uint _ColorDepth;
+
+        /// <summary>
+        ///     Creates a new Resolution
+        /// </summary>
+        /// <param name="width">Display resolution width</param>
+        /// <param name="height">Display resolution height</param>
+        /// <param name="colorDepth">Display color depth</param>
+        public Resolution(int width, int height, int colorDepth)
+        {
+            _Width = (uint)width;
+            _Height = (uint)height;
+            _ColorDepth = (uint)colorDepth;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(Resolution other)
+        {
+            return _Width == other._Width && _Height == other._Height && _ColorDepth == other._ColorDepth;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is Resolution resolution && Equals(resolution);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (int)_Width;
+                hashCode = (hashCode * 397) ^ (int)_Height;
+                hashCode = (hashCode * 397) ^ (int)_ColorDepth;
+
+                return hashCode;
+            }
+        }
+
+        /// <summary>
+        ///     Checks for equality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are equal, otherwise false</returns>
+        public static bool operator ==(Resolution left, Resolution right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Checks for inequality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are not equal, otherwise false</returns>
+        public static bool operator !=(Resolution left, Resolution right)
+        {
+            return !left.Equals(right);
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"({Width}, {Height}) @ {ColorDepth}bpp";
+        }
+
+        /// <summary>
+        ///     Display resolution width
+        /// </summary>
+        public int Width
+        {
+            get => (int)_Width;
+        }
+
+        /// <summary>
+        ///     Display resolution height
+        /// </summary>
+        public int Height
+        {
+            get => (int)_Height;
+        }
+
+        /// <summary>
+        ///     Display color depth
+        /// </summary>
+        public int ColorDepth
+        {
+            get => (int)_ColorDepth;
+        }
+    }
+
+    /// <summary>
+    ///     Contains information regarding the scan-out configurations
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct ScanOutInformationV1 : IInitializable
+    {
+        internal StructureVersion _Version;
+        internal Rectangle _SourceDesktopRectangle;
+        internal Rectangle _SourceViewPortRectangle;
+        internal Rectangle _TargetViewPortRectangle;
+        internal uint _TargetDisplayWidth;
+        internal uint _TargetDisplayHeight;
+        internal uint _CloneImportance;
+        internal Rotate _SourceToTargetRotation;
+
+        /// <summary>
+        ///     Gets the operating system display device rectangle in desktop coordinates displayId is scanning out from.
+        /// </summary>
+        public Rectangle SourceDesktopRectangle
+        {
+            get => _SourceDesktopRectangle;
+        }
+
+        /// <summary>
+        ///     Gets the area inside the SourceDesktopRectangle which is scanned out to the display.
+        /// </summary>
+        public Rectangle SourceViewPortRectangle
+        {
+            get => _SourceViewPortRectangle;
+        }
+
+        /// <summary>
+        ///     Gets the area inside the rectangle described by targetDisplayWidth/Height SourceViewPortRectangle is scanned out
+        ///     to.
+        /// </summary>
+        public Rectangle TargetViewPortRectangle
+        {
+            get => _TargetViewPortRectangle;
+        }
+
+        /// <summary>
+        ///     Gets the horizontal size of the active resolution scanned out to the display.
+        /// </summary>
+        public uint TargetDisplayWidth
+        {
+            get => _TargetDisplayWidth;
+        }
+
+        /// <summary>
+        ///     Gets the vertical size of the active resolution scanned out to the display.
+        /// </summary>
+        public uint TargetDisplayHeight
+        {
+            get => _TargetDisplayHeight;
+        }
+
+        /// <summary>
+        ///     Gets the clone importance assigned to the target if the target is a cloned view of the SourceDesktopRectangle
+        ///     (0:primary,1 secondary,...).
+        /// </summary>
+        public uint CloneImportance
+        {
+            get => _CloneImportance;
+        }
+
+        /// <summary>
+        ///     Gets the rotation performed between the SourceViewPortRectangle and the TargetViewPortRectangle.
+        /// </summary>
+        public Rotate SourceToTargetRotation
+        {
+            get => _SourceToTargetRotation;
+        }
+    }
+
+    /// <summary>
+    ///     Contains information regarding the scan-out intensity state
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct ScanOutIntensityStateV1 : IInitializable
+    {
+        internal StructureVersion _Version;
+        internal uint _IsEnabled;
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the scan out intensity is enabled or not
+        /// </summary>
+        public bool IsEnabled
+        {
+            get => _IsEnabled > 0;
+        }
+    }
+
+    /// <inheritdoc cref="IScanOutIntensity" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct ScanOutIntensityV1 : IDisposable, IInitializable, IScanOutIntensity
+    {
+        internal StructureVersion _Version;
+        internal uint _Width;
+        internal uint _Height;
+        internal IntPtr _BlendingTexture;
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="ScanOutIntensityV1" />.
+        /// </summary>
+        /// <param name="width">The width of the input texture.</param>
+        /// <param name="height">The height of the input texture</param>
+        /// <param name="blendingTexture">The array of floating values building an intensity RGB texture.</param>
+        public ScanOutIntensityV1(uint width, uint height, float[] blendingTexture)
+        {
+            if (blendingTexture?.Length != width * height * 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(blendingTexture));
+            }
+
+            this = typeof(ScanOutIntensityV1).Instantiate<ScanOutIntensityV1>();
+            _Width = width;
+            _Height = height;
+            _BlendingTexture = Marshal.AllocHGlobal((int)(width * height * 3 * sizeof(float)));
+
+            Marshal.Copy(blendingTexture, 0, _BlendingTexture, blendingTexture.Length);
+        }
+
+        /// <inheritdoc />
+        public uint Width
+        {
+            get => _Width;
+        }
+
+        /// <inheritdoc />
+        public uint Height
+        {
+            get => _Height;
+        }
+
+        /// <inheritdoc />
+        public float[] BlendingTexture
+        {
+            get
+            {
+                var floats = new float[_Width * _Height * 3];
+                Marshal.Copy(_BlendingTexture, floats, 0, floats.Length);
+
+                return floats;
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            Marshal.FreeHGlobal(_BlendingTexture);
+        }
+    }
+
+    /// <inheritdoc cref="IScanOutIntensity" />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(2)]
+    public struct ScanOutIntensityV2 : IDisposable, IInitializable, IScanOutIntensity
+    {
+        internal StructureVersion _Version;
+        internal uint _Width;
+        internal uint _Height;
+        internal IntPtr _BlendingTexture;
+        internal IntPtr _OffsetTexture;
+        internal uint _OffsetTextureChannels;
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="ScanOutIntensityV2" />.
+        /// </summary>
+        /// <param name="width">The width of the input texture.</param>
+        /// <param name="height">The height of the input texture</param>
+        /// <param name="blendingTexture">The array of floating values building an intensity RGB texture</param>
+        /// <param name="offsetTextureChannels">The number of channels per pixel in the offset texture</param>
+        /// <param name="offsetTexture">The array of floating values building an offset texture</param>
+        // ReSharper disable once TooManyDependencies
+        public ScanOutIntensityV2(
+            uint width,
+            uint height,
+            float[] blendingTexture,
+            uint offsetTextureChannels,
+            float[] offsetTexture)
+        {
+            if (blendingTexture?.Length != width * height * 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(blendingTexture));
+            }
+
+            if (offsetTexture?.Length != width * height * offsetTextureChannels)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offsetTexture));
+            }
+
+            this = typeof(ScanOutIntensityV2).Instantiate<ScanOutIntensityV2>();
+            _Width = width;
+            _Height = height;
+            _BlendingTexture = Marshal.AllocHGlobal((int)(width * height * 3 * sizeof(float)));
+            Marshal.Copy(blendingTexture, 0, _BlendingTexture, blendingTexture.Length);
+
+            _OffsetTextureChannels = offsetTextureChannels;
+            _OffsetTexture = Marshal.AllocHGlobal((int)(width * height * offsetTextureChannels * sizeof(float)));
+            Marshal.Copy(offsetTexture, 0, _OffsetTexture, offsetTexture.Length);
+        }
+
+        /// <inheritdoc />
+        public uint Width
+        {
+            get => _Width;
+        }
+
+        /// <inheritdoc />
+        public uint Height
+        {
+            get => _Height;
+        }
+
+        /// <summary>
+        ///     Gets the number of channels per pixel in the offset texture
+        /// </summary>
+        public uint OffsetTextureChannels
+        {
+            get => _OffsetTextureChannels;
+        }
+
+        /// <inheritdoc />
+        public float[] BlendingTexture
+        {
+            get
+            {
+                var floats = new float[_Width * _Height * 3];
+                Marshal.Copy(_BlendingTexture, floats, 0, floats.Length);
+
+                return floats;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the array of floating values building an offset texture
+        /// </summary>
+        public float[] OffsetTexture
+        {
+            get
+            {
+                var floats = new float[_Width * _Height * _OffsetTextureChannels];
+                Marshal.Copy(_OffsetTexture, floats, 0, floats.Length);
+
+                return floats;
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            Marshal.FreeHGlobal(_BlendingTexture);
+            Marshal.FreeHGlobal(_OffsetTexture);
+        }
+    }
+
+    /// <summary>
+    ///     Contains information regarding the scan-out warping state
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct ScanOutWarpingStateV1 : IInitializable
+    {
+        internal StructureVersion _Version;
+        internal uint _IsEnabled;
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the scan out warping is enabled or not
+        /// </summary>
+        public bool IsEnabled
+        {
+            get => _IsEnabled > 0;
+        }
+    }
+
+    /// <summary>
+    ///     Contains information regarding the scan-out warping data
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct ScanOutWarpingV1 : IDisposable, IInitializable
+    {
+        internal StructureVersion _Version;
+        internal IntPtr _Vertices;
+        internal WarpingVerticeFormat _VertexFormat;
+        internal uint _NumberOfVertices;
+        internal IntPtr _TextureRectangle;
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="ScanOutWarpingV1" />.
+        /// </summary>
+        /// <param name="vertexFormat">The format of the input vertices.</param>
+        /// <param name="vertices">The array of floating values containing the warping vertices.</param>
+        /// <param name="textureRectangle">The rectangle in desktop coordinates describing the source area for the warping.</param>
+        public ScanOutWarpingV1(WarpingVerticeFormat vertexFormat, float[] vertices, Rectangle textureRectangle)
+        {
+            if (vertices.Length % 6 != 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(vertices));
+            }
+
+            this = typeof(ScanOutWarpingV1).Instantiate<ScanOutWarpingV1>();
+            _VertexFormat = vertexFormat;
+            _NumberOfVertices = (uint)(vertices.Length / 6);
+            _Vertices = Marshal.AllocHGlobal(vertices.Length * sizeof(float));
+            Marshal.Copy(vertices, 0, _Vertices, vertices.Length);
+
+            _TextureRectangle = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Rectangle)));
+            Marshal.StructureToPtr(textureRectangle, _TextureRectangle, true);
+        }
+
+        /// <summary>
+        ///     Gets the format of the input vertices
+        /// </summary>
+        public WarpingVerticeFormat VertexFormat
+        {
+            get => _VertexFormat;
+        }
+
+        /// <summary>
+        ///     Gets the rectangle in desktop coordinates describing the source area for the warping
+        /// </summary>
+        public Rectangle TextureRectangle
+        {
+            get => (Rectangle)Marshal.PtrToStructure(_TextureRectangle, typeof(Rectangle));
+        }
+
+        /// <summary>
+        ///     Gets the array of floating values containing the warping vertices
+        /// </summary>
+        public float[] Vertices
+        {
+            get
+            {
+                var floats = new float[_NumberOfVertices * 6];
+                Marshal.Copy(_Vertices, floats, 0, floats.Length);
+
+                return floats;
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            Marshal.FreeHGlobal(_Vertices);
+            Marshal.FreeHGlobal(_TextureRectangle);
+        }
+    }
+
+    /// <summary>
+    ///     Holds information about a source mode
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct SourceModeInfo : IEquatable<SourceModeInfo>
+    {
+        internal readonly Resolution _Resolution;
+        internal readonly ColorFormat _ColorFormat;
+        internal readonly Position _Position;
+        internal readonly SpanningOrientation _SpanningOrientation;
+        internal uint _RawReserved;
+
+        /// <summary>
+        ///     Creates a new SourceModeInfo
+        /// </summary>
+        /// <param name="resolution">Source resolution</param>
+        /// <param name="colorFormat">Must be Format.Unknown</param>
+        /// <param name="position">Source position</param>
+        /// <param name="spanningOrientation">Spanning orientation for XP</param>
+        /// <param name="isGDIPrimary">true if this source represents the GDI primary display, otherwise false</param>
+        /// <param name="isSLIFocus">true if this source represents the SLI focus display, otherwise false</param>
+        public SourceModeInfo(
+            Resolution resolution,
+            ColorFormat colorFormat,
+            Position position = default(Position),
+            SpanningOrientation spanningOrientation = SpanningOrientation.None,
+            bool isGDIPrimary = false,
+            bool isSLIFocus = false) : this()
+        {
+            _Resolution = resolution;
+            _ColorFormat = colorFormat;
+            _Position = position;
+            _SpanningOrientation = spanningOrientation;
+            IsGDIPrimary = isGDIPrimary;
+            IsSLIFocus = isSLIFocus;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(SourceModeInfo other)
+        {
+            return _Resolution.Equals(other._Resolution) &&
+                   _ColorFormat == other._ColorFormat &&
+                   _Position.Equals(other._Position) &&
+                   _SpanningOrientation == other._SpanningOrientation &&
+                   _RawReserved == other._RawReserved;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            return obj is SourceModeInfo info && Equals(info);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = _Resolution.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_ColorFormat;
+                hashCode = (hashCode * 397) ^ _Position.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_SpanningOrientation;
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
+                hashCode = (hashCode * 397) ^ (int)_RawReserved;
+
+                return hashCode;
+            }
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{Resolution} @ {Position} - {ColorFormat}";
+        }
+
+        /// <summary>
+        ///     Holds the source resolution
+        /// </summary>
+        public Resolution Resolution
+        {
+            get => _Resolution;
+        }
+
+        /// <summary>
+        ///     Ignored at present, must be Format.Unknown
+        /// </summary>
+        public ColorFormat ColorFormat
+        {
+            get => _ColorFormat;
+        }
+
+        /// <summary>
+        ///     Is all positions are 0 or invalid, displays will be automatically positioned from left to right with GDI Primary at
+        ///     0,0, and all other displays in the order of the path array.
+        /// </summary>
+        public Position Position
+        {
+            get => _Position;
+        }
+
+        /// <summary>
+        ///     Spanning is only supported on XP
+        /// </summary>
+        public SpanningOrientation SpanningOrientation
+        {
+            get => _SpanningOrientation;
+        }
+
+        /// <summary>
+        ///     Indicates if the path is for the primary GDI display
+        /// </summary>
+        public bool IsGDIPrimary
+        {
+            get => _RawReserved.GetBit(0);
+            private set => _RawReserved = _RawReserved.SetBit(0, value);
+        }
+
+        /// <summary>
+        ///     Indicates if the path is for the SLI focus display
+        /// </summary>
+        public bool IsSLIFocus
+        {
+            get => _RawReserved.GetBit(1);
+            private set => _RawReserved = _RawReserved.SetBit(1, value);
+        }
+    }
+
+    /// <summary>
+    ///     Holds VESA scan out timing parameters
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct Timing : IEquatable<Timing>
+    {
+        internal readonly ushort _HorizontalVisible;
+        internal readonly ushort _HorizontalBorder;
+        internal readonly ushort _HorizontalFrontPorch;
+        internal readonly ushort _HorizontalSyncWidth;
+        internal readonly ushort _HorizontalTotal;
+        internal readonly TimingHorizontalSyncPolarity _HorizontalSyncPolarity;
+        internal readonly ushort _VerticalVisible;
+        internal readonly ushort _VerticalBorder;
+        internal readonly ushort _VerticalFrontPorch;
+        internal readonly ushort _VerticalSyncWidth;
+        internal readonly ushort _VerticalTotal;
+        internal readonly TimingVerticalSyncPolarity _VerticalSyncPolarity;
+        internal readonly TimingScanMode _ScanMode;
+        internal readonly uint _PixelClockIn10KHertz;
+        internal readonly TimingExtra _Extra;
+
+        /// <summary>
+        ///     Creates an instance of <see cref="Timing" /> structure.
+        /// </summary>
+        /// <param name="horizontalVisible">The horizontal visible pixels</param>
+        /// <param name="verticalVisible">The vertical visible pixels</param>
+        /// <param name="horizontalBorder">The horizontal border pixels</param>
+        /// <param name="verticalBorder">The vertical border pixels</param>
+        /// <param name="horizontalFrontPorch">The horizontal front porch pixels</param>
+        /// <param name="verticalFrontPorch">The vertical front porch pixels</param>
+        /// <param name="horizontalSyncWidth">The horizontal sync width pixels</param>
+        /// <param name="verticalSyncWidth">The vertical sync width pixels</param>
+        /// <param name="horizontalTotal">The horizontal total pixels</param>
+        /// <param name="verticalTotal">The vertical total pixels</param>
+        /// <param name="horizontalPolarity">The horizontal sync polarity</param>
+        /// <param name="verticalPolarity">The vertical sync polarity</param>
+        /// <param name="scanMode">The scan mode</param>
+        /// <param name="extra">The extra timing information</param>
+        public Timing(
+            ushort horizontalVisible,
+            ushort verticalVisible,
+            ushort horizontalBorder,
+            ushort verticalBorder,
+            ushort horizontalFrontPorch,
+            ushort verticalFrontPorch,
+            ushort horizontalSyncWidth,
+            ushort verticalSyncWidth,
+            ushort horizontalTotal,
+            ushort verticalTotal,
+            TimingHorizontalSyncPolarity horizontalPolarity,
+            TimingVerticalSyncPolarity verticalPolarity,
+            TimingScanMode scanMode,
+            TimingExtra extra
+        )
+        {
+            this = typeof(Timing).Instantiate<Timing>();
+
+            _HorizontalVisible = horizontalVisible;
+            _HorizontalBorder = horizontalBorder;
+            _HorizontalFrontPorch = horizontalFrontPorch;
+            _HorizontalSyncWidth = horizontalSyncWidth;
+            _HorizontalTotal = horizontalTotal;
+            _HorizontalSyncPolarity = horizontalPolarity;
+
+            _VerticalVisible = verticalVisible;
+            _VerticalBorder = verticalBorder;
+            _VerticalFrontPorch = verticalFrontPorch;
+            _VerticalSyncWidth = verticalSyncWidth;
+            _VerticalTotal = verticalTotal;
+            _VerticalSyncPolarity = verticalPolarity;
+
+            _ScanMode = scanMode;
+            _PixelClockIn10KHertz =
+                (uint)(horizontalTotal * verticalTotal * (extra.FrequencyInMillihertz / 1000d) / 10000);
+
+            _Extra = extra;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="Timing" /> structure.
+        /// </summary>
+        /// <param name="horizontalVisible">The horizontal visible pixels</param>
+        /// <param name="verticalVisible">The vertical visible pixels</param>
+        /// <param name="horizontalBorder">The horizontal border pixels</param>
+        /// <param name="verticalBorder">The vertical border pixels</param>
+        /// <param name="horizontalFrontPorch">The horizontal front porch pixels</param>
+        /// <param name="verticalFrontPorch">The vertical front porch pixels</param>
+        /// <param name="horizontalSyncWidth">The horizontal sync width pixels</param>
+        /// <param name="verticalSyncWidth">The vertical sync width pixels</param>
+        /// <param name="horizontalTotal">The horizontal total pixels</param>
+        /// <param name="verticalTotal">The vertical total pixels</param>
+        /// <param name="horizontalPolarity">The horizontal sync polarity</param>
+        /// <param name="verticalPolarity">The vertical sync polarity</param>
+        /// <param name="scanMode">The scan mode</param>
+        /// <param name="refreshRateFrequencyInHz">The frequency in hertz</param>
+        /// <param name="horizontalPixelRepetition">The number of identical horizontal pixels that are repeated; 1 = no repetition</param>
+        public Timing(
+            ushort horizontalVisible,
+            ushort verticalVisible,
+            ushort horizontalBorder,
+            ushort verticalBorder,
+            ushort horizontalFrontPorch,
+            ushort verticalFrontPorch,
+            ushort horizontalSyncWidth,
+            ushort verticalSyncWidth,
+            ushort horizontalTotal,
+            ushort verticalTotal,
+            TimingHorizontalSyncPolarity horizontalPolarity,
+            TimingVerticalSyncPolarity verticalPolarity,
+            TimingScanMode scanMode,
+            double refreshRateFrequencyInHz,
+            ushort horizontalPixelRepetition = 1
+        ) : this(
+            horizontalVisible, verticalVisible, horizontalBorder,
+            verticalBorder, horizontalFrontPorch, verticalFrontPorch,
+            horizontalSyncWidth, verticalSyncWidth, horizontalTotal,
+            verticalTotal, horizontalPolarity, verticalPolarity, scanMode,
+            new TimingExtra(
+                refreshRateFrequencyInHz,
+                $"CUST:{horizontalVisible}x{verticalVisible}x{refreshRateFrequencyInHz:F3}Hz",
+                0,
+                0,
+                horizontalPixelRepetition
+            )
+        )
+        {
+        }
+
+        /// <inheritdoc />
+        public bool Equals(Timing other)
+        {
+            return _HorizontalVisible == other._HorizontalVisible &&
+                   _HorizontalBorder == other._HorizontalBorder &&
+                   _HorizontalFrontPorch == other._HorizontalFrontPorch &&
+                   _HorizontalSyncWidth == other._HorizontalSyncWidth &&
+                   _HorizontalTotal == other._HorizontalTotal &&
+                   _HorizontalSyncPolarity == other._HorizontalSyncPolarity &&
+                   _VerticalVisible == other._VerticalVisible &&
+                   _VerticalBorder == other._VerticalBorder &&
+                   _VerticalFrontPorch == other._VerticalFrontPorch &&
+                   _VerticalSyncWidth == other._VerticalSyncWidth &&
+                   _VerticalTotal == other._VerticalTotal &&
+                   _VerticalSyncPolarity == other._VerticalSyncPolarity &&
+                   _ScanMode == other._ScanMode &&
+                   _PixelClockIn10KHertz == other._PixelClockIn10KHertz &&
+                   _Extra.Equals(other._Extra);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is Timing timing && Equals(timing);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = _HorizontalVisible.GetHashCode();
+                hashCode = (hashCode * 397) ^ _HorizontalBorder.GetHashCode();
+                hashCode = (hashCode * 397) ^ _HorizontalFrontPorch.GetHashCode();
+                hashCode = (hashCode * 397) ^ _HorizontalSyncWidth.GetHashCode();
+                hashCode = (hashCode * 397) ^ _HorizontalTotal.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_HorizontalSyncPolarity;
+                hashCode = (hashCode * 397) ^ _VerticalVisible.GetHashCode();
+                hashCode = (hashCode * 397) ^ _VerticalBorder.GetHashCode();
+                hashCode = (hashCode * 397) ^ _VerticalFrontPorch.GetHashCode();
+                hashCode = (hashCode * 397) ^ _VerticalSyncWidth.GetHashCode();
+                hashCode = (hashCode * 397) ^ _VerticalTotal.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_VerticalSyncPolarity;
+                hashCode = (hashCode * 397) ^ (int)_ScanMode;
+                hashCode = (hashCode * 397) ^ (int)_PixelClockIn10KHertz;
+                hashCode = (hashCode * 397) ^ _Extra.GetHashCode();
+
+                return hashCode;
+            }
+        }
+
+        /// <summary>
+        ///     Checks two instance of <see cref="Timing" /> for equality.
+        /// </summary>
+        /// <param name="left">The first instance.</param>
+        /// <param name="right">The second instance.</param>
+        /// <returns>Returns a boolean value indicating if the two instances are equal; otherwise false</returns>
+        public static bool operator ==(Timing left, Timing right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Checks two instance of <see cref="Timing" /> for in equality.
+        /// </summary>
+        /// <param name="left">The first instance.</param>
+        /// <param name="right">The second instance.</param>
+        /// <returns>Returns a boolean value indicating if the two instances are not equal; otherwise false</returns>
+        public static bool operator !=(Timing left, Timing right)
+        {
+            return !(left == right);
+        }
+
+        /// <summary>
+        ///     Get the horizontal visible pixels
+        /// </summary>
+        public int HorizontalVisible
+        {
+            get => _HorizontalVisible;
+        }
+
+        /// <summary>
+        ///     Get the horizontal border pixels
+        /// </summary>
+        public int HorizontalBorder
+        {
+            get => _HorizontalBorder;
+        }
+
+        /// <summary>
+        ///     Get the horizontal front porch pixels
+        /// </summary>
+        public int HorizontalFrontPorch
+        {
+            get => _HorizontalFrontPorch;
+        }
+
+        /// <summary>
+        ///     Get the horizontal sync width pixels
+        /// </summary>
+        public int HorizontalSyncWidth
+        {
+            get => _HorizontalSyncWidth;
+        }
+
+        /// <summary>
+        ///     Get the horizontal total pixels
+        /// </summary>
+        public int HorizontalTotal
+        {
+            get => _HorizontalTotal;
+        }
+
+        /// <summary>
+        ///     Get the horizontal sync polarity
+        /// </summary>
+        public TimingHorizontalSyncPolarity HorizontalSyncPolarity
+        {
+            get => _HorizontalSyncPolarity;
+        }
+
+        /// <summary>
+        ///     Get the vertical visible pixels
+        /// </summary>
+        public int VerticalVisible
+        {
+            get => _VerticalVisible;
+        }
+
+        /// <summary>
+        ///     Get the vertical border pixels
+        /// </summary>
+        public int VerticalBorder
+        {
+            get => _VerticalBorder;
+        }
+
+        /// <summary>
+        ///     Get the vertical front porch pixels
+        /// </summary>
+        public int VerticalFrontPorch
+        {
+            get => _VerticalFrontPorch;
+        }
+
+        /// <summary>
+        ///     Get the vertical sync width pixels
+        /// </summary>
+        public int VerticalSyncWidth
+        {
+            get => _VerticalSyncWidth;
+        }
+
+        /// <summary>
+        ///     Get the vertical total pixels
+        /// </summary>
+        public int VerticalTotal
+        {
+            get => _VerticalTotal;
+        }
+
+        /// <summary>
+        ///     Get the vertical sync polarity
+        /// </summary>
+        public TimingVerticalSyncPolarity VerticalSyncPolarity
+        {
+            get => _VerticalSyncPolarity;
+        }
+
+        /// <summary>
+        ///     Get the scan mode
+        /// </summary>
+        public TimingScanMode ScanMode
+        {
+            get => _ScanMode;
+        }
+
+        /// <summary>
+        ///     Get the pixel clock in 10 kHz
+        /// </summary>
+        public int PixelClockIn10KHertz
+        {
+            get => (int)_PixelClockIn10KHertz;
+        }
+
+        /// <summary>
+        ///     Get the other timing related extras
+        /// </summary>
+        public TimingExtra Extra
+        {
+            get => _Extra;
+        }
+
+        /// <summary>
+        ///     Gets the horizontal active pixels
+        /// </summary>
+        public int HorizontalActive
+        {
+            get => HorizontalVisible + HorizontalBorder;
+        }
+
+        /// <summary>
+        ///     Gets the vertical active pixels
+        /// </summary>
+        public int VerticalActive
+        {
+            get => VerticalVisible + VerticalBorder;
+        }
+
+        /// <summary>
+        ///     Gets the horizontal back porch pixels
+        /// </summary>
+        public int HorizontalBackPorch
+        {
+            get => HorizontalBlanking - (HorizontalFrontPorch + HorizontalSyncWidth);
+        }
+
+        /// <summary>
+        ///     Gets the horizontal blanking pixels
+        /// </summary>
+        public int HorizontalBlanking
+        {
+            get => HorizontalTotal - (HorizontalActive + HorizontalBorder);
+        }
+
+        /// <summary>
+        ///     Gets vertical back porch pixels
+        /// </summary>
+        public int VerticalBackPorch
+        {
+            get => VerticalBlanking - (VerticalFrontPorch + VerticalSyncWidth);
+        }
+
+        /// <summary>
+        ///     Gets the vertical blanking pixels
+        /// </summary>
+        public int VerticalBlanking
+        {
+            get => VerticalTotal - (VerticalActive + VerticalBorder);
+        }
+    }
+
+    /// <summary>
+    ///     Holds NVIDIA-specific timing extras
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct TimingExtra : IInitializable, IEquatable<TimingExtra>
+    {
+        internal readonly uint _HardwareFlags;
+        internal readonly ushort _RefreshRate;
+        internal readonly uint _FrequencyInMillihertz;
+        internal readonly ushort _VerticalAspect;
+        internal readonly ushort _HorizontalAspect;
+        internal readonly ushort _HorizontalPixelRepetition;
+        internal readonly uint _Standard;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
+        internal string _Name;
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="TimingExtra" /> structure.
+        /// </summary>
+        /// <param name="frequencyInHertz">The timing frequency in hertz</param>
+        /// <param name="name">The timing source name</param>
+        /// <param name="horizontalAspect">The display horizontal aspect</param>
+        /// <param name="verticalAspect">The display vertical aspect</param>
+        /// <param name="horizontalPixelRepetition">The number of identical horizontal pixels that are repeated; 1 = no repetition</param>
+        /// <param name="hardwareFlags">The NVIDIA hardware-based enhancement, such as double-scan.</param>
+        public TimingExtra(
+            double frequencyInHertz,
+            string name,
+            ushort horizontalAspect = 0,
+            ushort verticalAspect = 0,
+            ushort horizontalPixelRepetition = 1,
+            uint hardwareFlags = 0
+        ) : this(
+            (uint)(frequencyInHertz * 1000d),
+            (ushort)frequencyInHertz,
+            name,
+            horizontalAspect,
+            verticalAspect,
+            horizontalPixelRepetition,
+            hardwareFlags
+        )
+        {
+        }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="TimingExtra" /> structure.
+        /// </summary>
+        /// <param name="frequencyInMillihertz">The timing frequency in millihertz</param>
+        /// <param name="refreshRate">The refresh rate</param>
+        /// <param name="name">The timing source name</param>
+        /// <param name="horizontalAspect">The display horizontal aspect</param>
+        /// <param name="verticalAspect">The display vertical aspect</param>
+        /// <param name="horizontalPixelRepetition">The number of identical horizontal pixels that are repeated; 1 = no repetition</param>
+        /// <param name="hardwareFlags">The NVIDIA hardware-based enhancement, such as double-scan.</param>
+        public TimingExtra(
+            uint frequencyInMillihertz,
+            ushort refreshRate,
+            string name,
+            ushort horizontalAspect = 0,
+            ushort verticalAspect = 0,
+            ushort horizontalPixelRepetition = 1,
+            uint hardwareFlags = 0
+        )
+        {
+            this = typeof(TimingExtra).Instantiate<TimingExtra>();
+            _FrequencyInMillihertz = frequencyInMillihertz;
+            _RefreshRate = refreshRate;
+            _HorizontalAspect = horizontalAspect;
+            _VerticalAspect = verticalAspect;
+            _HorizontalPixelRepetition = horizontalPixelRepetition;
+            _HardwareFlags = hardwareFlags;
+            _Name = name?.Length > 40 ? name.Substring(0, 40) : name ?? "";
+        }
+
+        /// <inheritdoc />
+        public bool Equals(TimingExtra other)
+        {
+            return _HardwareFlags == other._HardwareFlags &&
+                   _RefreshRate == other._RefreshRate &&
+                   _FrequencyInMillihertz == other._FrequencyInMillihertz &&
+                   _VerticalAspect == other._VerticalAspect &&
+                   _HorizontalAspect == other._HorizontalAspect &&
+                   _HorizontalPixelRepetition == other._HorizontalPixelRepetition &&
+                   _Standard == other._Standard;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is TimingExtra extra && Equals(extra);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (int)_HardwareFlags;
+                hashCode = (hashCode * 397) ^ _RefreshRate.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_FrequencyInMillihertz;
+                hashCode = (hashCode * 397) ^ _VerticalAspect.GetHashCode();
+                hashCode = (hashCode * 397) ^ _HorizontalAspect.GetHashCode();
+                hashCode = (hashCode * 397) ^ _HorizontalPixelRepetition.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_Standard;
+
+                return hashCode;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the NVIDIA hardware-based enhancement, such as double-scan.
+        /// </summary>
+        public uint HardwareFlags
+        {
+            get => _HardwareFlags;
+        }
+
+        /// <summary>
+        ///     Gets the logical refresh rate to present
+        /// </summary>
+        public int RefreshRate
+        {
+            get => _RefreshRate;
+        }
+
+        /// <summary>
+        ///     Gets the physical vertical refresh rate in 0.001Hz
+        /// </summary>
+        public int FrequencyInMillihertz
+        {
+            get => (int)_FrequencyInMillihertz;
+        }
+
+        /// <summary>
+        ///     Gets the display vertical aspect
+        /// </summary>
+        public int VerticalAspect
+        {
+            get => _VerticalAspect;
+        }
+
+        /// <summary>
+        ///     Gets the display horizontal aspect
+        /// </summary>
+        public int HorizontalAspect
+        {
+            get => _HorizontalAspect;
+        }
+
+        /// <summary>
+        ///     Gets the bit-wise pixel repetition factor: 0x1:no pixel repetition; 0x2:each pixel repeats twice horizontally,..
+        /// </summary>
+        public int PixelRepetition
+        {
+            get => _HorizontalPixelRepetition;
+        }
+
+        /// <summary>
+        ///     Gets the timing standard
+        /// </summary>
+        public uint Standard
+        {
+            get => _Standard;
+        }
+
+        /// <summary>
+        ///     Gets the timing name
+        /// </summary>
+        public string Name
+        {
+            get => _Name;
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return Name;
+        }
+
+        /// <summary>
+        ///     Checks two instance of <see cref="TimingExtra" /> for equality.
+        /// </summary>
+        /// <param name="left">The first instance.</param>
+        /// <param name="right">The second instance.</param>
+        /// <returns>Returns a boolean value indicating if the two instances are equal; otherwise false</returns>
+        public static bool operator ==(TimingExtra left, TimingExtra right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Checks two instance of <see cref="TimingExtra" /> for equality.
+        /// </summary>
+        /// <param name="left">The first instance.</param>
+        /// <param name="right">The second instance.</param>
+        /// <returns>Returns a boolean value indicating if the two instances are equal; otherwise false</returns>
+        public static bool operator !=(TimingExtra left, TimingExtra right)
+        {
+            return !(left == right);
+        }
+    }
+
+    /// <summary>
+    ///     Contains the information required for calculating timing for a particular display
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct TimingInput : IInitializable
+    {
+        [StructLayout(LayoutKind.Explicit, Pack = 8, Size = 12)]
+        internal struct TimingFlag
+        {
+            [FieldOffset(0)] internal ushort _Flags;
+            [FieldOffset(4)] internal byte _TVFormatCEAIdPSFormatId;
+            [FieldOffset(8)] internal byte _Scaling;
+
+            public bool IsInterlaced
+            {
+                get => _Flags.GetBit(0);
+                set => _Flags = _Flags.SetBit(0, value);
+            }
+
+            public TVFormat TVFormat
+            {
+                get => (TVFormat)_TVFormatCEAIdPSFormatId;
+                set => _TVFormatCEAIdPSFormatId = (byte)value;
+            }
+
+            public byte CEAId
+            {
+                get => _TVFormatCEAIdPSFormatId;
+                set => _TVFormatCEAIdPSFormatId = value;
+            }
+
+            public byte PredefinedPSFormatId
+            {
+                get => _TVFormatCEAIdPSFormatId;
+                set => _TVFormatCEAIdPSFormatId = value;
+            }
+
+            public byte Scaling
+            {
+                get => _Scaling;
+                set => _Scaling = value;
+            }
+
+            public TimingFlag(bool isInterlaced, byte scaling) : this()
+            {
+                IsInterlaced = isInterlaced;
+                Scaling = scaling;
+            }
+
+            public TimingFlag(bool isInterlaced, byte scaling, TVFormat tvFormat) : this(isInterlaced, scaling)
+            {
+                TVFormat = tvFormat;
+            }
+
+            public TimingFlag(bool isInterlaced, byte scaling, byte ceaIdOrPredefinedPSFormatId) : this(isInterlaced,
+                scaling)
+            {
+                _TVFormatCEAIdPSFormatId = ceaIdOrPredefinedPSFormatId;
+            }
+        }
+
+        internal StructureVersion _Version;
+        internal uint _Width;
+        internal uint _Height;
+        internal float _RefreshRate;
+        internal TimingFlag _Flags;
+        internal TimingOverride _TimingType;
+
+        /// <summary>
+        ///     Gets the visible horizontal size
+        /// </summary>
+        public uint Width
+        {
+            get => _Width;
+        }
+
+        /// <summary>
+        ///     Gets the visible vertical size
+        /// </summary>
+        public uint Height
+        {
+            get => _Height;
+        }
+
+        /// <summary>
+        ///     Gets the timing refresh rate
+        /// </summary>
+        public float RefreshRate
+        {
+            get => _RefreshRate;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the requested timing is an interlaced timing
+        /// </summary>
+        public bool IsInterlaced
+        {
+            get => _Flags.IsInterlaced;
+        }
+
+        /// <summary>
+        ///     Gets the preferred scaling
+        /// </summary>
+        public byte Scaling
+        {
+            get => _Flags.Scaling;
+        }
+
+        /// <summary>
+        ///     Gets timing type (formula) to use for calculating the timing
+        /// </summary>
+        public TimingOverride TimingType
+        {
+            get => _TimingType;
+        }
+
+        /// <summary>
+        ///     Creates an instance of the TimingInput
+        /// </summary>
+        /// <param name="width">The preferred visible horizontal size</param>
+        /// <param name="height">The preferred visible vertical size</param>
+        /// <param name="refreshRate">The preferred timing refresh rate</param>
+        /// <param name="timingType">The preferred formula to be used for timing calculation</param>
+        /// <param name="isInterlaced">A boolean value indicating if the preferred timing is interlaced</param>
+        /// <param name="scaling">The preferred scaling factor</param>
+        public TimingInput(
+            uint width,
+            uint height,
+            float refreshRate,
+            TimingOverride timingType,
+            bool isInterlaced = false,
+            byte scaling = 0
+        )
+        {
+            this = typeof(TimingInput).Instantiate<TimingInput>();
+            _Width = width;
+            _Height = height;
+            _RefreshRate = refreshRate;
+            _TimingType = timingType;
+            _Flags = new TimingFlag(isInterlaced, scaling);
+        }
+
+        /// <summary>
+        ///     Creates an instance of the TimingInput
+        /// </summary>
+        /// <param name="tvFormat">The preferred analog TV format</param>
+        /// <param name="isInterlaced">A boolean value indicating if the preferred timing is interlaced</param>
+        /// <param name="scaling">The preferred scaling factor</param>
+        public TimingInput(TVFormat tvFormat, bool isInterlaced = false, byte scaling = 0)
+            : this(0, 0, 0, TimingOverride.AnalogTV, isInterlaced, scaling)
+        {
+            _Flags = new TimingFlag(isInterlaced, scaling, tvFormat);
+        }
+
+        /// <summary>
+        ///     Creates an instance of the TimingInput
+        /// </summary>
+        /// <param name="ceaIdOrPredefinedPSFormatId">
+        ///     The CEA id or the predefined PsF format id depending on the value of other
+        ///     arguments
+        /// </param>
+        /// <param name="timingType">
+        ///     The preferred formula to be used for timing calculation, valid values for this overload are
+        ///     <see cref="TimingOverride.EIA861" /> and <see cref="TimingOverride.Predefined" />.
+        /// </param>
+        /// <param name="isInterlaced">A boolean value indicating if the preferred timing is interlaced</param>
+        /// <param name="scaling">The preferred scaling factor</param>
+        public TimingInput(
+            byte ceaIdOrPredefinedPSFormatId,
+            TimingOverride timingType,
+            bool isInterlaced = false,
+            byte scaling = 0
+        )
+            : this(0, 0, 0, timingType, isInterlaced, scaling)
+        {
+            if (timingType != TimingOverride.EIA861 && timingType != TimingOverride.Predefined)
+            {
+                throw new ArgumentException("Invalid timing type passed.", nameof(timingType));
+            }
+
+            _Flags = new TimingFlag(isInterlaced, scaling, ceaIdOrPredefinedPSFormatId);
+        }
+
+        /// <summary>
+        ///     Creates an instance of the TimingInput
+        /// </summary>
+        /// <param name="timingType">
+        ///     The preferred formula to be used for timing calculation.
+        /// </param>
+        public TimingInput(TimingOverride timingType)
+            : this(0, 0, 0, timingType)
+        {
+        }
+
+        /// <summary>
+        ///     Gets the analog TV actual HD/SDTV format
+        /// </summary>
+        public TVFormat? TVFormat
+        {
+            get
+            {
+                if (Width == 0 && Height == 0 && Math.Abs(RefreshRate) < 0.01 && TimingType == TimingOverride.AnalogTV)
+                {
+                    return _Flags.TVFormat;
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the EIA/CEA 861B/D predefined short timing descriptor id
+        /// </summary>
+        public byte? CEAId
+        {
+            get
+            {
+                if (Width == 0 && Height == 0 && Math.Abs(RefreshRate) < 0.01 && TimingType == TimingOverride.EIA861)
+                {
+                    return _Flags.CEAId;
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the Nvidia predefined PsF format id
+        /// </summary>
+        public byte? PredefinedPSFormatId
+        {
+            get
+            {
+                if (TimingType == TimingOverride.Predefined)
+                {
+                    return _Flags.PredefinedPSFormatId;
+                }
+
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     UnAttachedDisplayHandle is a one-to-one map to the GDI handle of an unattached display.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct UnAttachedDisplayHandle : IHandle, IEquatable<UnAttachedDisplayHandle>
+    {
+        internal readonly IntPtr _MemoryAddress;
+
+        /// <inheritdoc />
+        public bool Equals(UnAttachedDisplayHandle other)
+        {
+            return _MemoryAddress.Equals(other._MemoryAddress);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is UnAttachedDisplayHandle && Equals((UnAttachedDisplayHandle)obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return _MemoryAddress.GetHashCode();
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"UnAttachedDisplayHandle #{MemoryAddress.ToInt64()}";
+        }
+
+        /// <summary>
+        ///     Checks for equality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are equal, otherwise false</returns>
+        public static bool operator ==(UnAttachedDisplayHandle left, UnAttachedDisplayHandle right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        ///     Checks for inequality between two objects of same type
+        /// </summary>
+        /// <param name="left">The first object</param>
+        /// <param name="right">The second object</param>
+        /// <returns>true, if both objects are not equal, otherwise false</returns>
+        public static bool operator !=(UnAttachedDisplayHandle left, UnAttachedDisplayHandle right)
+        {
+            return !left.Equals(right);
+        }
+
+        /// <inheritdoc />
+        public IntPtr MemoryAddress
+        {
+            get => _MemoryAddress;
+        }
+
+        /// <inheritdoc />
+        public bool IsNull
+        {
+            get => _MemoryAddress == IntPtr.Zero;
+        }
+    }
+
+    /// <summary>
+    ///     Hold information about the screen view port rectangle
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct ViewPortF
+    {
+        internal float _X;
+        internal float _Y;
+        internal float _Width;
+        internal float _Height;
+
+        /// <summary>
+        ///     Gets the x-coordinate of the viewport top-left point
+        /// </summary>
+        public float X
+        {
+            get => _X;
+        }
+
+        /// <summary>
+        ///     Gets the y-coordinate of the viewport top-left point
+        /// </summary>
+        public float Y
+        {
+            get => _Y;
+        }
+
+        /// <summary>
+        ///     Gets the width of the viewport.
+        /// </summary>
+        public float Width
+        {
+            get => _Width;
+        }
+
+        /// <summary>
+        ///     Gets the height of the viewport.
+        /// </summary>
+        public float Height
+        {
+            get => _Height;
+        }
+
+        /// <summary>
+        ///     Creates an instance of ViewPortF
+        /// </summary>
+        /// <param name="x">The x-coordinate of the viewport top-left point</param>
+        /// <param name="y">The y-coordinate of the viewport top-left point</param>
+        /// <param name="width">The width of the viewport.</param>
+        /// <param name="height">The height of the viewport.</param>
+        public ViewPortF(float x, float y, float width, float height)
+        {
+            _X = x;
+            _Y = y;
+            _Width = width;
+            _Height = height;
+        }
+
+        /// <summary>
+        ///     Creates an instance of <see cref="ViewPortF" />
+        /// </summary>
+        /// <param name="rect">The rectangle to take view port information from.</param>
+        public ViewPortF(RectangleF rect) : this(rect.X, rect.Y, rect.Width, rect.Height)
+        {
+        }
+
+        /// <summary>
+        ///     Return an instance of <see cref="RectangleF" /> representing this view port.
+        /// </summary>
+        /// <returns></returns>
+        public RectangleF ToRectangle()
+        {
+            return new RectangleF(X, Y, Width, Height);
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"({Width:F1}, {Height:F1}) @ ({X:F1}, {Y:F1})";
+        }
     }
 
 

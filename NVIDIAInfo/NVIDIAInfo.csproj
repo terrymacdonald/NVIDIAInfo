@@ -91,6 +91,7 @@
     <Compile Include="NvDisplay.cs" />
     <Compile Include="NvExceptions.cs" />
     <Compile Include="NvGeneral.cs" />
+    <Compile Include="NvGPU.cs" />
     <Compile Include="NvHelpers.cs" />
     <Compile Include="NvMosaic.cs" />
     <Compile Include="OldHelpers.cs" />

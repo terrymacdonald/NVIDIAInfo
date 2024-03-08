@@ -1437,7 +1437,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct ValueTypeReference : IDisposable, IHandle, IEquatable<ValueTypeReference>
+    public struct ValueTypeReference : IDisposable, IHandle, IEquatable<ValueTypeReference>
     {
         // ReSharper disable once ConvertToAutoProperty
         public IntPtr MemoryAddress { get; }

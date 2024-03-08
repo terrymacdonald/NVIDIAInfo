@@ -647,6 +647,22 @@ namespace DisplayMagicianShared.NVIDIA
         NVIDIADisplayNotFound = -210
     }
 
+    /// <summary>
+    ///     Chipset information flags - obsolete
+    /// </summary>
+    [Flags]
+    public enum ChipsetInfoFlag
+    {
+        /// <summary>
+        ///     No flags
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        ///     Hybrid chipset configuration
+        /// </summary>
+        Hybrid = 1
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct StructureVersion
