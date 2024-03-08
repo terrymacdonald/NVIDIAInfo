@@ -4,84 +4,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace DisplayMagician.NVIDIA
+/*
+namespace DisplayMagicianShared.NVIDIA
 {
-
-    /// <summary>
-    ///     Marker interface for all types that should be filled with information before passing to un-managed code
-    /// </summary>
-    internal interface IInitializable
-    {
-    }
-
-    /// <summary>
-    ///     Interface for all pointer based handles
-    /// </summary>
-    public interface IHandle
-    {
-        /// <summary>
-        ///     Returns true if the handle is null and not pointing to a valid location in the memory
-        /// </summary>
-        bool IsNull { get; }
-
-        /// <summary>
-        ///     Gets the address of the handle in the memory
-        /// </summary>
-        IntPtr MemoryAddress { get; }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct StructureVersion
-    {
-        private readonly uint _version;
-
-        public int VersionNumber
-        {
-            get => (int)(_version >> 16);
-        }
-
-        public int StructureSize
-        {
-            get => (int)(_version & ~(0xFFFF << 16));
-        }
-
-        public StructureVersion(int version, Type structureType)
-        {
-            _version = (uint)(Marshal.SizeOf(structureType) | (version << 16));
-        }
-
-        public override string ToString()
-        {
-            return $"Structure Size: {StructureSize} Bytes, Version: {VersionNumber}";
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Struct)]
-    internal class StructureVersionAttribute : Attribute
-    {
-        public StructureVersionAttribute()
-        {
-        }
-
-        public StructureVersionAttribute(int versionNumber)
-        {
-            VersionNumber = versionNumber;
-        }
-
-        public int VersionNumber { get; set; }
-    }
-
-
-    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Delegate)]
-    internal class AcceptsAttribute : Attribute
-    {
-        public AcceptsAttribute(params Type[] types)
-        {
-            Types = types;
-        }
-
-        public Type[] Types { get; set; }
-    }
     internal static class ExtensionMethods
     {
         /// <exception cref="Exception">A delegate callback throws an exception.</exception>
@@ -369,4 +294,4 @@ namespace DisplayMagician.NVIDIA
             }
         }
     }
-}
+}*/

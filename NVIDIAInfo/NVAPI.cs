@@ -1,9 +1,10 @@
-﻿using System;
+﻿/*using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Text;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace DisplayMagicianShared.NVIDIA
 {
@@ -2054,11 +2055,11 @@ namespace DisplayMagicianShared.NVIDIA
         public override bool Equals(object obj) => obj is NV_VIEWPORTF other && this.Equals(other);
 
         // NOTE: Using Math.Round for equality testing between floats.
-        /*public bool Equals(NV_VIEWPORTF other)
+        *//*public bool Equals(NV_VIEWPORTF other)
         => Math.Round(X, 5) == Math.Round(other.X, 5) &&
            Math.Round(Y, 5) == Math.Round(other.Y, 5) &&
            Math.Round(W, 5) == Math.Round(other.W, 5) &&
-           Math.Round(H, 5) == Math.Round(other.H, 5);*/
+           Math.Round(H, 5) == Math.Round(other.H, 5);*//*
         public bool Equals(NV_VIEWPORTF other)
         => X == other.X &&
            Y == other.Y &&
@@ -3598,7 +3599,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         #region DLLImport
 
-        /*[DllImport(Kernel32_FileName)]
+        *//*[DllImport(Kernel32_FileName)]
         public static extern HMODULE GetModuleHandle(string moduleName);*/
 
 
@@ -3637,7 +3638,7 @@ namespace DisplayMagicianShared.NVIDIA
         // Third Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect to number of targetInfoCount(from Second Pass).
         [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern NVAPI_STATUS NvAPI_DISP_GetDisplayConfig(ref ulong pathInfoCount, out NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 pathInfo);
-*/
+*//*
 
         #endregion DLLImport
 
@@ -4763,11 +4764,47 @@ namespace DisplayMagicianShared.NVIDIA
             NVAPI_STATUS status;
             if (GetAssociatedUnAttachedNvidiaDisplayHandleInternal != null) { status = GetAssociatedUnAttachedNvidiaDisplayHandleInternal(builder, ref pNvUnAttachedDispHandle); }
             else { status = NVAPI_STATUS.NVAPI_FUNCTION_NOT_FOUND; }
-            szDisplayName = builder.ToString();
 
             return status;
         }
         #endregion
+
+
+        ///////////////////////////////////////////////////////////////////////////////
+        // FUNCTION NAME:   NvAPI_DISP_GetDisplayConfig
+        //
+        //! DESCRIPTION:     This API lets caller retrieve the current global display
+        //!                  configuration.
+        //!       USAGE:     The caller might have to call this three times to fetch all the required configuration details as follows:
+        //!                  First  Pass: Caller should Call NvAPI_DISP_GetDisplayConfig() with pathInfo set to NULL to fetch pathInfoCount.
+        //!                  Second Pass: Allocate memory for pathInfo with respect to the number of pathInfoCount(from First Pass) to fetch
+        //!                               targetInfoCount. If sourceModeInfo is needed allocate memory or it can be initialized to NULL.
+        //!             Third  Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect
+        //!                               to number of targetInfoCount(from Second Pass).
+        //! SUPPORTED OS:  Windows 7 and higher
+        //!
+        //!
+        //! \param [in,out]  pathInfoCount    Number of elements in pathInfo array, returns number of valid topologies, this cannot be null.
+        //! \param [in,out]  pathInfo         Array of path information
+        //!
+        //! \return    This API can return any of the error codes enumerated in #NvAPI_Status. If there are return error codes with
+        //!            specific meaning for this API, they are listed below.
+        //!
+        //! \retval    NVAPI_INVALID_ARGUMENT  -   Invalid input parameter. Following can be the reason for this return value:
+        //!                                        -# pathInfoCount is NULL.
+        //!                                        -# *pathInfoCount is 0 and pathInfo is not NULL.
+        //!                                        -# *pathInfoCount is not 0 and pathInfo is NULL.
+        //! \retval    NVAPI_DEVICE_BUSY       -   ModeSet has not yet completed. Please wait and call it again.
+        //!
+        //! \ingroup dispcontrol
+        ///////////////////////////////////////////////////////////////////////////////
+        //NVAPI_INTERFACE NvAPI_DISP_GetDisplayConfig(__inout NvU32 *pathInfoCount, __out_ecount_full_opt(* pathInfoCount) NV_DISPLAYCONFIG_PATH_INFO *pathInfo);
+        *//*public delegate NVAPI_STATUS DISP_GetDisplayConfigDelegate(
+           [In][Out] ref uint pathInfoCount,
+           [In] [Accepts(typeof(PathInfoV2), typeof(PathInfoV1))]
+            ValueTypeArray pathInfos
+        );*//*
+
 
 
         // ******** IMPORTANT! This code has an error when attempting to perform the third pass as required by NVAPI documentation *********
@@ -4777,6 +4814,8 @@ namespace DisplayMagicianShared.NVIDIA
             [In][Out] ref UInt32 pathInfoCount,
             [In][Out] IntPtr pathInfoBuffer);
         private static readonly DISP_GetDisplayConfigDelegate DISP_GetDisplayConfigInternal;
+
+
 
         /// <summary>
         /// DESCRIPTION:     This API lets caller retrieve the current global display configuration.
@@ -4945,14 +4984,14 @@ namespace DisplayMagicianShared.NVIDIA
 
                                     // Now we start copying the info into the object we want to return
                                     // We'll start with filling in the Timing Extra info we want to return
-                                    /*PathInfos[i].TargetInfo[y].Details.Timing.Extra.Flags = returnedTimingExtra.Flags;
+                                    *//*PathInfos[i].TargetInfo[y].Details.Timing.Extra.Flags = returnedTimingExtra.Flags;
                                     PathInfos[i].TargetInfo[y].Details.Timing.Extra.FrequencyInMillihertz = returnedTimingExtra.FrequencyInMillihertz;
                                     PathInfos[i].TargetInfo[y].Details.Timing.Extra.HorizontalAspect = returnedTimingExtra.HorizontalAspect;
                                     PathInfos[i].TargetInfo[y].Details.Timing.Extra.HorizontalPixelRepetition = returnedTimingExtra.HorizontalPixelRepetition;
                                     PathInfos[i].TargetInfo[y].Details.Timing.Extra.Name = returnedTimingExtra.Name;
                                     PathInfos[i].TargetInfo[y].Details.Timing.Extra.RefreshRate = returnedTimingExtra.RefreshRate;
                                     PathInfos[i].TargetInfo[y].Details.Timing.Extra.TimingStandard = returnedTimingExtra.TimingStandard;
-                                    PathInfos[i].TargetInfo[y].Details.Timing.Extra.VerticalAspect = returnedTimingExtra.VerticalAspect;*/
+                                    PathInfos[i].TargetInfo[y].Details.Timing.Extra.VerticalAspect = returnedTimingExtra.VerticalAspect;*//*
 
                                     PathInfos[i].TargetInfo[y].Details.Timing.Extra.Flags = returnedAdvTarget.Timing.Extra.Flags;
                                     PathInfos[i].TargetInfo[y].Details.Timing.Extra.FrequencyInMillihertz = returnedAdvTarget.Timing.Extra.FrequencyInMillihertz;
@@ -4965,7 +5004,7 @@ namespace DisplayMagicianShared.NVIDIA
 
 
                                     // Next, we'll fill in the Timing info we want to return
-                                    /*PathInfos[i].TargetInfo[y].Details.Timing.HBorder = returnedTiming.HBorder;
+                                    *//*PathInfos[i].TargetInfo[y].Details.Timing.HBorder = returnedTiming.HBorder;
                                     PathInfos[i].TargetInfo[y].Details.Timing.HFrontPorch = returnedTiming.HFrontPorch;
                                     PathInfos[i].TargetInfo[y].Details.Timing.HSyncPol = returnedTiming.HSyncPol;
                                     PathInfos[i].TargetInfo[y].Details.Timing.HSyncWidth = returnedTiming.HSyncWidth;
@@ -4978,7 +5017,7 @@ namespace DisplayMagicianShared.NVIDIA
                                     PathInfos[i].TargetInfo[y].Details.Timing.VSyncPol = returnedTiming.VSyncPol;
                                     PathInfos[i].TargetInfo[y].Details.Timing.VSyncWidth = returnedTiming.VSyncWidth;
                                     PathInfos[i].TargetInfo[y].Details.Timing.VTotal = returnedTiming.VTotal;
-                                    PathInfos[i].TargetInfo[y].Details.Timing.VVisible = returnedTiming.VVisible;*/
+                                    PathInfos[i].TargetInfo[y].Details.Timing.VVisible = returnedTiming.VVisible;*//*
 
                                     PathInfos[i].TargetInfo[y].Details.Timing.HBorder = returnedAdvTarget.Timing.HBorder;
                                     PathInfos[i].TargetInfo[y].Details.Timing.HFrontPorch = returnedAdvTarget.Timing.HFrontPorch;
@@ -6933,10 +6972,10 @@ namespace DisplayMagicianShared.NVIDIA
                 status = DRS_EnumSettingsInternal(drsSessionHandle, drsProfileHandle, drsStartIndex, ref drsSettingCount, drsSettingsInternal);
                 drsSettings = new NVDRS_SETTING_V1[drsSettingCount];
                 Array.Copy(drsSettingsInternal, drsSettings, drsSettingCount);
-                /*for (int i = 0; i < drsSettingCount; i++)
+                *//*for (int i = 0; i < drsSettingCount; i++)
                 {
                     drsSettings[i] = drsSettingsInternal[i].Clone();
-                }*/
+                }*//*
 
             }
             else
@@ -7151,4 +7190,4 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
     }
-}
+}*/

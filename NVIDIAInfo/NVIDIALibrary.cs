@@ -9,6 +9,7 @@ using System.ComponentModel;
 using DisplayMagicianShared.Windows;
 using EDIDParser;
 using System.Threading.Tasks;
+using NvAPIWrapper;
 
 namespace DisplayMagicianShared.NVIDIA
 {
@@ -166,7 +167,7 @@ namespace DisplayMagicianShared.NVIDIA
         public bool IsOptimus;
         public NVIDIA_MOSAIC_CONFIG MosaicConfig;
         public Dictionary<UInt32, NVIDIA_PER_ADAPTER_CONFIG> PhysicalAdapters;
-        public List<NV_DISPLAYCONFIG_PATH_INFO_V2> DisplayConfigs;
+        public List<NvAPIWrapper.Native.Interfaces.Display.IPathInfo> DisplayConfigs;
         public List<NVIDIA_DRS_CONFIG> DRSSettings;
         // Note: We purposely have left out the DisplayNames from the Equals as it's order keeps changing after each reboot and after each profile swap
         // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
@@ -189,7 +190,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
             // Now we need to go through the display configs comparing values, as the order changes if there is a cloned display
-            if (!NVIDIALibrary.EqualButDifferentOrder<NV_DISPLAYCONFIG_PATH_INFO_V2>(DisplayConfigs, other.DisplayConfigs))
+            if (!NVIDIALibrary.EqualButDifferentOrder<NvAPIWrapper.Native.Interfaces.Display.IPathInfo>(DisplayConfigs, other.DisplayConfigs))
             {
                 return false;
             }
@@ -369,7 +370,7 @@ namespace DisplayMagicianShared.NVIDIA
             myDefaultConfig.MosaicConfig.MosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[0];
             myDefaultConfig.MosaicConfig.MosaicViewports = new List<NV_RECT[]>();
             myDefaultConfig.PhysicalAdapters = new Dictionary<UInt32, NVIDIA_PER_ADAPTER_CONFIG>();
-            myDefaultConfig.DisplayConfigs = new List<NV_DISPLAYCONFIG_PATH_INFO_V2>();
+            myDefaultConfig.DisplayConfigs = new List<NvAPIWrapper.Native.Interfaces.Display.IPathInfo>();
             myDefaultConfig.DRSSettings = new List<NVIDIA_DRS_CONFIG>();
             myDefaultConfig.DisplayNames = new Dictionary<string, string>();
             myDefaultConfig.DisplayIdentifiers = new List<string>();
@@ -795,8 +796,27 @@ namespace DisplayMagicianShared.NVIDIA
                 //!             Third  Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect
                 //!                               to number of targetInfoCount(from Second Pass).
                 //! SUPPORTED OS:  Windows 7 and higher
+
+                NvAPIWrapper.NVIDIA.Initialize();
+
+                var pathInfos = NvAPIWrapper.Native.DisplayApi.GetDisplayConfig().ToList();
+                int pathInfoCount = pathInfos.Count;
+                for (int x = 0; x < pathInfoCount; x++)
+                {
+                    if (pathInfos[x].TargetsInfo.Count() > 1)
+                    {
+                        // This is a cloned display, we need to mark this NVIDIA display profile as cloned so we correct the profile later
+                        myDisplayConfig.IsCloned = true;
+                    }
+                }
+
+                myDisplayConfig.DisplayConfigs = pathInfos.ToList();
+                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_GetDisplayConfig returned OK on third pass.");
+            
+
                 // First pass: Figure out how many pathInfo objects there are
-                uint pathInfoCount = 0;
+                /*uint pathInfoCount = 0;
+                var pathInfos = NvAPIWrapper.Native.DisplayApi.GetDisplayConfig();
                 NVStatus = NVImport.NvAPI_DISP_GetDisplayConfig(ref pathInfoCount);
                 if (NVStatus == NVAPI_STATUS.NVAPI_OK && pathInfoCount > 0)
                 {
@@ -924,7 +944,7 @@ namespace DisplayMagicianShared.NVIDIA
                 else
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting NVIDIA Display Config! NvAPI_DISP_GetDisplayConfig() returned error code {NVStatus} on first pass");
-                }
+                }*/
 
                 // We want to get the primary monitor
                 NVStatus = NVImport.NvAPI_DISP_GetGDIPrimaryDisplayId(out UInt32 primaryDisplayId);

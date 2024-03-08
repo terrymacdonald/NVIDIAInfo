@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DisplayMagicianShared.NVIDIA
+/*namespace DisplayMagicianShared.NVIDIA
 {
 
 
@@ -62,7 +62,7 @@ namespace DisplayMagicianShared.NVIDIA
     /// <summary>
     ///     Interface for all pointer based handles
     /// </summary>
-    public interface IHandle
+    *//*public interface IHandle
     {
         /// <summary>
         ///     Returns true if the handle is null and not pointing to a valid location in the memory
@@ -73,7 +73,7 @@ namespace DisplayMagicianShared.NVIDIA
         ///     Gets the address of the handle in the memory
         /// </summary>
         IntPtr MemoryAddress { get; }
-    }
+    }*//*
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct ValueTypeReference : IDisposable, IHandle, IEquatable<ValueTypeReference>
@@ -438,4 +438,4 @@ namespace DisplayMagicianShared.NVIDIA
             }
         }
     }
-}
+}*/

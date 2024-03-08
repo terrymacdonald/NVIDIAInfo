@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>NVIDIAInfo</RootNamespace>
     <AssemblyName>NVIDIAInfo</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
@@ -27,6 +27,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -60,6 +61,10 @@
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>..\packages\NLog.4.7.10\lib\net45\NLog.dll</HintPath>
     </Reference>
+    <Reference Include="NvAPIWrapper, Version=0.8.1.101, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\NvAPIWrapper\Debug\net481\NvAPIWrapper.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -77,12 +82,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NvAttributes.cs" />
     <Compile Include="CCD.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="GDI.cs" />
-    <Compile Include="Helpers.cs" />
+    <Compile Include="NvConstants.cs" />
+    <Compile Include="NvDelegates.cs" />
+    <Compile Include="NvDisplay.cs" />
+    <Compile Include="NvExceptions.cs" />
+    <Compile Include="NvGeneral.cs" />
+    <Compile Include="NvHelpers.cs" />
+    <Compile Include="NvMosaic.cs" />
+    <Compile Include="OldHelpers.cs" />
     <Compile Include="NVAPI.cs" />
     <Compile Include="NVIDIALibrary.cs" />
+    <Compile Include="NvInterfaces.cs" />
     <Compile Include="PInvokeDelegateFactory.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
