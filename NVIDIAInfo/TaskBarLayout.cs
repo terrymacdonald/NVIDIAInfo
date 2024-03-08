@@ -85,7 +85,7 @@ namespace DisplayMagicianShared.Windows
                 {
                     // It's not v2 or v3, so it must be a single display
                     MMStuckRectVerFound = false;
-                    SharedLogger.logger.Warn($"TaskBarLayout/ReadFromRegistry: Couldn't find an MMStuckRect2 or MMStuckRect3 registry key! Going to test if it is a single display only.");
+                    SharedLogger.logger.Trace($"TaskBarLayout/ReadFromRegistry: Couldn't find an MMStuckRect2 or MMStuckRect3 registry key! Going to test if it is a single display only.");
                 }
             }
 
@@ -183,34 +183,28 @@ namespace DisplayMagicianShared.Windows
                                 address,
                                 RegistryKeyPermissionCheck.ReadSubTree))
                         {
-                            if (key.GetValueNames().Contains(regKeyValue))
+
+                            var binary = key?.GetValue("Settings") as byte[];
+                            if (binary?.Length > 0)
                             {
-                                var binary = key?.GetValue(regKeyValue) as byte[];
-                                if (binary?.Length > 0)
-                                {
-                                    MainScreen = true;
-                                    RegKeyValue = regKeyValue;
-                                    Binary = binary;
-                                    Version = version;
+                                MainScreen = true;
+                                RegKeyValue = "Settings";
+                                Binary = binary;
+                                Version = version;
 
-                                    // Extract the values from the binary byte field
-                                    PopulateFieldsFromBinary();
+                                // Extract the values from the binary byte field
+                                PopulateFieldsFromBinary();
 
-                                    SharedLogger.logger.Trace($"TaskBarLayout/ReadFromRegistry: The taskbar for {RegKeyValue} is against the {Edge} edge, is positioned at ({TaskBarLocation.X},{TaskBarLocation.Y}) and is {TaskBarLocation.Width}x{TaskBarLocation.Height} in size.");
-                                    return true;
-                                }
-                                else
-                                {
-                                    SharedLogger.logger.Error($"TaskBarLayout/ReadFromRegistry: Unable to get the TaskBarStuckRectangle binary settings from {regKeyValue} screen.");
-                                    retryNeeded = true;
-                                    return false;
-                                }
+                                SharedLogger.logger.Trace($"TaskBarLayout/ReadFromRegistry: The taskbar for {RegKeyValue} is against the {Edge} edge, is positioned at ({TaskBarLocation.X},{TaskBarLocation.Y}) and is {TaskBarLocation.Width}x{TaskBarLocation.Height} in size.");
+                                return true;
                             }
                             else
                             {
-                                SharedLogger.logger.Trace($"TaskBarLayout/ReadFromRegistry: Unable to find {regKeyValue} key in {address}. Screen details may not be available yet in registry.");
+                                SharedLogger.logger.Error($"TaskBarLayout/ReadFromRegistry: Unable to get the TaskBarStuckRectangle binary settings from {regKeyValue} screen.");
+                                retryNeeded = true;
                                 return false;
                             }
+
                         }
                     }
                     catch (Exception ex)
@@ -582,9 +576,10 @@ namespace DisplayMagicianShared.Windows
                     tbsrReadWorked = tbsr.ReadFromRegistry(GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath), out retryNeeded);
                     if (retryNeeded)
                     {
-                        SharedLogger.logger.Error($"TaskBarLayout/GetAllCurrentTaskBarPositions: Taskbar read #1 from registry didn't work.");
+                        SharedLogger.logger.Debug($"TaskBarLayout/GetAllCurrentTaskBarPositions: Additional Display Taskbar read #1 from registry didn't work.");
                         retryNeeded = true;
-                        return taskBarStuckRectangles;
+                        tbsrReadWorked = tbsr.ReadFromRegistry(GetRegKeyValueFromDevicePath(displaySources[monitorInfo.szDevice][0].DevicePath), out retryNeeded);
+                        //return taskBarStuckRectangles;
                     }
                     tbsr.Edge = (TaskBarEdge)abd.uEdge;
                     tbsr.MonitorLocation = new System.Drawing.Rectangle(monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.top, monWidth, monHeight);
@@ -617,11 +612,11 @@ namespace DisplayMagicianShared.Windows
                     // If it's a main screen, also add a duplicate so we track the main StuckRects settings separately too
                     TaskBarLayout tbsrMain = new TaskBarLayout();
                     tbsrReadWorked = tbsrMain.ReadFromRegistry("Settings", out retryNeeded);
-                    if (!retryNeeded)
+                    if (retryNeeded)
                     {
-                        SharedLogger.logger.Error($"TaskBarLayout/GetAllCurrentTaskBarPositions: Taskbar read #1 from registry didn't work.");
+                        SharedLogger.logger.Debug($"TaskBarLayout/GetAllCurrentTaskBarPositions: Main Taskbar read #1 from registry didn't work.");
                         retryNeeded = true;
-                        return taskBarStuckRectangles;
+                        tbsrReadWorked = tbsrMain.ReadFromRegistry("Settings", out retryNeeded);
                     }
                     tbsrMain.Edge = tbsr.Edge;
                     tbsrMain.MonitorLocation = tbsr.MonitorLocation;
