@@ -763,7 +763,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct UnicodeString : IInitializable
+    public struct UnicodeString : IInitializable
     {
         public const int UnicodeStringLength = 2048;
 
