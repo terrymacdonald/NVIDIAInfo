@@ -1,7 +1,4 @@
-﻿using NvAPIWrapper.Native.Display;
-using NvAPIWrapper.Native.Display.Structures;
-using NvAPIWrapper.Native.GPU;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -11,105 +8,177 @@ using System.Threading.Tasks;
 
 namespace DisplayMagicianShared.NVIDIA
 {
-/*    /// <summary>
-    ///     This structure defines a group of topologies that work together to create one overall layout.  All of the supported
-    ///     topologies are represented with this structure.
-    ///     For example, a 'Passive Stereo' topology would be represented with this structure, and would have separate topology
-    ///     details for the left and right eyes. The count would be 2. A 'Basic' topology is also represented by this
-    ///     structure, with a count of 1.
-    ///     The structure is primarily used internally, but is exposed to applications in a read-only fashion because there are
-    ///     some details in it that might be useful (like the number of rows/cols, or connected display information).  A user
-    ///     can get the filled-in structure by calling NvAPI_Mosaic_GetTopoGroup().
-    ///     You can then look at the detailed values within the structure.  There are no entry points which take this structure
-    ///     as input (effectively making it read-only).
+    /*    /// <summary>
+        ///     This structure defines a group of topologies that work together to create one overall layout.  All of the supported
+        ///     topologies are represented with this structure.
+        ///     For example, a 'Passive Stereo' topology would be represented with this structure, and would have separate topology
+        ///     details for the left and right eyes. The count would be 2. A 'Basic' topology is also represented by this
+        ///     structure, with a count of 1.
+        ///     The structure is primarily used internally, but is exposed to applications in a read-only fashion because there are
+        ///     some details in it that might be useful (like the number of rows/cols, or connected display information).  A user
+        ///     can get the filled-in structure by calling NvAPI_Mosaic_GetTopoGroup().
+        ///     You can then look at the detailed values within the structure.  There are no entry points which take this structure
+        ///     as input (effectively making it read-only).
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        [StructureVersion(1)]
+        public struct TopologyGroup : IInitializable, IEquatable<TopologyGroup>
+        {
+            /// <summary>
+            ///     Maximum number of topologies per each group
+            /// </summary>
+            public const int MaxTopologyPerGroup = 2;
+
+            internal StructureVersion _Version;
+            internal readonly TopologyBrief _Brief;
+            internal readonly uint _TopologiesCount;
+
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxTopologyPerGroup)]
+            internal readonly TopologyDetails[]
+                _TopologyDetails;
+
+            /// <summary>
+            ///     The brief details of this topology
+            /// </summary>
+            public TopologyBrief Brief
+            {
+                get => _Brief;
+            }
+
+            /// <summary>
+            ///     Information about the topologies within this group
+            /// </summary>
+            public TopologyDetails[] TopologyDetails
+            {
+                get => _TopologyDetails.Take((int)_TopologiesCount).ToArray();
+            }
+
+            /// <inheritdoc />
+            public bool Equals(TopologyGroup other)
+            {
+                return _Brief.Equals(other._Brief) &&
+                       _TopologiesCount == other._TopologiesCount &&
+                       _TopologyDetails.SequenceEqual(other._TopologyDetails);
+            }
+
+            /// <inheritdoc />
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj))
+                {
+                    return false;
+                }
+
+                return obj is TopologyGroup group && Equals(group);
+            }
+
+            /// <summary>
+            ///     Checks for equality between two objects of same type
+            /// </summary>
+            /// <param name="left">The first object</param>
+            /// <param name="right">The second object</param>
+            /// <returns>true, if both objects are equal, otherwise false</returns>
+            public static bool operator ==(TopologyGroup left, TopologyGroup right)
+            {
+                return left.Equals(right);
+            }
+
+            /// <summary>
+            ///     Checks for inequality between two objects of same type
+            /// </summary>
+            /// <param name="left">The first object</param>
+            /// <param name="right">The second object</param>
+            /// <returns>true, if both objects are not equal, otherwise false</returns>
+            public static bool operator !=(TopologyGroup left, TopologyGroup right)
+            {
+                return !left.Equals(right);
+            }
+
+            /// <inheritdoc />
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    var hashCode = _Brief.GetHashCode();
+                    hashCode = (hashCode * 397) ^ (int)_TopologiesCount;
+                    hashCode = (hashCode * 397) ^ (_TopologyDetails?.GetHashCode() ?? 0);
+
+                    return hashCode;
+                }
+            }
+        }*/
+
+    /// <summary>
+    ///     Contains possible values for color data color space
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    [StructureVersion(1)]
-    public struct TopologyGroup : IInitializable, IEquatable<TopologyGroup>
+    public enum ColorDataColorimetry : uint
     {
         /// <summary>
-        ///     Maximum number of topologies per each group
+        ///     RGB color space
         /// </summary>
-        public const int MaxTopologyPerGroup = 2;
-
-        internal StructureVersion _Version;
-        internal readonly TopologyBrief _Brief;
-        internal readonly uint _TopologiesCount;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxTopologyPerGroup)]
-        internal readonly TopologyDetails[]
-            _TopologyDetails;
+        RGB = 0,
 
         /// <summary>
-        ///     The brief details of this topology
+        ///     YCC601 color space
         /// </summary>
-        public TopologyBrief Brief
-        {
-            get => _Brief;
-        }
+        YCC601,
 
         /// <summary>
-        ///     Information about the topologies within this group
+        ///     YCC709 color space
         /// </summary>
-        public TopologyDetails[] TopologyDetails
-        {
-            get => _TopologyDetails.Take((int)_TopologiesCount).ToArray();
-        }
-
-        /// <inheritdoc />
-        public bool Equals(TopologyGroup other)
-        {
-            return _Brief.Equals(other._Brief) &&
-                   _TopologiesCount == other._TopologiesCount &&
-                   _TopologyDetails.SequenceEqual(other._TopologyDetails);
-        }
-
-        /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            return obj is TopologyGroup group && Equals(group);
-        }
+        YCC709,
 
         /// <summary>
-        ///     Checks for equality between two objects of same type
+        ///     XVYCC601 color space
         /// </summary>
-        /// <param name="left">The first object</param>
-        /// <param name="right">The second object</param>
-        /// <returns>true, if both objects are equal, otherwise false</returns>
-        public static bool operator ==(TopologyGroup left, TopologyGroup right)
-        {
-            return left.Equals(right);
-        }
+        XVYCC601,
 
         /// <summary>
-        ///     Checks for inequality between two objects of same type
+        ///     XVYCC709 color space
         /// </summary>
-        /// <param name="left">The first object</param>
-        /// <param name="right">The second object</param>
-        /// <returns>true, if both objects are not equal, otherwise false</returns>
-        public static bool operator !=(TopologyGroup left, TopologyGroup right)
-        {
-            return !left.Equals(right);
-        }
+        XVYCC709,
 
-        /// <inheritdoc />
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = _Brief.GetHashCode();
-                hashCode = (hashCode * 397) ^ (int)_TopologiesCount;
-                hashCode = (hashCode * 397) ^ (_TopologyDetails?.GetHashCode() ?? 0);
+        /// <summary>
+        ///     SYCC601 color space
+        /// </summary>
+        SYCC601,
 
-                return hashCode;
-            }
-        }
-    }*/
+        /// <summary>
+        ///     ADOBEYCC601 color space
+        /// </summary>
+        ADOBEYCC601,
+
+        /// <summary>
+        ///     ADOBERGB color space
+        /// </summary>
+        ADOBERGB,
+
+        /// <summary>
+        ///     BT2020RGB color space
+        /// </summary>
+        BT2020RGB,
+
+        /// <summary>
+        ///     BT2020YCC color space
+        /// </summary>
+        BT2020YCC,
+
+        /// <summary>
+        ///     BT2020cYCC color space
+        /// </summary>
+        // ReSharper disable once InconsistentNaming
+        BT2020cYCC,
+
+        /// <summary>
+        ///     Default color space
+        /// </summary>
+        Default = 0xFE,
+
+        /// <summary>
+        ///     Automatically select color space
+        /// </summary>
+        Auto = 0xFF
+    }
 
     /// <summary>
     ///     Contains possible values for the color data command

@@ -1,8 +1,4 @@
-﻿using NvAPIWrapper.Native.Display;
-using NvAPIWrapper.Native.GPU;
-using NvAPIWrapper.Native.GPU.Structures;
-using NvAPIWrapper.Native.Mosaic.Structures;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -629,7 +625,7 @@ namespace DisplayMagicianShared.NVIDIA
         ///     Maximum number of displays for this structure
         /// </summary>
         public const int MaxDisplays =
-            PhysicalGPUHandle.PhysicalGPUs * Constants.AdvancedDisplayHeads;
+            PhysicalGPUHandle.PhysicalGPUs * NvConstants.AdvancedDisplayHeads;
 
         internal StructureVersion _Version;
         internal readonly DisplayCapacityProblem _Errors;

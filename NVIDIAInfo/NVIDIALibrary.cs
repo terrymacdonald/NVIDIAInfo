@@ -9,7 +9,6 @@ using System.ComponentModel;
 using DisplayMagicianShared.Windows;
 using EDIDParser;
 using System.Threading.Tasks;
-using NvAPIWrapper;
 
 namespace DisplayMagicianShared.NVIDIA
 {
@@ -18,14 +17,14 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NVIDIA_MOSAIC_CONFIG : IEquatable<NVIDIA_MOSAIC_CONFIG>
     {
         public bool IsMosaicEnabled;
-        public NV_MOSAIC_TOPO_BRIEF MosaicTopologyBrief;
-        public NV_MOSAIC_DISPLAY_SETTING_V2 MosaicDisplaySettings;
+        public TopologyBrief  MosaicTopologyBrief;
+        public DisplaySettingsV2 MosaicDisplaySettings;
         public Int32 OverlapX;
         public Int32 OverlapY;
-        public NV_MOSAIC_GRID_TOPO_V2[] MosaicGridTopos;
+        public GridTopologyV2[] MosaicGridTopos;
         public UInt32 MosaicGridCount;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NVImport.NV_MOSAIC_MAX_DISPLAYS)]
-        public List<NV_RECT[]> MosaicViewports;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (Int32)NvConstants.NV_MOSAIC_MAX_DISPLAYS)]
+        public List<Rectangle[]> MosaicViewports;
         public UInt32 PrimaryDisplayId;
 
         public override bool Equals(object obj) => obj is NVIDIA_MOSAIC_CONFIG other && this.Equals(other);
@@ -4084,7 +4083,7 @@ namespace DisplayMagicianShared.NVIDIA
             return screensToReturn.ToArray();
         }
 
-        public static bool ListOfArraysEqual(List<NV_RECT[]> a1, List<NV_RECT[]> a2)
+        public static bool ListOfArraysEqual(List<Rectangle[]> a1, List<Rectangle[]> a2)
         {
             if (a1.Count == a2.Count)
             {

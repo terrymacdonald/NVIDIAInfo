@@ -1,18 +1,8 @@
-﻿using NvAPIWrapper.Native.Display;
-using NvAPIWrapper.Native.Display.Structures;
-using NvAPIWrapper.Native.General;
-using NvAPIWrapper.Native.GPU.Structures;
-using NvAPIWrapper.Native.GPU;
-using NvAPIWrapper.Native.Interfaces.Display;
-using NvAPIWrapper.Native.Interfaces.Mosaic;
-using NvAPIWrapper.Native.Mosaic;
-using NvAPIWrapper.Native.Mosaic.Structures;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NvAPIWrapper.Native.Interfaces.GPU;
 
 namespace DisplayMagicianShared.NVIDIA
 {
