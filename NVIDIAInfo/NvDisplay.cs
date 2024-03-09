@@ -3328,6 +3328,232 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
+    /// <inheritdoc />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct DVStaticMetadata: IDVStaticMetadata
+    {
+        // TODO: FIX THIS! This actually hasn't been set up properly, but is a simple copy of DisplayColorData, waiting for us to modify it to actually become DVStaticMetadata
+        // We need to write an Interface for this.
+
+        /*struct
+        {
+            NvU32 VSVDB_version               : 3;                //!< Version of Vendor Data block,Version 0: 25 bytes  Version 1: 14 bytes
+            NvU32 dm_version                  : 8;                //!< Upper Nibble represents major version of Display Management(DM) while lower represents minor version of DM
+            NvU32 supports_2160p60hz          : 1;                //!< If set sink is capable of 4kx2k @ 60hz
+            NvU32 supports_YUV422_12bit       : 1;                //!< If set, sink is capable of YUV422-12 bit
+            NvU32 supports_global_dimming     : 1;                //!< Indicates if sink supports global dimming
+            NvU32 colorimetry                 : 1;                //!< If set indicates sink supports DCI P3 colorimetry, REc709 otherwise
+            NvU32 supports_backlight_control  : 2;                //!< This is set when sink is using lowlatency interface and can control its backlight.
+            NvU32 backlt_min_luma             : 2;                //!< It is the level for Backlt min luminance value.
+            NvU32 interface_supported_by_sink : 2;                //!< Indicates the interface (standard or low latency) supported by the sink.
+            NvU32 supports_10b_12b_444        : 2;                //!< It is set when interface supported is low latency, it tells whether it supports 10 bit or 12 bit RGB 4:4:4 or YCbCr 4:4:4 or both.
+            NvU32 reserved                    : 9;                //!< Should be set to zero
+                                                                  //!< All values below are encoded use DolbyVisionHDMITransmissionSpecification document to decode
+            NvU16 target_min_luminance;                           //!< Represents min luminance level of Sink
+            NvU16 target_max_luminance;                           //!< Represents max luminance level of sink
+            NvU16 cc_red_x;                                       //!< Red primary chromaticity coordinate x
+            NvU16 cc_red_y;                                       //!< Red primary chromaticity coordinate y
+            NvU16 cc_green_x;                                     //!< Green primary chromaticity coordinate x
+            NvU16 cc_green_y;                                     //!< Green primary chromaticity coordinate Y
+            NvU16 cc_blue_x;                                      //!< Blue primary chromaticity coordinate x
+            NvU16 cc_blue_y;                                      //!< Blue primary chromaticity coordinate y
+            NvU16 cc_white_x;                                     //!< White primary chromaticity coordinate x
+            NvU16 cc_white_y;                                     //!< White primary chromaticity coordinate y
+        }
+        dv_static_metadata;*/
+
+
+
+        private readonly UInt32 _Flags;
+        private readonly UInt16 _TargetMinLuminance;
+        private readonly UInt16 _TargetMaxLuminance;
+        private readonly UInt16 _CCRedX;
+        private readonly UInt16 _CCRedY;
+        private readonly UInt16 _CCGreenX;
+        private readonly UInt16 _CCGreenY;
+        private readonly UInt16 _CCBlueX;
+        private readonly UInt16 _CCBlueY;
+        private readonly UInt16 _CCWhiteX;
+        private readonly UInt16 _CCWhiteY;
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 Flags
+        {
+            get => _Flags;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 TargetMinLuminance
+        {
+            get => _TargetMinLuminance;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 TargetMaxLuminance
+        {
+            get => _TargetMaxLuminance;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 CCRedX
+        {
+            get => _CCRedX;
+        }
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 CCRedY
+        {
+            get => _CCRedY;
+        }
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 CCGreenX
+        {
+            get => _CCGreenX;
+        }
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 CCGreenY
+        {
+            get => _CCGreenY;
+        }
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 CCBlueX
+        {
+            get => _CCBlueX;
+        }
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 CCBlueY
+        {
+            get => _CCBlueY;
+        }
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 CCWhiteX
+        {
+            get => _CCWhiteX;
+        }
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public UInt32 CCWhiteY
+        {
+            get => _CCWhiteY;
+        }
+    }
+
+    /// <inheritdoc />
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct HDR10PlusVSVDB : IDisplayColorData
+    {
+        // TODO: FIX THIS! This actually hasn't been set up properly, but is a simple copy of DisplayColorData, waiting for us to modify it to actually become HDR10PlusVSVDB
+        // We need to write an Interface for this.
+
+        /*struct
+        {
+            NvU32 VSVDB_version               : 3;                //!< Version of Vendor Data block,Version 0: 25 bytes  Version 1: 14 bytes
+            NvU32 dm_version                  : 8;                //!< Upper Nibble represents major version of Display Management(DM) while lower represents minor version of DM
+            NvU32 supports_2160p60hz          : 1;                //!< If set sink is capable of 4kx2k @ 60hz
+            NvU32 supports_YUV422_12bit       : 1;                //!< If set, sink is capable of YUV422-12 bit
+            NvU32 supports_global_dimming     : 1;                //!< Indicates if sink supports global dimming
+            NvU32 colorimetry                 : 1;                //!< If set indicates sink supports DCI P3 colorimetry, REc709 otherwise
+            NvU32 supports_backlight_control  : 2;                //!< This is set when sink is using lowlatency interface and can control its backlight.
+            NvU32 backlt_min_luma             : 2;                //!< It is the level for Backlt min luminance value.
+            NvU32 interface_supported_by_sink : 2;                //!< Indicates the interface (standard or low latency) supported by the sink.
+            NvU32 supports_10b_12b_444        : 2;                //!< It is set when interface supported is low latency, it tells whether it supports 10 bit or 12 bit RGB 4:4:4 or YCbCr 4:4:4 or both.
+            NvU32 reserved                    : 9;                //!< Should be set to zero
+                                                                  //!< All values below are encoded use DolbyVisionHDMITransmissionSpecification document to decode
+            NvU16 target_min_luminance;                           //!< Represents min luminance level of Sink
+            NvU16 target_max_luminance;                           //!< Represents max luminance level of sink
+            NvU16 cc_red_x;                                       //!< Red primary chromaticity coordinate x
+            NvU16 cc_red_y;                                       //!< Red primary chromaticity coordinate y
+            NvU16 cc_green_x;                                     //!< Green primary chromaticity coordinate x
+            NvU16 cc_green_y;                                     //!< Green primary chromaticity coordinate Y
+            NvU16 cc_blue_x;                                      //!< Blue primary chromaticity coordinate x
+            NvU16 cc_blue_y;                                      //!< Blue primary chromaticity coordinate y
+            NvU16 cc_white_x;                                     //!< White primary chromaticity coordinate x
+            NvU16 cc_white_y;                                     //!< White primary chromaticity coordinate y
+        }
+        dv_static_metadata;
+        
+         
+         struct
+        {
+            NvU16 application_version               : 2;          //!< Application version of HDR10+ Vendor Specific Video Data Block
+            NvU16 full_frame_peak_luminance_index   : 2;          //!< Full frame peak luminance index
+            NvU16 peak_luminance_index              : 4;          //!< Peak luminance index
+            NvU16 reserved                          : 8;
+        }hdr10plus_vsvdb;
+        */
+
+        private readonly ColorDataColorCoordinate _FirstColorCoordinate;
+        private readonly ColorDataColorCoordinate _SecondColorCoordinate;
+        private readonly ColorDataColorCoordinate _ThirdColorCoordinate;
+        private readonly ColorDataColorCoordinate _WhiteColorCoordinate;
+        private readonly ushort _MaximumDesiredContentLuminance;
+        private readonly ushort _MinimumDesiredContentLuminance;
+        private readonly ushort _MaximumDesiredFrameAverageLightLevel;
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate FirstColorCoordinate
+        {
+            get => _FirstColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate SecondColorCoordinate
+        {
+            get => _SecondColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate ThirdColorCoordinate
+        {
+            get => _ThirdColorCoordinate;
+        }
+
+        /// <inheritdoc />
+        // ReSharper disable once ConvertToAutoProperty
+        public ColorDataColorCoordinate WhiteColorCoordinate
+        {
+            get => _WhiteColorCoordinate;
+        }
+
+        /// <summary>
+        ///     Gets the maximum desired content luminance [1.0-65535] in cd/m^2
+        /// </summary>
+        public float MaximumDesiredContentLuminance
+        {
+            get => _MaximumDesiredContentLuminance;
+        }
+
+        /// <summary>
+        ///     Gets the maximum desired content frame average light level (a.k.a MaxFALL) [1.0-65535] in cd/m^2
+        /// </summary>
+        public float MaximumDesiredContentFrameAverageLightLevel
+        {
+            get => _MaximumDesiredFrameAverageLightLevel;
+        }
+
+        /// <summary>
+        ///     Gets the maximum desired content luminance [1.0-6.5535] in cd/m^2
+        /// </summary>
+        public float MinimumDesiredContentLuminance
+        {
+            get => _MinimumDesiredContentLuminance / 10000f;
+        }
+    }
+
+
+
     /// <summary>
     ///     DisplayHandle is a one-to-one map to the GDI handle of an attached display in the Windows Display Properties
     ///     Settings page.
@@ -3650,6 +3876,154 @@ namespace DisplayMagicianShared.NVIDIA
             get => _RawReserved.GetBit(4);
         }
     }
+
+    /// <summary>
+    ///     Contains information regarding HDR capabilities of a display
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(2)]
+    public struct HDRCapabilitiesV2 : IInitializable
+    {
+        internal StructureVersion _Version;
+        private readonly uint _RawReserved;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly StaticMetadataDescriptorId _StaticMetadataDescriptorId;
+        private readonly DisplayColorData _DisplayData;
+        private readonly DVStaticMetadata _DVStaticMetadata;
+
+        internal HDRCapabilitiesV2(bool expandDriverDefaultHDRParameters)
+        {
+            this = typeof(HDRCapabilitiesV2).Instantiate<HDRCapabilitiesV2>();
+            _RawReserved = 0u.SetBit(3, expandDriverDefaultHDRParameters);
+            _StaticMetadataDescriptorId = StaticMetadataDescriptorId.StaticMetadataType1;
+        }
+
+        /// <summary>
+        ///     Gets the display color space configurations
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public DisplayColorData DisplayData
+        {
+            get => _DisplayData;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a UHDA HDR with ST2084 EOTF (CEA861.3) is supported.
+        /// </summary>
+        public bool IsST2084EOTFSupported
+        {
+            get => _RawReserved.GetBit(0);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a traditional HDR gamma (CEA861.3) is supported.
+        /// </summary>
+        public bool IsTraditionalHDRGammaSupported
+        {
+            get => _RawReserved.GetBit(1);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the Extended Dynamic Range on SDR displays is supported.
+        /// </summary>
+        public bool IsEDRSupported
+        {
+            get => _RawReserved.GetBit(2);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the default EDID HDR parameters is expanded;
+        ///     otherwise false if this instance contains actual HDR parameters.
+        /// </summary>
+        public bool IsDriverDefaultHDRParametersExpanded
+        {
+            get => _RawReserved.GetBit(3);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a traditional SDR gamma is supported.
+        /// </summary>
+        public bool IsTraditionalSDRGammaSupported
+        {
+            get => _RawReserved.GetBit(4);
+        }
+    }
+
+    /// <summary>
+    ///     Contains information regarding HDR capabilities of a display
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(3)]
+    public struct HDRCapabilitiesV3 : IInitializable
+    {
+        internal StructureVersion _Version;
+        private readonly uint _RawReserved;
+
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly StaticMetadataDescriptorId _StaticMetadataDescriptorId;
+        private readonly DisplayColorData _DisplayData;
+        private readonly DVStaticMetadata _DVStaticMetadata;
+        private readonly HDR10PlusVSVDB _HDR10PlusVSVDB;
+
+        internal HDRCapabilitiesV3(bool expandDriverDefaultHDRParameters)
+        {
+            this = typeof(HDRCapabilitiesV3).Instantiate<HDRCapabilitiesV3>();
+            _RawReserved = 0u.SetBit(3, expandDriverDefaultHDRParameters);
+            _StaticMetadataDescriptorId = StaticMetadataDescriptorId.StaticMetadataType1;
+        }
+
+        /// <summary>
+        ///     Gets the display color space configurations
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        public DisplayColorData DisplayData
+        {
+            get => _DisplayData;
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a UHDA HDR with ST2084 EOTF (CEA861.3) is supported.
+        /// </summary>
+        public bool IsST2084EOTFSupported
+        {
+            get => _RawReserved.GetBit(0);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a traditional HDR gamma (CEA861.3) is supported.
+        /// </summary>
+        public bool IsTraditionalHDRGammaSupported
+        {
+            get => _RawReserved.GetBit(1);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the Extended Dynamic Range on SDR displays is supported.
+        /// </summary>
+        public bool IsEDRSupported
+        {
+            get => _RawReserved.GetBit(2);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the default EDID HDR parameters is expanded;
+        ///     otherwise false if this instance contains actual HDR parameters.
+        /// </summary>
+        public bool IsDriverDefaultHDRParametersExpanded
+        {
+            get => _RawReserved.GetBit(3);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a traditional SDR gamma is supported.
+        /// </summary>
+        public bool IsTraditionalSDRGammaSupported
+        {
+            get => _RawReserved.GetBit(4);
+        }
+    }
+
 
     /// <inheritdoc cref="IHDRColorData" />
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
