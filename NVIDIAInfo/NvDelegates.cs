@@ -1273,6 +1273,41 @@ namespace DisplayMagicianShared.NVIDIA
             [Accepts(typeof(QueryIlluminationSupportParameterV1))] [In]
             ValueTypeReference illuminationSupportInfo);
 
+
+        ///////////////////////////////////////////////////////////////////////////////
+        // FUNCTION NAME:   NvAPI_GPU_QueryWorkstationFeatureSupport
+        //
+        //! \fn NvAPI_GPU_QueryWorkstationFeatureSupport(NvPhysicalGpuHandle physicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE gpuWorkstationFeature)
+        //! \code
+        //! DESCRIPTION:     Indicates whether a queried workstation feature is supported by the requested GPU.
+        //!
+        //! SUPPORTED OS:  Windows 10 and higher
+        //!
+        //! \since Release: 440
+        //!
+        //! DESCRIPTION:     This API, when called with a valid physical gpu handle as Input, lets caller know whether the given workstation feature is supported by this GPU.
+        //!
+        //! PARAMETERS:      physicalGpu(IN)            : The handle of the GPU for the which caller wants to get the support information.
+        //!                  gpuWorkstationFeature(IN ) : The feature for the GPU in question. One of the values from enum NV_GPU_WORKSTATION_FEATURE_TYPE.
+        //!
+        //! \return  This API can return any of the error codes enumerated in #NvAPI_Status listed below
+        //!
+        //! \retval ::NVAPI_OK the queried workstation feature is supported on the given GPU.
+        //! \retval ::NVAPI_NO_IMPLEMENTATION the current driver doesn't support this interface.
+        //! \retval ::NVAPI_INVALID_HANDLE the incoming physicalGpu handle is invalid.
+        //! \retval ::NVAPI_NOT_SUPPORTED the requested gpuWorkstationFeature is not supported in the selected GPU.
+        //! \retval ::NVAPI_SETTING_NOT_FOUND the requested gpuWorkstationFeature is unknown to the current driver version.
+        //!
+        //! \endcode
+        //! \ingroup gpu
+        ///////////////////////////////////////////////////////////////////////////////
+        //API_INTERFACE NvAPI_GPU_QueryWorkstationFeatureSupport(NvPhysicalGpuHandle physicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE gpuWorkstationFeature);
+        [FunctionId(FunctionId.NvAPI_GPU_QueryWorkstationFeatureSupport)]
+        public delegate Status NvAPI_GPU_QueryWorkstationFeatureSupport(
+        );
+
+
+
         [FunctionId(FunctionId.NvAPI_GPU_ResetECCErrorInfo)]
         public delegate Status NvAPI_GPU_ResetECCErrorInfo(
             [In] PhysicalGPUHandle physicalGpu,
