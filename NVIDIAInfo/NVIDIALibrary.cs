@@ -53,14 +53,14 @@ namespace DisplayMagicianShared.NVIDIA
     public struct NVIDIA_PER_DISPLAY_CONFIG : IEquatable<NVIDIA_PER_DISPLAY_CONFIG>
     {
         public bool HasNvHdrEnabled;
-        public hdr HdrCapabilities;
-        public NV_HDR_COLOR_DATA_V2 HdrColorData;
+        public HDRCapabilitiesV2 HdrCapabilities;
+        public HDRColorDataV2 HdrColorData;
         public bool HasAdaptiveSync;
         public NV_SET_ADAPTIVE_SYNC_DATA_V1 AdaptiveSyncConfig;
         public bool HasColorData;
-        public NV_COLOR_DATA_V5 ColorData;
+        public ColorDataV5 ColorData;
         public bool HasCustomDisplay;
-        public List<NV_CUSTOM_DISPLAY_V1> CustomDisplays;
+        public List<CustomDisplay> CustomDisplays;
 
 
         public override bool Equals(object obj) => obj is NVIDIA_PER_DISPLAY_CONFIG other && this.Equals(other);
@@ -115,8 +115,8 @@ namespace DisplayMagicianShared.NVIDIA
     {
         //public bool HasDRSSettings;
         public bool IsBaseProfile;
-        public NVDRS_PROFILE_V1 ProfileInfo;
-        public List<NVDRS_SETTING_V1> DriverSettings;
+        public DRSProfileV1 ProfileInfo;
+        public List<DRSSettingV1> DriverSettings;
         public override bool Equals(object obj) => obj is NVIDIA_DRS_CONFIG other && this.Equals(other);
         public bool Equals(NVIDIA_DRS_CONFIG other)
         => IsBaseProfile == other.IsBaseProfile &&
@@ -166,7 +166,7 @@ namespace DisplayMagicianShared.NVIDIA
         public bool IsOptimus;
         public NVIDIA_MOSAIC_CONFIG MosaicConfig;
         public Dictionary<UInt32, NVIDIA_PER_ADAPTER_CONFIG> PhysicalAdapters;
-        public List<NvAPIWrapper.Native.Interfaces.Display.IPathInfo> DisplayConfigs;
+        public List<PathInfoV2> DisplayConfigs;
         public List<NVIDIA_DRS_CONFIG> DRSSettings;
         // Note: We purposely have left out the DisplayNames from the Equals as it's order keeps changing after each reboot and after each profile swap
         // and it is informational only and doesn't contribute to the configuration (it's used for generating the Screens structure, and therefore for
@@ -216,7 +216,7 @@ namespace DisplayMagicianShared.NVIDIA
 
         private bool _initialised = false;
         private NVIDIA_DISPLAY_CONFIG _activeDisplayConfig;
-        public List<NV_MONITOR_CONN_TYPE> SkippedColorConnectionTypes;
+        public List<MonitorConnectionType> SkippedColorConnectionTypes;
         public List<string> _allConnectedDisplayIdentifiers;
 
         // To detect redundant calls
@@ -229,12 +229,12 @@ namespace DisplayMagicianShared.NVIDIA
         public NVIDIALibrary()
         {
             // Populate the list of ConnectionTypes we want to skip as they don't support querying
-            SkippedColorConnectionTypes = new List<NV_MONITOR_CONN_TYPE> {
-                NV_MONITOR_CONN_TYPE.VGA,
-                NV_MONITOR_CONN_TYPE.COMPONENT,
-                NV_MONITOR_CONN_TYPE.SVIDEO,
-                NV_MONITOR_CONN_TYPE.DVI,
-                NV_MONITOR_CONN_TYPE.COMPOSITE,
+            SkippedColorConnectionTypes = new List<MonitorConnectionType> {
+                MonitorConnectionType.VGA,
+                MonitorConnectionType.Component,
+                MonitorConnectionType.Composite,
+                MonitorConnectionType.SVideo,
+                MonitorConnectionType.DVI,
             };
 
             _activeDisplayConfig = CreateDefaultConfig();
@@ -251,7 +251,7 @@ namespace DisplayMagicianShared.NVIDIA
                 _initialised = false;
                 try
                 {
-                    if (NVImport.IsAvailable())
+                    if (NVAPI.IsAvailable())
                     {
                         _initialised = true;
                         SharedLogger.logger.Trace($"NVIDIALibrary/NVIDIALibrary: NVIDIA NVAPI library was initialised successfully");
@@ -414,9 +414,9 @@ namespace DisplayMagicianShared.NVIDIA
                 List<UInt32> foundDisplayIds = new List<uint>();
 
                 // Enumerate all the Physical GPUs
-                PhysicalGpuHandle[] physicalGpus = new PhysicalGpuHandle[NVImport.NVAPI_MAX_PHYSICAL_GPUS];
+                PhysicalGPUHandle[] physicalGpus = new PhysicalGPUHandle[NvConstants.NVAPI_MAX_PHYSICAL_GPUS];
                 uint physicalGpuCount = 0;
-                Status NVStatus = NVImport.NvAPI_EnumPhysicalGPUs(ref physicalGpus, out physicalGpuCount);
+                Status NVStatus = NVAPI.EnumPhysicalGPUs(ref physicalGpus, out physicalGpuCount);
                 if (NVStatus == Status.Ok)
                 {
                     SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_EnumPhysicalGPUs returned {physicalGpuCount} Physical GPUs");
@@ -438,7 +438,7 @@ namespace DisplayMagicianShared.NVIDIA
                 {
                     // Prepare the physicalGPU per adapter structure to use later
                     NVIDIA_PER_ADAPTER_CONFIG myAdapter = new NVIDIA_PER_ADAPTER_CONFIG();
-                    myAdapter.LogicalGPU.PhysicalGPUHandles = new PhysicalGpuHandle[0];
+                    myAdapter.LogicalGPU.PhysicalGPUHandles = new PhysicalGPUHandle[0];
                     myAdapter.IsQuadro = false;
                     myAdapter.HasLogicalGPU = false;
                     myAdapter.Displays = new Dictionary<uint, NVIDIA_PER_DISPLAY_CONFIG>();
@@ -476,8 +476,8 @@ namespace DisplayMagicianShared.NVIDIA
 
 
                     // Firstly let's get the logical GPU from the Physical handle
-                    LogicalGpuHandle logicalGPUHandle;
-                    NVStatus = NVImport.NvAPI_GetLogicalGPUFromPhysicalGPU(physicalGpus[physicalGpuIndex], out logicalGPUHandle);
+                    LogicalGPUHandle logicalGPUHandle;
+                    NVStatus = NVAPI.GetLogicalGPUFromPhysicalGPU(physicalGpus[physicalGpuIndex], out logicalGPUHandle);
                     if (NVStatus == Status.Ok)
                     {
                         SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Successfully got Logical GPU Handle from physical GPU.");
@@ -673,11 +673,11 @@ namespace DisplayMagicianShared.NVIDIA
                     myDisplayConfig.MosaicConfig.MosaicGridTopos = mosaicGridTopos;
                     myDisplayConfig.MosaicConfig.MosaicGridCount = mosaicGridCount;
 
-                    List<NV_RECT[]> allViewports = new List<NV_RECT[]>();
+                    List<Rectangle[]> allViewports = new List<Rectangle[]>();
                     foreach (NV_MOSAIC_GRID_TOPO_V2 gridTopo in mosaicGridTopos)
                     {
                         // Get Current Mosaic Grid settings using the Grid topologies numbers we got before
-                        NV_RECT[] viewports = new NV_RECT[NVImport.NV_MOSAIC_MAX_DISPLAYS];
+                        Rectangle[] viewports = new Rectangle[NvConstants.NV_MOSAIC_MAX_DISPLAYS];
                         byte bezelCorrected = 0;
                         NVStatus = NVAPI.GetDisplayViewportsByResolution(gridTopo.Displays[0].DisplayId, 0, 0, ref viewports, ref bezelCorrected);
                         if (NVStatus == Status.Ok)
@@ -1484,7 +1484,7 @@ namespace DisplayMagicianShared.NVIDIA
                                 drsConfig.IsBaseProfile = true;
 
                                 // Next we grab the Profile Info and store it
-                                NVDRS_PROFILE_V1 drsProfileInfo = new NVDRS_PROFILE_V1();
+                                DRSProfileV1 drsProfileInfo = new DRSProfileV1();
                                 NVStatus = NVAPI.GetProfileInfo(drsSessionHandle, drsProfileHandle, ref drsProfileInfo);
                                 if (NVStatus == Status.Ok)
                                 {
@@ -3965,7 +3965,7 @@ namespace DisplayMagicianShared.NVIDIA
             return stringToReturn;
         }
 
-        public static NV_MOSAIC_GRID_TOPO_V2[] CreateSingleScreenMosaicTopology()
+        public static IGridTopology[] CreateSingleScreenMosaicTopology()
         {
 
             // Figure out how many Mosaic Grid topoligies there are                    
@@ -3977,7 +3977,7 @@ namespace DisplayMagicianShared.NVIDIA
             }
 
             // Get Current Mosaic Grid settings using the Grid topologies fnumbers we got before
-            NV_MOSAIC_GRID_TOPO_V2[] mosaicGridTopos = new NV_MOSAIC_GRID_TOPO_V2[mosaicGridCount];
+            GridTopologyV2[] mosaicGridTopos = new GridTopologyV2[mosaicGridCount];
             NVStatus = NVAPI.EnumDisplayGrids(ref mosaicGridTopos, ref mosaicGridCount);
             if (NVStatus == Status.Ok)
             {
@@ -4010,9 +4010,9 @@ namespace DisplayMagicianShared.NVIDIA
 
             // Sum up all the screens we have
             //int totalScreenCount = mosaicGridTopos.Select(tp => tp.Displays).Sum(d => d.Count());
-            List<NV_MOSAIC_GRID_TOPO_V2> screensToReturn = new List<NV_MOSAIC_GRID_TOPO_V2>();
+            List<GridTopologyV2> screensToReturn = new List<GridTopologyV2>();
 
-            foreach (NV_MOSAIC_GRID_TOPO_V2 gridTopo in mosaicGridTopos)
+            foreach (GridTopologyV2 gridTopo in mosaicGridTopos)
             {
                 // Figure out how many Mosaic Display topologies there are                    
                 UInt32 mosaicDisplayModesCount = 0;
@@ -4024,7 +4024,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                 // Get Current Mosaic Display Topology settings using the Grid topologies numbers we got before
                 //NV_MOSAIC_TOPO myGridTopo = gridTopo;
-                NV_MOSAIC_DISPLAY_SETTING_V2[] mosaicDisplaySettings = new NV_MOSAIC_DISPLAY_SETTING_V2[mosaicDisplayModesCount];
+                DisplaySettingsV2[] mosaicDisplaySettings = new DisplaySettingsV2[mosaicDisplayModesCount];
                 NVStatus = NVAPI.EnumDisplayModes(gridTopo, ref mosaicDisplaySettings, ref mosaicDisplayModesCount);
                 if (NVStatus == Status.Ok)
                 {
@@ -4057,7 +4057,7 @@ namespace DisplayMagicianShared.NVIDIA
 
                 for (int displayIndexToUse = 0; displayIndexToUse < gridTopo.DisplayCount; displayIndexToUse++)
                 {
-                    NV_MOSAIC_GRID_TOPO_V2 thisScreen = new NV_MOSAIC_GRID_TOPO_V2();
+                    DisplaySettingsV2 thisScreen = new DisplaySettingsV2();
                     thisScreen.Version = NVImport.NV_MOSAIC_GRID_TOPO_V2_VER;
                     thisScreen.Rows = 1;
                     thisScreen.Columns = 1;
@@ -4095,7 +4095,7 @@ namespace DisplayMagicianShared.NVIDIA
                     {
                         for (int j = 0; j < a1[i].Length; j++)
                         {
-                            if (a1[i][j] != a2[i][j])
+                            if (!a1[i][j].Equals(a2[i][j]))
                             {
                                 return false;
                             }

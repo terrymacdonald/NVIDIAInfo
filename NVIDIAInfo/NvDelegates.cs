@@ -426,6 +426,18 @@ namespace DisplayMagicianShared.NVIDIA
             ValueTypeArray gridTopologies,
             [In][Out] ref DisplayTopologyStatus[] topoStatuses,
             [In] uint gridCount);
+
+        //NVAPI_INTERFACE NvAPI_Mosaic_GetDisplayViewportsByResolution(NvU32 displayId, NvU32 srcWidth, NvU32 srcHeight, NV_RECT viewports[NV_MOSAIC_MAX_DISPLAYS], NvU8* bezelCorrected);
+        [FunctionId(FunctionId.NvAPI_Mosaic_GetDisplayViewportsByResolution)]
+        public delegate Status NvAPI_Mosaic_GetDisplayViewportsByResolution(
+            [In] UInt32 sdisplayId,
+            [In] UInt32 srcWidth,
+            [In] UInt32 srcHeight,
+            [Out] 
+            [Accepts(typeof(ViewPortF))]
+            ValueTypeArray viewports,
+            [Out] byte bezelCorrected);
+
     }
 
     // ReSharper disable InconsistentNaming

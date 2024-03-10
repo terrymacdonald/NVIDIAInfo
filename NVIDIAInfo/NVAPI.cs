@@ -2173,6 +2173,40 @@ namespace DisplayMagicianShared.NVIDIA
             return result;
         }
 
+
+        /// <summary>
+        ///     This API returns a structure filled with the details of the specified Mosaic topology.
+        ///     If the pTopoBrief passed in matches the current topology, then information in the brief and group structures will
+        ///     reflect what is current. Thus the brief would have the current 'enable' status, and the group would have the
+        ///     current overlap values. If there is no match, then the returned brief has an 'enable' status of FALSE (since it is
+        ///     obviously not enabled), and the overlap values will be 0.
+        /// </summary>
+        /// <param name="topoBrief">
+        ///     The topology for getting the details. This must be one of the topology briefs returned from
+        ///     GetSupportedTopoInfo().
+        /// </param>
+        /// <returns>The topology details matching the brief</returns>
+        /// <exception cref="NVIDIAApiException">Status.NotSupported: Mosaic is not supported with the existing hardware.</exception>
+        /// <exception cref="NVIDIAApiException">Status.InvalidArgument: One or more arguments passed in are invalid.</exception>
+        /// <exception cref="NVIDIAApiException">Status.ApiNotInitialized: The NvAPI API needs to be initialized first.</exception>
+        /// <exception cref="NVIDIAApiException">Status.NoImplementation: This entry point not available.</exception>
+        /// <exception cref="NVIDIAApiException">Status.Error: Miscellaneous error occurred.</exception>
+        public static TopologyGroup GetDisplayViewportsByResolution(UInt32 sdisplayId, UInt32 srcWidth, UInt32 srcHeight)
+        {
+            var viewports = typeof(ViewPortF).Instantiate<ViewPortF>();
+            byte bezelCorrected = 0;
+         var status =
+                DelegateFactory.GetDelegate<MosaicDelegates.NvAPI_Mosaic_GetDisplayViewportsByResolution>()(sdisplayId, srcWidth, srcHeight, ref viewports, ref bezelCorrected);
+
+            if (status != Status.Ok)
+            {
+                throw new NVIDIAApiException(status);
+            }
+
+            return result;
+        }
+
+
         /// <summary>
         ///     This API sets the Mosaic topology and performs a mode switch using the given display settings.
         /// </summary>
