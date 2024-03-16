@@ -1567,6 +1567,12 @@ namespace DisplayMagicianShared.NVIDIA
         BusInterface
     }
 
+    public enum WorkstationFeatureType : UInt32
+    {
+        NvidiaRTXVRReady = 1,  //!< NVIDIA RTX VR Ready
+        QyadroVRReady = NvidiaRTXVRReady,  //!< DEPRECATED name - do not use
+        Proviz = 2,
+    }
 
 
 
@@ -1985,6 +1991,39 @@ namespace DisplayMagicianShared.NVIDIA
                 $"{AvailableDedicatedVideoMemoryInkB / 1024} MB ({CurrentAvailableDedicatedVideoMemoryInkB / 1024} MB) / {DedicatedVideoMemoryInkB / 1024} MB";
         }
     }
+
+
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    public struct LogicalGPUData : IEquatable<LogicalGPUData>, ICloneable // Note: Version 1 of NV_BOARD_INFO_V1 structure
+    {
+        public UInt32 Version;                   //!< structure version
+        public IntPtr OSAdapterId;
+        public UInt32 PhysicalGPUCount;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)PhysicalGPUHandle.MaxPhysicalGPUs)]
+        public PhysicalGPUHandle[] PhysicalGPUHandles;
+        public UInt32 Reserved;
+
+        public override bool Equals(object obj) => obj is LogicalGPUData other && this.Equals(other);
+
+        public bool Equals(LogicalGPUData other)
+        => Version == other.Version &&
+           PhysicalGPUCount == other.PhysicalGPUCount &&
+           PhysicalGPUHandles.SequenceEqual(other.PhysicalGPUHandles);
+
+        public override Int32 GetHashCode()
+        {
+            return (Version, PhysicalGPUCount, PhysicalGPUHandles).GetHashCode();
+        }
+        public static bool operator ==(LogicalGPUData lhs, LogicalGPUData rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(LogicalGPUData lhs, LogicalGPUData rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            LogicalGPUData other = (LogicalGPUData)MemberwiseClone();
+            return other;
+        }
+    }
+
 
     /// <summary>
     ///     Holds information about the system's display driver memory.

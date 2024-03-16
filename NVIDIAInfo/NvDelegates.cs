@@ -167,6 +167,18 @@ namespace DisplayMagicianShared.NVIDIA
             [In][Accepts(typeof(CustomDisplay))] ValueTypeArray customDisplays
         );
 
+        [FunctionId(FunctionId.NvAPI_DISP_GetAdaptiveSyncData)]
+        public delegate Status NvAPI_DISP_GetAdaptiveSyncData(
+            [In] uint displayId,
+            [In][Accepts(typeof(AdaptiveSyncData))] ValueTypeReference adaptiveSyncData
+        );
+
+        [FunctionId(FunctionId.NvAPI_DISP_SetAdaptiveSyncData)]
+        public delegate Status NvAPI_DISP_SetAdaptiveSyncData(
+            [In] uint displayId,
+            [In][Accepts(typeof(AdaptiveSyncData))] ValueTypeReference adaptiveSyncData
+        );
+
         [FunctionId(FunctionId.NvAPI_EnumNvidiaDisplayHandle)]
         public delegate Status NvAPI_EnumNvidiaDisplayHandle(
             [In] uint enumId,
@@ -320,6 +332,7 @@ namespace DisplayMagicianShared.NVIDIA
             [In][Out] ref int maximumNumberOfVertices,
             [Out] out int isSticky
         );
+
 
         [FunctionId(FunctionId.NvAPI_SetDVCLevel)]
         public delegate Status NvAPI_SetDVCLevel(
@@ -706,6 +719,12 @@ namespace DisplayMagicianShared.NVIDIA
             PhysicalGPUHandle[]
                 gpuHandles,
             [Out] out uint gpuCount);
+
+        [FunctionId(FunctionId.NvAPI_GPU_GetLogicalGpuInfo)]
+        public delegate Status NvAPI_GPU_GetLogicalGpuInfo(
+            [In] LogicalGPUHandle gpuHandle,
+            [In][Out] ref LogicalGPUData logicalGPUData
+        );
 
         [FunctionId(FunctionId.NvAPI_GetDriverModel)]
         public delegate Status NvAPI_GetDriverModel(
@@ -1304,9 +1323,9 @@ namespace DisplayMagicianShared.NVIDIA
         //API_INTERFACE NvAPI_GPU_QueryWorkstationFeatureSupport(NvPhysicalGpuHandle physicalGpu, NV_GPU_WORKSTATION_FEATURE_TYPE gpuWorkstationFeature);
         [FunctionId(FunctionId.NvAPI_GPU_QueryWorkstationFeatureSupport)]
         public delegate Status NvAPI_GPU_QueryWorkstationFeatureSupport(
+            [In] PhysicalGPUHandle physicalGpu,
+            [In] WorkstationFeatureType gpuWorkstationFeature
         );
-
-
 
         [FunctionId(FunctionId.NvAPI_GPU_ResetECCErrorInfo)]
         public delegate Status NvAPI_GPU_ResetECCErrorInfo(

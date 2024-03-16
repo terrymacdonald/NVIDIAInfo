@@ -3603,41 +3603,41 @@ namespace DisplayMagicianShared.NVIDIA
         public static extern HMODULE GetModuleHandle(string moduleName);*/
 
 
-        /*// Delegate
-        // This function initializes the NvAPI library (if not already initialized) but always increments the ref-counter.
-        // This must be called before calling other NvAPI_ functions. Note: It is now mandatory to call NvAPI_Initialize before calling any other NvAPI. NvAPI_Unload should be called to unload the NVAPI Library.
-        [UnmanagedFunctionPoInt32er(CallingConvention.Cdecl)]
-        private delegate NVAPI_STATUS NvAPI_Initialize();
+/*// Delegate
+// This function initializes the NvAPI library (if not already initialized) but always increments the ref-counter.
+// This must be called before calling other NvAPI_ functions. Note: It is now mandatory to call NvAPI_Initialize before calling any other NvAPI. NvAPI_Unload should be called to unload the NVAPI Library.
+[UnmanagedFunctionPoInt32er(CallingConvention.Cdecl)]
+private delegate NVAPI_STATUS NvAPI_Initialize();
 
-        //DESCRIPTION: Decrements the ref-counter and when it reaches ZERO, unloads NVAPI library.This must be called in pairs with NvAPI_Initialize.
-        // If the client wants unload functionality, it is recommended to always call NvAPI_Initialize and NvAPI_Unload in pairs.
-        // Unloading NvAPI library is not supported when the library is in a resource locked state.
-        // Some functions in the NvAPI library initiates an operation or allocates certain resources and there are corresponding functions available, to complete the operation or free the allocated resources.
-        // All such function pairs are designed to prevent unloading NvAPI library. For example, if NvAPI_Unload is called after NvAPI_XXX which locks a resource, it fails with NVAPI_ERROR.
-        // Developers need to call the corresponding NvAPI_YYY to unlock the resources, before calling NvAPI_Unload again.
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS NvAPI_Unload();
+//DESCRIPTION: Decrements the ref-counter and when it reaches ZERO, unloads NVAPI library.This must be called in pairs with NvAPI_Initialize.
+// If the client wants unload functionality, it is recommended to always call NvAPI_Initialize and NvAPI_Unload in pairs.
+// Unloading NvAPI library is not supported when the library is in a resource locked state.
+// Some functions in the NvAPI library initiates an operation or allocates certain resources and there are corresponding functions available, to complete the operation or free the allocated resources.
+// All such function pairs are designed to prevent unloading NvAPI library. For example, if NvAPI_Unload is called after NvAPI_XXX which locks a resource, it fails with NVAPI_ERROR.
+// Developers need to call the corresponding NvAPI_YYY to unlock the resources, before calling NvAPI_Unload again.
+[DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
+public static extern NVAPI_STATUS NvAPI_Unload();
 
-        // This is used to get a string containing the NVAPI version 
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS NvAPI_GetInterfaceVersionStringEx(out string description);
+// This is used to get a string containing the NVAPI version 
+[DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
+public static extern NVAPI_STATUS NvAPI_GetInterfaceVersionStringEx(out string description);
 
-        // NVAPI SESSION HANDLING FUNCTIONS
-        // This is used to get a session handle to use to maInt32ain state across multiple NVAPI calls
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS NvAPI_DRS_CreateSession(out IntPtr session);
+// NVAPI SESSION HANDLING FUNCTIONS
+// This is used to get a session handle to use to maInt32ain state across multiple NVAPI calls
+[DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
+public static extern NVAPI_STATUS NvAPI_DRS_CreateSession(out IntPtr session);
 
-        // This is used to destroy a session handle to used to maInt32ain state across multiple NVAPI calls
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS NvAPI_DRS_DestorySession(IntPtr session);
+// This is used to destroy a session handle to used to maInt32ain state across multiple NVAPI calls
+[DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
+public static extern NVAPI_STATUS NvAPI_DRS_DestorySession(IntPtr session);
 
-        // This API lets caller retrieve the current global display configuration.
-        // USAGE: The caller might have to call this three times to fetch all the required configuration details as follows:
-        // First Pass: Caller should Call NvAPI_DISP_GetDisplayConfig() with pathInfo set to NULL to fetch pathInfoCount.
-        // Second Pass: Allocate memory for pathInfo with respect to the number of pathInfoCount(from First Pass) to fetch targetInfoCount. If sourceModeInfo is needed allocate memory or it can be initialized to NULL.
-        // Third Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect to number of targetInfoCount(from Second Pass).
-        [DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern NVAPI_STATUS NvAPI_DISP_GetDisplayConfig(ref ulong pathInfoCount, out NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 pathInfo);
+// This API lets caller retrieve the current global display configuration.
+// USAGE: The caller might have to call this three times to fetch all the required configuration details as follows:
+// First Pass: Caller should Call NvAPI_DISP_GetDisplayConfig() with pathInfo set to NULL to fetch pathInfoCount.
+// Second Pass: Allocate memory for pathInfo with respect to the number of pathInfoCount(from First Pass) to fetch targetInfoCount. If sourceModeInfo is needed allocate memory or it can be initialized to NULL.
+// Third Pass(Optional, only required if target information is required): Allocate memory for targetInfo with respect to number of targetInfoCount(from Second Pass).
+[DllImport(NVAPI_DLL, CallingConvention = CallingConvention.Cdecl)]
+public static extern NVAPI_STATUS NvAPI_DISP_GetDisplayConfig(ref ulong pathInfoCount, out NV_DISPLAYCONFIG_PATH_TARGET_INFO_V2 pathInfo);
 *//*
 
         #endregion DLLImport

@@ -1266,6 +1266,54 @@ namespace DisplayMagicianShared.NVIDIA
         }
 
         /// <summary>
+        ///     This function is used to set data for Adaptive Sync Display.
+        /// </summary>
+        /// <param name="displayId">Display ID of the display.</param>
+        /// <param name="adaptiveSyncData">SetAdaptiveSyncData containing the information about the values of parameters that are to be set on given display.</param>
+        /// <returns>An instance of the <see cref="Timing" /> structure.</returns>
+        public static void GetAdaptiveSyncData(uint displayId, ref AdaptiveSyncData adaptiveSyncData)
+        {
+            var getAdaptiveSyncData = DelegateFactory.GetDelegate<DisplayDelegates.NvAPI_DISP_GetAdaptiveSyncData>();
+
+            using (var adaptiveSyncDataReference = ValueTypeReference.FromValueType(adaptiveSyncData))
+            {
+                var status = getAdaptiveSyncData(displayId, adaptiveSyncDataReference);
+
+                if (status != Status.Ok)
+                {
+                    throw new NVIDIAApiException(status);
+                }
+
+                adaptiveSyncData = adaptiveSyncDataReference.ToValueType<AdaptiveSyncData>().GetValueOrDefault();
+            }
+        }
+
+        /// <summary>
+        ///     This function is used to set data for Adaptive Sync Display.
+        /// </summary>
+        /// <param name="displayId">Display ID of the display.</param>
+        /// <param name="adaptiveSyncData">SetAdaptiveSyncData containing the information about the values of parameters that are to be set on given display.</param>
+        /// <returns>An instance of the <see cref="Timing" /> structure.</returns>
+        public static void SetAdaptiveSyncData(uint displayId, AdaptiveSyncData adaptiveSyncData)
+        {
+            var setAdaptiveSyncData = DelegateFactory.GetDelegate<DisplayDelegates.NvAPI_DISP_SetAdaptiveSyncData>();
+
+            using (var adaptiveSyncDataReference = ValueTypeReference.FromValueType(adaptiveSyncData))
+            {
+                var status = setAdaptiveSyncData(displayId, adaptiveSyncDataReference);
+
+                if (status != Status.Ok)
+                {
+                    throw new NVIDIAApiException(status);
+                }
+
+                adaptiveSyncData = adaptiveSyncDataReference.ToValueType<AdaptiveSyncData>().GetValueOrDefault();
+            }
+        }
+
+
+
+        /// <summary>
         ///     This function returns the display name given, for example, "\\DISPLAY1", using the unattached NVIDIA display handle
         /// </summary>
         /// <param name="display">Handle of the associated unattached display</param>
@@ -2191,10 +2239,10 @@ namespace DisplayMagicianShared.NVIDIA
         /// <exception cref="NVIDIAApiException">Status.ApiNotInitialized: The NvAPI API needs to be initialized first.</exception>
         /// <exception cref="NVIDIAApiException">Status.NoImplementation: This entry point not available.</exception>
         /// <exception cref="NVIDIAApiException">Status.Error: Miscellaneous error occurred.</exception>
-        public static TopologyGroup GetDisplayViewportsByResolution(UInt32 sdisplayId, UInt32 srcWidth, UInt32 srcHeight)
+        public static void GetDisplayViewportsByResolution(UInt32 sdisplayId, UInt32 srcWidth, UInt32 srcHeight, ref ViewPortF viewports, ref byte bezelCorrected)
         {
-            var viewports = typeof(ViewPortF).Instantiate<ViewPortF>();
-            byte bezelCorrected = 0;
+            //var viewports = typeof(ViewPortF).Instantiate<ViewPortF>();
+            //byte bezelCorrected = 0;
          var status =
                 DelegateFactory.GetDelegate<MosaicDelegates.NvAPI_Mosaic_GetDisplayViewportsByResolution>()(sdisplayId, srcWidth, srcHeight, ref viewports, ref bezelCorrected);
 
@@ -2202,8 +2250,6 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 throw new NVIDIAApiException(status);
             }
-
-            return result;
         }
 
 
@@ -3306,8 +3352,13 @@ namespace DisplayMagicianShared.NVIDIA
                 typeof(PhysicalGPUHandle).Instantiate<PhysicalGPUHandle>().Repeat(PhysicalGPUHandle.PhysicalGPUs);
             var status = DelegateFactory.GetDelegate<GPUDelegates.NvAPI_EnumPhysicalGPUs>()(gpuList, out var count);
 
-            if (status != Status.Ok)
+            if (status == Status.Ok)
             {
+                SharedLogger.logger.Trace($"NVAPI/EnumPhysicalGPUs: NvAPI_EnumPhysicalGPUs returned {count} Physical GPUs");
+            }
+            else
+            {
+                SharedLogger.logger.Trace($"NVAPI/EnumPhysicalGPUs: Error getting physical GPU count. NvAPI_EnumPhysicalGPUs() returned error code {status}");
                 throw new NVIDIAApiException(status);
             }
 
@@ -3337,6 +3388,28 @@ namespace DisplayMagicianShared.NVIDIA
 
             return gpuList.Take((int)count).ToArray();
         }
+
+        /// <summary>
+        ///      This function is used to query Logical GPU information.
+        /// </summary>
+        /// <param name="gpuHandle">Logical GPU Handle.</param>
+        /// <param name="logicalGPUData">Pointer to LogicalGPUData structure.</param>
+        public static void GetLogicalGPUInfo(
+            LogicalGPUHandle gpuHandle,
+            out LogicalGPUData logicalGPUData)
+        {
+            logicalGPUData = typeof(LogicalGPUData).Instantiate<LogicalGPUData>();
+            logicalGPUData.PhysicalGPUHandles =
+                typeof(PhysicalGPUHandle).Instantiate<PhysicalGPUHandle>().Repeat(PhysicalGPUHandle.MaxPhysicalGPUs);
+            var status = DelegateFactory.GetDelegate<GPUDelegates.NvAPI_GPU_GetLogicalGpuInfo>()(gpuHandle, ref logicalGPUData);
+
+            if (status != Status.Ok)
+            {
+                throw new NVIDIAApiException(status);
+            }
+
+        }
+
 
         /// <summary>
         ///     This function returns the AGP aperture in megabytes.
@@ -5136,6 +5209,57 @@ namespace DisplayMagicianShared.NVIDIA
                     .GetValueOrDefault()
                     .IsSupported;
             }
+        }
+
+
+        /// <summary>
+        ///     Indicates whether a queried workstation feature is supported by the requested GPU.
+        /// </summary>
+        /// <param name="gpuHandle">The physical GPU handle.</param>
+        /// <param name="gpuWorkstationFeature">The feature for the GPU in question. One of the values from enum WorkstationFeatureType</param>
+        /// <returns>Status.Ok if the queried workstation feature is supported on the given GPU, or Status.NotSUpported if the feature is not supported.</returns>
+        public static bool QueryWorkstationFeatureSupport(PhysicalGPUHandle gpuHandle, WorkstationFeatureType gpuWorkstationFeature)
+        {
+            var status = DelegateFactory.GetDelegate<GPUDelegates.NvAPI_GPU_QueryWorkstationFeatureSupport>()(
+                gpuHandle,
+                gpuWorkstationFeature
+            );
+
+            if (status == Status.Ok)
+            {
+                SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: NVIDIA Video Card is one from the Quadro range");
+                return true;
+            }
+            else if (status == Status.NotSupported)
+            {
+                SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: NVIDIA Video Card is not from the Quadro range");
+                return false;
+            }
+            else
+            {
+                if (status == Status.NoImplementation)
+                {
+                    SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: The current NVIDIA driver doesn't support this NvAPI_GPU_QueryWorkstationFeatureSupport interface.");
+                }
+                else if (status == Status.InvalidHandle)
+                {
+                    SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: The physical video card handle supplied to NvAPI_GPU_QueryWorkstationFeatureSupport was an invalid handle.");
+                }
+                else if (status == Status.NotSupported)
+                {
+                    SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: The requested gpuWorkstationFeature is not supported in the selected GPU.");
+                }
+                else if (status == Status.SettingNotFound)
+                {
+                    SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: The requested gpuWorkstationFeature is unknown to the current driver version.");
+                }
+                else
+                {
+                    SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: Error getting GPU Function status. NvAPI_GPU_QueryWorkstationFeatureSupport() returned error code {NVStatus}");
+                }
+                throw new NVIDIAApiException(status);
+            }
+
         }
 
         /// <summary>
