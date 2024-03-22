@@ -11,6 +11,11 @@ namespace DisplayMagicianShared.NVIDIA
     public static class NVAPI
     {
 
+        private static bool available = false;
+
+
+        public static bool IsAvailable() { return available; }
+
         /// <summary>
         ///     This function returns information about the system's chipset.
         /// </summary>
@@ -143,6 +148,10 @@ namespace DisplayMagicianShared.NVIDIA
             {
                 throw new NVIDIAApiException(status);
             }
+            else
+            {
+                available = true;
+            }
         }
 
         /// <summary>
@@ -183,7 +192,9 @@ namespace DisplayMagicianShared.NVIDIA
         public static void Unload()
         {
             var status = DelegateFactory.GetDelegate<GeneralDelegates.NvAPI_Unload>()();
-
+            
+            available = false;
+            
             if (status != Status.Ok)
             {
                 throw new NVIDIAApiException(status);
@@ -5255,7 +5266,7 @@ namespace DisplayMagicianShared.NVIDIA
                 }
                 else
                 {
-                    SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: Error getting GPU Function status. NvAPI_GPU_QueryWorkstationFeatureSupport() returned error code {NVStatus}");
+                    SharedLogger.logger.Trace($"NVAPI/QueryWorkstationFeatureSupport: Error getting GPU Function status. NvAPI_GPU_QueryWorkstationFeatureSupport() returned error code {status}");
                 }
                 throw new NVIDIAApiException(status);
             }

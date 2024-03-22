@@ -581,7 +581,7 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return !left.Equals(right);
         }
-
+ 
         /// <inheritdoc />
         public int Width
         {
@@ -1896,6 +1896,14 @@ namespace DisplayMagicianShared.NVIDIA
         public TopologyBrief Brief
         {
             get => _Brief;
+        }
+
+        /// <summary>
+        ///     Number of topologies within this group
+        /// </summary>
+        public uint TopologiesCount
+        {
+            get => _TopologiesCount;
         }
 
         /// <summary>

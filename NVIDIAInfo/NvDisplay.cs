@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace DisplayMagicianShared.NVIDIA
 {
@@ -3330,7 +3331,7 @@ namespace DisplayMagicianShared.NVIDIA
 
     /// <inheritdoc />
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct DVStaticMetadata: IDVStaticMetadata
+    public struct DVStaticMetadata : IEquatable<DVStaticMetadata>, ICloneable
     {
         // TODO: FIX THIS! This actually hasn't been set up properly, but is a simple copy of DisplayColorData, waiting for us to modify it to actually become DVStaticMetadata
         // We need to write an Interface for this.
@@ -3376,74 +3377,176 @@ namespace DisplayMagicianShared.NVIDIA
         private readonly UInt16 _CCWhiteX;
         private readonly UInt16 _CCWhiteY;
 
-        /// <inheritdoc />
-        // ReSharper disable once ConvertToAutoProperty
-        public UInt32 Flags
+
+        /// <summary>
+        ///     Gets a boolean value indicating that a hardware mode-set without OS update should be performed.
+        /// </summary>
+        public byte VsvdbVersion
         {
-            get => _Flags;
+            get => (byte)_Flags.GetBits(0,3);
         }
+
+        /// <summary>
+        ///     Gets a boolean value indicating that a hardware mode-set without OS update should be performed.
+        /// </summary>
+        public byte DmVersion
+        {
+            get => (byte)_Flags.GetBits(3,8);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating that sink is capable of 4kx2k @ 60hz.
+        /// </summary>
+        public bool Supports2160p60hz
+        {
+            get => _Flags.GetBit(12);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating that sink is capable of YUV422-12 bit.
+        /// </summary>
+        public bool SupportsYUV422_12bit
+        {
+            get => _Flags.GetBit(13);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating that sink supports global dimming.
+        /// </summary>
+        public bool SupportsGlobalDimming
+        {
+            get => _Flags.GetBit(14);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating that sink supports DCI P3 colorimetry, REC709 otherwise.
+        /// </summary>
+        public bool SupportsColorimetry
+        {
+            get => _Flags.GetBit(15);
+        }
+
+        /// <summary>
+        ///     Gets a  byte value indicating that the sink is using lowlatency interface and can control its backlight.
+        /// </summary>
+        public byte SupportsBacklightControl
+        {
+            get => (byte)_Flags.GetBits(16,2);
+        }
+
+        /// <summary>
+        ///     Gets a byte value indicating that the level for Backlt min luminance value (if backlighting set).
+        /// </summary>
+        public byte BacklitMinimumLumination
+        {
+            get => (byte)_Flags.GetBits(18, 2);
+        }
+
+        /// <summary>
+        ///     Gets a byte value indicating the interface (standard or low latency) supported by the sink.
+        /// </summary>
+        public byte InterfaceSupportedBySink
+        {
+            get => (byte)_Flags.GetBits(20, 2);
+        }
+
+        /// <summary>
+        ///     Gets a byte value indicating the interface (standard or low latency) supported by the sink.
+        /// </summary>
+        public byte Supports10b12b444
+        {
+            get => (byte)_Flags.GetBits(22, 2);
+        }
+
 
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 TargetMinLuminance
+        public UInt16 TargetMinLuminance
         {
             get => _TargetMinLuminance;
         }
 
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 TargetMaxLuminance
+        public UInt16 TargetMaxLuminance
         {
             get => _TargetMaxLuminance;
         }
 
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 CCRedX
+        public UInt16 CCRedX
         {
             get => _CCRedX;
         }
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 CCRedY
+        public UInt16 CCRedY
         {
             get => _CCRedY;
         }
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 CCGreenX
+        public UInt16 CCGreenX
         {
             get => _CCGreenX;
         }
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 CCGreenY
+        public UInt16 CCGreenY
         {
             get => _CCGreenY;
         }
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 CCBlueX
+        public UInt16 CCBlueX
         {
             get => _CCBlueX;
         }
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 CCBlueY
+        public UInt16 CCBlueY
         {
             get => _CCBlueY;
         }
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 CCWhiteX
+        public UInt16 CCWhiteX
         {
             get => _CCWhiteX;
         }
         /// <inheritdoc />
         // ReSharper disable once ConvertToAutoProperty
-        public UInt32 CCWhiteY
+        public UInt16 CCWhiteY
         {
             get => _CCWhiteY;
+        }
+
+        public override bool Equals(object obj) => obj is DVStaticMetadata other && this.Equals(other);
+        public bool Equals(DVStaticMetadata other)
+        => _Flags == other._Flags &&
+           _TargetMinLuminance == other._TargetMinLuminance &&
+           _TargetMaxLuminance == other._TargetMaxLuminance &&
+           _CCRedX == other._CCRedX &&
+           _CCRedY == other._CCRedY &&
+           _CCGreenX == other._CCGreenX &&
+            _CCGreenY == other._CCGreenY &&
+            _CCBlueX == other._CCBlueX &&
+            _CCBlueY == other._CCBlueY &&
+            _CCWhiteX == other._CCWhiteX &&
+            _CCWhiteY == other._CCWhiteY;
+
+        public override Int32 GetHashCode()
+        {
+            return (_Flags, _TargetMinLuminance, _TargetMaxLuminance, _CCRedX, _CCRedY, _CCGreenX, _CCGreenY, _CCBlueX, _CCBlueY, _CCWhiteX, _CCWhiteY).GetHashCode();
+        }
+        public static bool operator ==(DVStaticMetadata lhs, DVStaticMetadata rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(DVStaticMetadata lhs, DVStaticMetadata rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            DVStaticMetadata other = (DVStaticMetadata)MemberwiseClone();
+            return other;
         }
     }
 
