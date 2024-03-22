@@ -665,7 +665,7 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct StructureVersion
+    public struct StructureVersion : IEquatable<StructureVersion>
     {
         private readonly uint _version;
 
@@ -688,10 +688,22 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return $"Structure Size: {StructureSize} Bytes, Version: {VersionNumber}";
         }
+
+        public override bool Equals(object obj) => obj is StructureVersion other && this.Equals(other);
+        public bool Equals(StructureVersion other)
+        => _version == other._version;
+
+        public override int GetHashCode()
+        {
+            return (_version).GetHashCode();
+        }
+        public static bool operator ==(StructureVersion lhs, StructureVersion rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(StructureVersion lhs, StructureVersion rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    public struct GenericString : IInitializable
+    public struct GenericString : IInitializable, IEquatable<GenericString>
     {
         public const int GenericStringLength = 4096;
 
@@ -712,10 +724,22 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return Value;
         }
+
+        public override bool Equals(object obj) => obj is GenericString other && this.Equals(other);
+        public bool Equals(GenericString other)
+        => _Value == other._Value;
+
+        public override int GetHashCode()
+        {
+            return (_Value).GetHashCode();
+        }
+        public static bool operator ==(GenericString lhs, GenericString rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(GenericString lhs, GenericString rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    public struct ShortString : IInitializable
+    public struct ShortString : IInitializable, IEquatable<ShortString> 
     {
         public const int ShortStringLength = 64;
 
@@ -736,10 +760,22 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return Value;
         }
+
+        public override bool Equals(object obj) => obj is ShortString other && this.Equals(other);
+        public bool Equals(ShortString other)
+        => _Value == other._Value;
+
+        public override int GetHashCode()
+        {
+            return (_Value).GetHashCode();
+        }
+        public static bool operator ==(ShortString lhs, ShortString rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(ShortString lhs, ShortString rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    public struct LongString : IInitializable
+    public struct LongString : IInitializable, IEquatable<LongString>
     {
         public const int LongStringLength = 256;
 
@@ -760,10 +796,22 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return Value;
         }
+
+        public override bool Equals(object obj) => obj is LongString other && this.Equals(other);
+        public bool Equals(LongString other)
+        => _Value == other._Value;
+
+        public override int GetHashCode()
+        {
+            return (_Value).GetHashCode();
+        }
+        public static bool operator ==(LongString lhs, LongString rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(LongString lhs, LongString rhs) => !(lhs == rhs);
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct UnicodeString : IInitializable
+    public struct UnicodeString : IInitializable, IEquatable<UnicodeString>
     {
         public const int UnicodeStringLength = 2048;
 
@@ -784,6 +832,18 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return Value;
         }
+
+        public override bool Equals(object obj) => obj is UnicodeString other && this.Equals(other);
+        public bool Equals(UnicodeString other)
+        => _Value == other._Value;
+
+        public override int GetHashCode()
+        {
+            return (_Value).GetHashCode();
+        }
+        public static bool operator ==(UnicodeString lhs, UnicodeString rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(UnicodeString lhs, UnicodeString rhs) => !(lhs == rhs);
     }
 
     /// <summary>

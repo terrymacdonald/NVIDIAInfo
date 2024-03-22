@@ -1282,7 +1282,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="displayId">Display ID of the display.</param>
         /// <param name="adaptiveSyncData">SetAdaptiveSyncData containing the information about the values of parameters that are to be set on given display.</param>
         /// <returns>An instance of the <see cref="Timing" /> structure.</returns>
-        public static void GetAdaptiveSyncData(uint displayId, ref AdaptiveSyncData adaptiveSyncData)
+        public static void GetAdaptiveSyncData(uint displayId, ref GetAdaptiveSyncData adaptiveSyncData)
         {
             var getAdaptiveSyncData = DelegateFactory.GetDelegate<DisplayDelegates.NvAPI_DISP_GetAdaptiveSyncData>();
 
@@ -1295,7 +1295,7 @@ namespace DisplayMagicianShared.NVIDIA
                     throw new NVIDIAApiException(status);
                 }
 
-                adaptiveSyncData = adaptiveSyncDataReference.ToValueType<AdaptiveSyncData>().GetValueOrDefault();
+                adaptiveSyncData = adaptiveSyncDataReference.ToValueType<GetAdaptiveSyncData>().GetValueOrDefault();
             }
         }
 
@@ -1305,7 +1305,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <param name="displayId">Display ID of the display.</param>
         /// <param name="adaptiveSyncData">SetAdaptiveSyncData containing the information about the values of parameters that are to be set on given display.</param>
         /// <returns>An instance of the <see cref="Timing" /> structure.</returns>
-        public static void SetAdaptiveSyncData(uint displayId, AdaptiveSyncData adaptiveSyncData)
+        public static void SetAdaptiveSyncData(uint displayId, GetAdaptiveSyncData adaptiveSyncData)
         {
             var setAdaptiveSyncData = DelegateFactory.GetDelegate<DisplayDelegates.NvAPI_DISP_SetAdaptiveSyncData>();
 
@@ -1318,7 +1318,7 @@ namespace DisplayMagicianShared.NVIDIA
                     throw new NVIDIAApiException(status);
                 }
 
-                adaptiveSyncData = adaptiveSyncDataReference.ToValueType<AdaptiveSyncData>().GetValueOrDefault();
+                adaptiveSyncData = adaptiveSyncDataReference.ToValueType<GetAdaptiveSyncData>().GetValueOrDefault();
             }
         }
 
@@ -2255,7 +2255,7 @@ namespace DisplayMagicianShared.NVIDIA
             //var viewports = typeof(ViewPortF).Instantiate<ViewPortF>();
             //byte bezelCorrected = 0;
          var status =
-                DelegateFactory.GetDelegate<MosaicDelegates.NvAPI_Mosaic_GetDisplayViewportsByResolution>()(sdisplayId, srcWidth, srcHeight,  viewports,  bezelCorrected);
+                DelegateFactory.GetDelegate<MosaicDelegates.NvAPI_Mosaic_GetDisplayViewportsByResolution>()(sdisplayId, srcWidth, srcHeight,  out viewports,  bezelCorrected);
 
             if (status != Status.Ok)
             {
@@ -4607,7 +4607,7 @@ namespace DisplayMagicianShared.NVIDIA
         /// <exception cref="NVIDIAApiException">Status.NvidiaDeviceNotFound: No NVIDIA GPU driving a display was found</exception>
         /// <exception cref="NVIDIAApiException">Status.ExpectedPhysicalGPUHandle: gpuHandle was not a physical GPU handle</exception>
         /// <exception cref="Exception">A delegate callback throws an exception.</exception>
-        public static DisplayIdsV2[] GetConnectedDisplayIds(PhysicalGPUHandle gpuHandle, ConnectedIdsFlag flags)
+        public static IDisplayIds[] GetConnectedDisplayIds(PhysicalGPUHandle gpuHandle, ConnectedIdsFlag flags)
         {
             var gpuGetConnectedDisplayIds =
                 DelegateFactory.GetDelegate<GPUDelegates.NvAPI_GPU_GetConnectedDisplayIds>();
@@ -4627,22 +4627,32 @@ namespace DisplayMagicianShared.NVIDIA
 
             if (count == 0)
             {
-                return new DisplayIdsV2[0];
+                return new IDisplayIds[0];
             }
 
-            using (
-                var displayIds =
-                    ValueTypeArray.FromArray(typeof(DisplayIdsV2).Instantiate<DisplayIdsV2>().Repeat((int)count)))
+
+            foreach (Type acceptType in gpuGetConnectedDisplayIds.Accepts())
             {
-                status = gpuGetConnectedDisplayIds(gpuHandle, displayIds, ref count, flags);
+                using ( var displayIds =
+                        ValueTypeArray.FromArray(typeof(acceptType).Instantiate<typeof(acceptType)>().Repeat((int)count)))
+                    {
+                       status = gpuGetConnectedDisplayIds(gpuHandle, displayIds, ref count, flags);
 
-                if (status != Status.Ok)
-                {
-                    throw new NVIDIAApiException(status);
+                    if (status == Status.IncompatibleStructureVersion)
+                    {
+                        continue;
+                    }
+
+                    if (status != Status.Ok)
+                    {
+                        throw new NVIDIAApiException(status);
+                    }
+                    return displayIds.ToArray(typeof(acceptType));
                 }
-
-                return displayIds.ToArray<DisplayIdsV2>((int)count);
             }
+
+            throw new NVIDIANotSupportedException("This operation is not supported.");
+
         }
 
         /// <summary>

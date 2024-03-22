@@ -458,7 +458,7 @@ namespace DisplayMagicianShared.NVIDIA
     ///     Contains a list of supported GPU series by a NVIDIA driver setting profile
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct DRSGPUSupport
+    public struct DRSGPUSupport : IEquatable<DRSGPUSupport>
     {
         internal uint _Flags;
 
@@ -516,6 +516,18 @@ namespace DisplayMagicianShared.NVIDIA
 
             return $"[{_Flags}]";
         }
+
+        public override bool Equals(object obj) => obj is DRSGPUSupport other && this.Equals(other);
+        public bool Equals(DRSGPUSupport other)
+        => _Flags == other._Flags;
+
+        public override int GetHashCode()
+        {
+            return (_Flags).GetHashCode();
+        }
+        public static bool operator ==(DRSGPUSupport lhs, DRSGPUSupport rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(DRSGPUSupport lhs, DRSGPUSupport rhs) => !(lhs == rhs);
     }
 
     /// <summary>
@@ -678,6 +690,24 @@ namespace DisplayMagicianShared.NVIDIA
         {
             get => (int)_NumberOfSettings;
         }
+
+        public override bool Equals(object obj) => obj is DRSProfileV1 other && this.Equals(other);
+        public bool Equals(DRSProfileV1 other)
+        => _Version == other._Version &&
+            _ProfileName == other._ProfileName &&
+            _GPUSupport == other._GPUSupport &&
+            _IsPredefined == other._IsPredefined &&
+            _NumberOfApplications == other._NumberOfApplications &&
+            _NumberOfSettings == other._NumberOfSettings;
+
+        public override int GetHashCode()
+        {
+            return (_Version, _ProfileName, _GPUSupport, _IsPredefined, _NumberOfApplications, _NumberOfSettings).GetHashCode();
+            //return (HasDRSSettings, ProfileInfo, DriverSettings).GetHashCode();
+        }
+        public static bool operator ==(DRSProfileV1 lhs, DRSProfileV1 rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(DRSProfileV1 lhs, DRSProfileV1 rhs) => !(lhs == rhs);
     }
 
     /// <summary>

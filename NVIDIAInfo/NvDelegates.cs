@@ -170,13 +170,13 @@ namespace DisplayMagicianShared.NVIDIA
         [FunctionId(FunctionId.NvAPI_DISP_GetAdaptiveSyncData)]
         public delegate Status NvAPI_DISP_GetAdaptiveSyncData(
             [In] uint displayId,
-            [In][Accepts(typeof(AdaptiveSyncData))] ValueTypeReference adaptiveSyncData
+            [In][Accepts(typeof(GetAdaptiveSyncData))] ValueTypeReference adaptiveSyncData
         );
 
         [FunctionId(FunctionId.NvAPI_DISP_SetAdaptiveSyncData)]
         public delegate Status NvAPI_DISP_SetAdaptiveSyncData(
             [In] uint displayId,
-            [In][Accepts(typeof(AdaptiveSyncData))] ValueTypeReference adaptiveSyncData
+            [In][Accepts(typeof(GetAdaptiveSyncData))] ValueTypeReference adaptiveSyncData
         );
 
         [FunctionId(FunctionId.NvAPI_EnumNvidiaDisplayHandle)]

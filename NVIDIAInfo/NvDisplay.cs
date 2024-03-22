@@ -3913,7 +3913,7 @@ namespace DisplayMagicianShared.NVIDIA
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     [StructureVersion(1)]
-    public struct HDRCapabilitiesV1 : IInitializable
+    public struct HDRCapabilitiesV1 : IInitializable, IHDRCapabilities
     {
         internal StructureVersion _Version;
         private readonly uint _RawReserved;
@@ -3978,6 +3978,13 @@ namespace DisplayMagicianShared.NVIDIA
         {
             get => _RawReserved.GetBit(4);
         }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if Dolby Vision is supported.
+        /// </summary>
+        public bool IsDolbyVisionSupported {
+            get => false;
+        }
     }
 
     /// <summary>
@@ -3985,7 +3992,7 @@ namespace DisplayMagicianShared.NVIDIA
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     [StructureVersion(2)]
-    public struct HDRCapabilitiesV2 : IInitializable
+    public struct HDRCapabilitiesV2 : IInitializable, IHDRCapabilities
     {
         internal StructureVersion _Version;
         private readonly uint _RawReserved;
@@ -4051,6 +4058,14 @@ namespace DisplayMagicianShared.NVIDIA
         {
             get => _RawReserved.GetBit(4);
         }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if Dolby Vision is supported.
+        /// </summary>
+        public bool IsDolbyVisionSupported
+        {
+            get => _RawReserved.GetBit(5);
+        }
     }
 
     /// <summary>
@@ -4058,7 +4073,7 @@ namespace DisplayMagicianShared.NVIDIA
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
     [StructureVersion(3)]
-    public struct HDRCapabilitiesV3 : IInitializable
+    public struct HDRCapabilitiesV3 : IInitializable, IHDRCapabilities
     {
         internal StructureVersion _Version;
         private readonly uint _RawReserved;
@@ -4124,6 +4139,30 @@ namespace DisplayMagicianShared.NVIDIA
         public bool IsTraditionalSDRGammaSupported
         {
             get => _RawReserved.GetBit(4);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if Dolby Vision is supported.
+        /// </summary>
+        public bool IsDolbyVisionSupported
+        {
+            get => _RawReserved.GetBit(5);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if HDR10+ (Sink Side Tonemapping) is supported.
+        /// </summary>
+        public bool isHdr10PlusSupported
+        {
+            get => _RawReserved.GetBit(6);
+        }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if HDR10+ Gaming, a.k.a HDR10+ Source Side Tonemapping (SSTM), is supported.
+        /// </summary>
+        public bool isHdr10PlusGamingSupported
+        {
+            get => _RawReserved.GetBit(7);
         }
     }
 
@@ -8247,9 +8286,10 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 8)]
-    public struct AdaptiveSyncData : IEquatable<AdaptiveSyncData>, ICloneable
+    [StructureVersion(1)]
+    public struct GetAdaptiveSyncData : IEquatable<GetAdaptiveSyncData>, ICloneable
     {
-        public UInt32 Version; // Must be V1
+        public StructureVersion _version; // Must be V1
         public UInt32 MaxFrameInterval;             //!< maximum frame interval in micro seconds as set previously using NvAPI_DISP_SetAdaptiveSyncData function. If default values from EDID are used, this parameter returns 0.
         public UInt32 Flags;
         public UInt32 ReservedEx1;             //!< Number of times the last flip was shown on the screen
@@ -8263,9 +8303,9 @@ namespace DisplayMagicianShared.NVIDIA
         public bool DisableAdaptiveSync => (Flags & 0x1) == 0x1; //!< Indicates if adaptive sync is disabled on the display.
         public bool DisableFrameSplitting => (Flags & 0x1) == 0x1; //!< Indicates if frame splitting is disabled on the display.
 
-        public override bool Equals(object obj) => obj is AdaptiveSyncData other && this.Equals(other);
+        public override bool Equals(object obj) => obj is GetAdaptiveSyncData other && this.Equals(other);
 
-        public bool Equals(AdaptiveSyncData other)
+        public bool Equals(GetAdaptiveSyncData other)
         => MaxFrameInterval == other.MaxFrameInterval &&
             Flags == other.Flags;
 
@@ -8273,12 +8313,12 @@ namespace DisplayMagicianShared.NVIDIA
         {
             return (MaxFrameInterval, Flags).GetHashCode();
         }
-        public static bool operator ==(AdaptiveSyncData lhs, AdaptiveSyncData rhs) => lhs.Equals(rhs);
+        public static bool operator ==(GetAdaptiveSyncData lhs, GetAdaptiveSyncData rhs) => lhs.Equals(rhs);
 
-        public static bool operator !=(AdaptiveSyncData lhs, AdaptiveSyncData rhs) => !(lhs == rhs);
+        public static bool operator !=(GetAdaptiveSyncData lhs, GetAdaptiveSyncData rhs) => !(lhs == rhs);
         public object Clone()
         {
-            AdaptiveSyncData other = (AdaptiveSyncData)MemberwiseClone();
+            GetAdaptiveSyncData other = (GetAdaptiveSyncData)MemberwiseClone();
             return other;
         }
     }

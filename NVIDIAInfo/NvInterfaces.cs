@@ -230,6 +230,50 @@ namespace DisplayMagicianShared.NVIDIA
     }
 
     /// <summary>
+    ///     Contains information regarding HDR capabilities
+    /// </summary>
+    public interface IHDRCapabilities
+    {
+        /// <summary>
+        ///     Gets the display color space configurations
+        /// </summary>
+        // ReSharper disable once ConvertToAutoProperty
+        DisplayColorData DisplayData { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a UHDA HDR with ST2084 EOTF (CEA861.3) is supported.
+        /// </summary>
+        bool IsST2084EOTFSupported { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a traditional HDR gamma (CEA861.3) is supported.
+        /// </summary>
+        bool IsTraditionalHDRGammaSupported { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the Extended Dynamic Range on SDR displays is supported.
+        /// </summary>
+        bool IsEDRSupported { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the default EDID HDR parameters is expanded;
+        ///     otherwise false if this instance contains actual HDR parameters.
+        /// </summary>
+        bool IsDriverDefaultHDRParametersExpanded { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if the HDMI2.0a traditional SDR gamma is supported.
+        /// </summary>
+        bool IsTraditionalSDRGammaSupported { get; }
+
+        /// <summary>
+        ///     Gets a boolean value indicating if Dolby Vision is supported.
+        /// </summary>
+        bool IsDolbyVisionSupported { get; }
+
+    }
+
+    /// <summary>
     ///     Interface for all PathInfo structures
     /// </summary>
     public interface IPathInfo : IDisposable
