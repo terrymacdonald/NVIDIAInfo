@@ -10,6 +10,7 @@ using DisplayMagicianShared.Windows;
 using EDIDParser;
 using System.Threading.Tasks;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static DisplayMagicianShared.NVIDIA.DisplayTopologyStatus;
 
 namespace DisplayMagicianShared.NVIDIA
 {
@@ -764,9 +765,8 @@ namespace DisplayMagicianShared.NVIDIA
                             NVIDIA_PER_DISPLAY_CONFIG myDisplay = new NVIDIA_PER_DISPLAY_CONFIG();
                             myDisplay.ColorData = new ColorDataV5();
                             myDisplay.HdrColorData = new HDRColorDataV2();
-                            // TODO: Change to HDR V3 once we have added the V3 capabilities object.
                             myDisplay.HdrCapabilities = new HDRCapabilitiesV3();
-                            myDisplay.AdaptiveSyncConfig = new GetAdaptiveSyncData(); // NOT SUPPORTED BY NvAPIWrapper code!
+                            myDisplay.AdaptiveSyncConfig = new SetAdaptiveSyncData();
                             myDisplay.CustomDisplays = new List<CustomDisplay>();
                             myDisplay.HasNvHdrEnabled = false;
                             myDisplay.HasAdaptiveSync = false;
@@ -937,7 +937,6 @@ namespace DisplayMagicianShared.NVIDIA
                                 catch (Exception nex)
                                 {
                                     SharedLogger.logger.Error(nex, $"NVIDIALibrary/GetNVIDIADisplayConfig: Exception occurred whilst getting the Adaptive Sync Settings for Display ID# {displayIds[displayIndex].DisplayId}.");
-                                    hdrColorData = new HDRColorDataV2();
                                 }
 
 
@@ -1013,81 +1012,38 @@ namespace DisplayMagicianShared.NVIDIA
                         // Now we try to get the information about the displayIDs and map them to windows \\DISPLAY names e.g. \\DISPLAY1
                         string displayName = displaySource.Key;
                         UInt32 displayId = 0;
-                        status = NVAPI.GetDisplayIdByDisplayName(displayName, out displayId);
-                        if (status == Status.Ok)
+                        try
                         {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DISP_GetDisplayIdByDisplayName returned OK. The display {displayName} has NVIDIA DisplayID {displayId}");
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Trying to get the Windows DisplayName to DisplayID mappings for Display ID {displayName}.");
+                            displayId = NVAPI.GetDisplayIdByDisplayName(displayName);
+                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Successfully got the Windows DisplayName to DisplayID mappings for Display ID {displayName} is set to {displayId}.");
                             myDisplayConfig.DisplayNames.Add(displayId.ToString(), displayName);
                         }
-                        else if (status == Status.NvidiaDeviceNotFound)
+                        catch (Exception ex)
                         {
-                            SharedLogger.logger.Debug($"NVIDIALibrary/GetNVIDIADisplayConfig: GDI Primary not on an NVIDIA GPU. NvAPI_DISP_GetDisplayIdByDisplayName() returned error code {status}");
+                            SharedLogger.logger.Error(ex, $"NVIDIALibrary/GetNVIDIADisplayConfig: Exception occurred whilst getting the Windows DisplayName to DisplayID mappings for Display ID {displayName}..");
                         }
-                        else if (status == Status.InvalidArgument)
-                        {
-                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more args passed in are invalid. NvAPI_DISP_GetDisplayIdByDisplayName() returned error code {status}");
-                        }
-                        else if (status == Status.ApiNotInitialized)
-                        {
-                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_DISP_GetDisplayIdByDisplayName() returned error code {status}");
-                        }
-                        else if (status == Status.NoImplementation)
-                        {
-                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_DISP_GetDisplayIdByDisplayName() returned error code {status}");
-                        }
-                        else if (status == Status.Error)
-                        {
-                            SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred. NvAPI_DISP_GetDisplayIdByDisplayName() returned error code {status}");
-                        }
-                        else
-                        {
-                            SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting Mosaic Topology! NvAPI_DISP_GetDisplayIdByDisplayName() returned error code {status}");
-                        }
+                        
                     }
 
                     // Get the display identifiers                
                     myDisplayConfig.DisplayIdentifiers = GetCurrentDisplayIdentifiers();
 
                     // Get the DRS Settings
-                    NvDRSSessionHandle drsSessionHandle = new NvDRSSessionHandle();
-                    status = NVAPI.CreateSession(out drsSessionHandle);
-                    if (status == Status.Ok)
+                    DRSSessionHandle drsSessionHandle = new DRSSessionHandle();
+                    try
                     {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DRS_CreateSession returned OK. We got a DRS Session Handle");
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Trying to get the DRS Session Handle so we can get the DRS settings.");
+                        drsSessionHandle = NVAPI.CreateSession(); 
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Successfully got the DRS Session Handle so we can get the DRS settings.");
 
-                        try
-                        {
-                            // Load the DRS Settings into memory
-                            status = NVAPI.LoadSettings(drsSessionHandle);
-                            if (status == Status.Ok)
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: NvAPI_DRS_LoadSettings returned OK. We successfully loaded the DRS Settings into memory.");
-                            }
-                            else if (status == Status.NvidiaDeviceNotFound)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: GDI Primary not on an NVIDIA GPU. NvAPI_DRS_LoadSettings() returned error code {status}");
-                            }
-                            else if (status == Status.InvalidArgument)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more args passed in are invalid. NvAPI_DRS_LoadSettings() returned error code {status}");
-                            }
-                            else if (status == Status.ApiNotInitialized)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_DRS_LoadSettings() returned error code {status}");
-                            }
-                            else if (status == Status.NoImplementation)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_DRS_LoadSettings() returned error code {status}");
-                            }
-                            else if (status == Status.Error)
-                            {
-                                SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred whilst loading settings into memory. NvAPI_DRS_LoadSettings() returned error code {status}");
-                            }
-                            else
-                            {
-                                SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while loading settings into memory! NvAPI_DRS_GetProfileInfo() returned error code {status}");
-                            }
+                        // Load the DRS Settings into memory
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Trying to load the DRS Settings into memory.");
+                        NVAPI.LoadSettings(drsSessionHandle);
+                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Successfully loaded the DRS Settings into memory.");
 
+                        try 
+                        { 
                             // Now we try to start getting the DRS Settings we need
                             // Firstly, we get the profile handle to the global DRS Profile currently in use
                             NvDRSProfileHandle drsProfileHandle = new NvDRSProfileHandle();
@@ -1246,30 +1202,11 @@ namespace DisplayMagicianShared.NVIDIA
                             }
                         }
                     }
-                    else if (status == Status.NvidiaDeviceNotFound)
+                    catch (Exception ex)
                     {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: GDI Primary not on an NVIDIA GPU. NvAPI_DRS_CreateSession() returned error code {status}");
+                        SharedLogger.logger.Error(ex, $"NVIDIALibrary/GetNVIDIADisplayConfig: Exception occurred whilst getting the DRS Session Handle so we can get the DRS settings or whilst loading the DRS settings into memory.");
                     }
-                    else if (status == Status.InvalidArgument)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: One or more args passed in are invalid. NvAPI_DRS_CreateSession() returned error code {status}");
-                    }
-                    else if (status == Status.ApiNotInitialized)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: The NvAPI API needs to be initialized first. NvAPI_DRS_CreateSession() returned error code {status}");
-                    }
-                    else if (status == Status.NoImplementation)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: This entry point not available in this NVIDIA Driver. NvAPI_DRS_CreateSession() returned error code {status}");
-                    }
-                    else if (status == Status.Error)
-                    {
-                        SharedLogger.logger.Warn($"NVIDIALibrary/GetNVIDIADisplayConfig: A miscellaneous error occurred whist getting a DRS Session Handle. NvAPI_DRS_CreateSession() returned error code {status}");
-                    }
-                    else
-                    {
-                        SharedLogger.logger.Trace($"NVIDIALibrary/GetNVIDIADisplayConfig: Some non standard error occurred while getting a DRS Session Handle! NvAPI_DRS_CreateSession() returned error code {status}");
-                    }
+                        
 
                 }
                 catch (Exception ex)

@@ -8323,4 +8323,43 @@ namespace DisplayMagicianShared.NVIDIA
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructureVersion(1)]
+    public struct SetAdaptiveSyncData : IEquatable<SetAdaptiveSyncData>, ICloneable
+    {
+        public StructureVersion _version; // Must be V1
+        public UInt32 MaxFrameInterval;             //!< maximum frame interval in micro seconds as set previously using NvAPI_DISP_SetAdaptiveSyncData function. If default values from EDID are used, this parameter returns 0.
+        public UInt32 Flags;
+        public UInt32 ReservedEx1;             //!< Number of times the last flip was shown on the screen
+        public UInt64 ReservedEx2;             //!< Timestamp for the lastest flip on the screen
+        public UInt32 ReservedEx3;
+        public UInt32 ReservedEx4;
+        public UInt32 ReservedEx5;
+        public UInt32 ReservedEx6;
+        public UInt32 ReservedEx7;
+
+        public bool DisableAdaptiveSync => (Flags & 0x1) == 0x1; //!< Indicates if adaptive sync is disabled on the display.
+        public bool DisableFrameSplitting => (Flags & 0x1) == 0x1; //!< Indicates if frame splitting is disabled on the display.
+
+        public override bool Equals(object obj) => obj is SetAdaptiveSyncData other && this.Equals(other);
+
+        public bool Equals(SetAdaptiveSyncData other)
+        => MaxFrameInterval == other.MaxFrameInterval &&
+            Flags == other.Flags;
+
+        public override Int32 GetHashCode()
+        {
+            return (MaxFrameInterval, Flags).GetHashCode();
+        }
+        public static bool operator ==(SetAdaptiveSyncData lhs, SetAdaptiveSyncData rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(SetAdaptiveSyncData lhs, SetAdaptiveSyncData rhs) => !(lhs == rhs);
+        public object Clone()
+        {
+            SetAdaptiveSyncData other = (SetAdaptiveSyncData)MemberwiseClone();
+            return other;
+        }
+    }
+
+
 }
