@@ -2250,12 +2250,12 @@ namespace DisplayMagicianShared.NVIDIA
         /// <exception cref="NVIDIAApiException">Status.ApiNotInitialized: The NvAPI API needs to be initialized first.</exception>
         /// <exception cref="NVIDIAApiException">Status.NoImplementation: This entry point not available.</exception>
         /// <exception cref="NVIDIAApiException">Status.Error: Miscellaneous error occurred.</exception>
-        public static void GetDisplayViewportsByResolution(UInt32 sdisplayId, UInt32 srcWidth, UInt32 srcHeight, ref ViewPortF viewports, ref byte bezelCorrected)
+        public static void GetDisplayViewportsByResolution(UInt32 sdisplayId, UInt32 srcWidth, UInt32 srcHeight, out ViewPortF[] viewports, ref byte bezelCorrected)
         {
             //var viewports = typeof(ViewPortF).Instantiate<ViewPortF>();
             //byte bezelCorrected = 0;
          var status =
-                DelegateFactory.GetDelegate<MosaicDelegates.NvAPI_Mosaic_GetDisplayViewportsByResolution>()(sdisplayId, srcWidth, srcHeight, ref viewports, ref bezelCorrected);
+                DelegateFactory.GetDelegate<MosaicDelegates.NvAPI_Mosaic_GetDisplayViewportsByResolution>()(sdisplayId, srcWidth, srcHeight,  viewports,  bezelCorrected);
 
             if (status != Status.Ok)
             {
